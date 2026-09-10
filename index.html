@@ -41,82 +41,6 @@
   --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
 }
 
-/* ================= SPLASH ================= */
-#splash{
-  position:fixed;inset:0;z-index:200;
-  background:
-    radial-gradient(760px 560px at 50% 46%, rgba(255,182,39,.10), transparent 68%),
-    #050607;
-  display:grid;place-items:center;
-  grid-template-rows:1fr auto 1fr;
-  perspective:1400px;
-  transition:opacity .65s ease, visibility .65s;
-  cursor:pointer;
-  overflow:hidden;
-}
-#splash::after{
-  content:"";position:absolute;inset:0;pointer-events:none;
-  background:repeating-linear-gradient(0deg,rgba(255,255,255,.028) 0 1px,transparent 1px 3px);
-}
-#splash.done{opacity:0;visibility:hidden}
-
-.splash-stage{grid-row:2;display:flex;flex-direction:column;align-items:center;gap:34px;position:relative}
-
-.belt-wrap{
-  width:min(78vw,620px);
-  transform-style:preserve-3d;
-  animation:beltIn 1.85s cubic-bezier(.17,.78,.28,1) both;
-  filter:drop-shadow(0 26px 46px rgba(0,0,0,.75));
-}
-.belt-wrap svg{display:block;width:100%;height:auto}
-
-@keyframes beltIn{
-  0%   {opacity:0; transform:rotateY(0deg) scale(.04); filter:blur(9px)}
-  14%  {opacity:1; filter:blur(3px)}
-  74%  {transform:rotateY(900deg) scale(1.14); filter:blur(0)}
-  100% {opacity:1; transform:rotateY(1080deg) scale(1); filter:blur(0)}
-}
-
-.flare{
-  position:absolute;top:44%;left:50%;width:60px;height:60px;margin:-30px 0 0 -30px;
-  border-radius:50%;background:radial-gradient(circle,rgba(255,235,180,.95),rgba(255,182,39,.45) 38%,transparent 70%);
-  animation:flare 1s ease-out 1.3s both;pointer-events:none;
-}
-@keyframes flare{
-  0%{opacity:0;transform:scale(.3)}
-  22%{opacity:1;transform:scale(7)}
-  100%{opacity:0;transform:scale(15)}
-}
-
-.splash-name{text-align:center;animation:nameIn .85s cubic-bezier(.2,.8,.3,1) 1.42s both}
-.splash-name h1{
-  font-family:var(--disp);font-weight:800;text-transform:uppercase;
-  font-size:clamp(26px,5.6vw,58px);letter-spacing:.045em;color:var(--ink);
-  text-shadow:0 0 40px rgba(255,182,39,.3);line-height:1;
-}
-.splash-name p{
-  margin-top:14px;font-family:var(--mono);font-size:clamp(9px,1.5vw,12px);
-  letter-spacing:.42em;text-transform:uppercase;color:var(--amber);
-}
-@keyframes nameIn{
-  0%{opacity:0;transform:translateY(24px);filter:blur(9px);letter-spacing:.3em}
-  100%{opacity:1;transform:translateY(0);filter:blur(0)}
-}
-
-.splash-skip{
-  grid-row:3;align-self:end;margin-bottom:34px;
-  font-family:var(--mono);font-size:9.5px;letter-spacing:.28em;text-transform:uppercase;color:#4A535D;
-  animation:skipIn .5s ease 2.1s both;
-}
-@keyframes skipIn{from{opacity:0}to{opacity:1}}
-
-body.splashing{overflow:hidden}
-
-@media (prefers-reduced-motion:reduce){
-  #splash{display:none}
-  body.splashing{overflow:auto}
-}
-
 *{box-sizing:border-box}
 html{background:var(--ground)}
 body{
@@ -1278,27 +1202,6 @@ document.addEventListener("click",function(e){
   var t=e.target.closest("[data-team]"); if(t){renderTeam(t.dataset.team);go("team");}
 });
 go("home");
-
-/* ---------- splash ---------- */
-(function(){
-  var el=document.getElementById("splash");
-  if(!el) return;
-  var reduced=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  if(reduced){ el.remove(); return; }
-  document.body.classList.add("splashing");
-  var done=false;
-  function finish(){
-    if(done) return; done=true;
-    el.classList.add("done");
-    document.body.classList.remove("splashing");
-    setTimeout(function(){ if(el.parentNode) el.remove(); },800);
-  }
-  var timer=setTimeout(finish,3400);
-  el.addEventListener("click",function(){clearTimeout(timer);finish();});
-  document.addEventListener("keydown",function(k){
-    if(k.key==="Escape"||k.key===" "){clearTimeout(timer);finish();}
-  },{once:true});
-})();
 })();
 </script>
 
