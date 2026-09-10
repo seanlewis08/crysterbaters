@@ -1,0 +1,1127 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="League For Kids That Read Good — standings, keeper costs, pre-draft board and the weekly games cap.">
+<meta name="theme-color" content="#07080A">
+<meta name="robots" content="noindex">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%2307080A'/%3E%3Ccircle cx='16' cy='16' r='11' fill='none' stroke='%23FFB627' stroke-width='2'/%3E%3Cpath d='M5 16h22M16 5v22' stroke='%23FFB627' stroke-width='1.2' opacity='.6'/%3E%3Cpath d='M8.2 8.2C14.4 11.5 17.5 17.7 17.5 27M23.8 8.2C17.6 11.5 14.5 17.7 14.5 27' fill='none' stroke='%23FFB627' stroke-width='1.2' opacity='.6'/%3E%3C/svg%3E">
+<meta property="og:title" content="League For Kids That Read Good">
+<meta property="og:description" content="Standings, keepers, draft board and the weekly games cap.">
+<meta property="og:type" content="website">
+<title>League For Kids That Read Good</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@500;600;700;800&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap">
+
+<style>
+:root{
+  --ground:#07080A;
+  --surface:#0F1216;
+  --surface-2:#161A20;
+  --surface-3:#1E242B;
+  --line:#232A32;
+  --line-2:#333C46;
+  --ink:#F3F6F9;
+  --muted:#8B97A5;
+  --dim:#5D6874;
+
+  --amber:#FFB627;
+  --amber-dim:#7A5A16;
+  --amber-glow:rgba(255,182,39,.13);
+  --cyan:#22D3EE;
+  --cyan-glow:rgba(34,211,238,.12);
+  --green:#3FCF8E;
+  --red:#FF5147;
+  --red-glow:rgba(255,81,71,.12);
+
+  --disp:"Saira Condensed","Arial Narrow",Arial,sans-serif;
+  --body:"Barlow","Helvetica Neue",Arial,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+
+*{box-sizing:border-box}
+html{background:var(--ground)}
+body{
+  margin:0;
+  background:
+    radial-gradient(1100px 520px at 50% -180px, rgba(255,182,39,.055), transparent 70%),
+    var(--ground);
+  color:var(--ink);
+  font-family:var(--body);
+  font-size:16px;
+  line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3,h4{font-family:var(--disp);margin:0;letter-spacing:.005em;text-wrap:balance;line-height:1.04}
+p{margin:0}
+button{font:inherit;color:inherit}
+a{color:var(--amber);text-decoration:none}
+a:hover{text-decoration:underline}
+
+.num,.tabular{font-variant-numeric:tabular-nums}
+
+.eyebrow{
+  font-family:var(--mono);font-size:10px;font-weight:600;
+  letter-spacing:.2em;text-transform:uppercase;color:var(--amber);
+}
+.eyebrow.cool{color:var(--dim)}
+
+/* ---------- top bar ---------- */
+.topbar{position:sticky;top:0;z-index:60;background:rgba(7,8,10,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.topbar-in{max-width:1200px;margin:0 auto;padding-inline:20px;display:flex;align-items:stretch;gap:20px;min-height:62px}
+.brand{display:flex;align-items:center;gap:11px;background:none;border:0;padding:0;cursor:pointer;text-align:left;flex-shrink:0}
+.mark{width:28px;height:28px;flex-shrink:0}
+.brand-txt{display:flex;flex-direction:column;line-height:1}
+.brand-txt b{font-family:var(--disp);font-weight:800;font-size:17px;text-transform:uppercase;letter-spacing:.045em}
+.brand-txt span{font-family:var(--mono);font-size:8.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--dim);margin-top:4px}
+nav{display:flex;margin-left:auto;overflow-x:auto;scrollbar-width:none}
+nav::-webkit-scrollbar{display:none}
+nav button{
+  background:none;border:0;cursor:pointer;position:relative;
+  font-family:var(--disp);font-weight:600;font-size:15px;text-transform:uppercase;letter-spacing:.075em;
+  padding:0 15px;color:var(--muted);white-space:nowrap;
+}
+nav button::after{content:"";position:absolute;left:12px;right:12px;bottom:0;height:2px;background:transparent}
+nav button:hover{color:var(--ink)}
+nav button[aria-current="page"]{color:var(--amber)}
+nav button[aria-current="page"]::after{background:var(--amber);box-shadow:0 0 10px var(--amber)}
+nav button:focus-visible{outline:1px solid var(--amber);outline-offset:-4px}
+
+/* ---------- ticker ---------- */
+.ticker{border-bottom:1px solid var(--line);background:var(--surface)}
+.ticker-in{
+  max-width:1200px;margin:0 auto;padding:0 20px;
+  display:flex;flex-wrap:wrap;gap:0 26px;align-items:center;min-height:36px;
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);
+}
+.ticker-in b{color:var(--ink);font-weight:600}
+.livedot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--amber);box-shadow:0 0 8px var(--amber);margin-right:8px;vertical-align:middle}
+
+.wrap{max-width:1200px;margin:0 auto;padding-inline:20px;padding-block:0 90px}
+
+.view{display:none}
+.view.on{display:block}
+section{margin-top:52px}
+section:first-child{margin-top:34px}
+
+.sec-head{display:flex;align-items:center;gap:16px;margin-bottom:8px;flex-wrap:wrap}
+.sec-head h2{font-size:27px;font-weight:800;text-transform:uppercase;letter-spacing:.03em}
+.sec-head .eyebrow{margin-left:auto}
+.rulebar{height:1px;background:linear-gradient(90deg,var(--amber),var(--line) 22%,var(--line));margin-bottom:18px}
+.lede{max-width:70ch;color:var(--muted);font-size:15.5px}
+
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:4px}
+
+.pill{display:inline-block;font-family:var(--mono);font-size:9.5px;font-weight:600;letter-spacing:.11em;text-transform:uppercase;padding:3px 8px;border-radius:2px;white-space:nowrap;border:1px solid}
+.pill.ok{color:var(--green);border-color:rgba(63,207,142,.4);background:rgba(63,207,142,.09)}
+.pill.warn{color:var(--amber);border-color:var(--amber-dim);background:var(--amber-glow)}
+.pill.gone{color:var(--red);border-color:rgba(255,81,71,.4);background:var(--red-glow)}
+.pill.q{color:var(--muted);border-color:var(--line-2);background:var(--surface-2)}
+.dot{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:8px;vertical-align:middle}
+
+.kbadge{
+  display:inline-grid;place-items:center;width:16px;height:16px;margin-left:8px;
+  border:1px solid var(--amber);border-radius:2px;background:var(--amber-glow);
+  font-family:var(--mono);font-size:9px;font-weight:600;color:var(--amber);
+  vertical-align:middle;line-height:1;
+}
+
+/* ---------- tables ---------- */
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:4px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:520px}
+th,td{text-align:left;padding:11px 16px;border-bottom:1px solid var(--line)}
+thead th{
+  font-family:var(--mono);font-size:9.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--dim);background:var(--surface-2);border-bottom:1px solid var(--line-2);white-space:nowrap;
+}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:nth-child(even) td{background:rgba(255,255,255,.012)}
+td.num,th.num{font-family:var(--mono);font-variant-numeric:tabular-nums;font-weight:500;font-size:14px}
+td.name{font-family:var(--disp);font-weight:600;font-size:17px;letter-spacing:.015em}
+td.mgr{font-family:var(--mono);font-size:12px;color:var(--muted);white-space:nowrap;text-transform:uppercase;letter-spacing:.08em}
+.sub{color:var(--muted);font-size:13.5px}
+.rowlink{cursor:pointer}
+.rowlink:hover td{background:var(--amber-glow)!important}
+tr.keeprow td{background:var(--amber-glow)!important;border-bottom-color:var(--amber-dim)}
+.rank{
+  font-family:var(--disp);font-weight:800;font-size:19px;color:var(--ink);
+  display:inline-grid;place-items:center;min-width:30px;height:26px;
+  background:var(--surface-3);border-radius:2px;font-variant-numeric:tabular-nums;
+}
+.rank.gold{background:var(--amber);color:#0A0A0A}
+.rank.po{border-left:2px solid var(--cyan)}
+
+/* ---------- hero ---------- */
+.hero{margin-top:30px;display:grid;grid-template-columns:1.45fr 1fr;gap:16px}
+.champ{
+  position:relative;overflow:hidden;border-radius:4px;
+  background:linear-gradient(150deg,#191309 0%,var(--surface) 55%);
+  border:1px solid var(--amber-dim);
+  padding:30px 30px 26px;
+  display:flex;flex-direction:column;justify-content:space-between;gap:26px;
+}
+.champ::before{
+  content:"";position:absolute;inset:0;
+  background:repeating-linear-gradient(90deg,rgba(255,182,39,.05) 0 1px,transparent 1px 5px);
+  opacity:.5;pointer-events:none;
+}
+.champ-top{position:relative}
+.champ h1{
+  font-size:clamp(38px,7vw,68px);font-weight:800;text-transform:uppercase;letter-spacing:.01em;
+  margin-top:12px;text-shadow:0 0 34px rgba(255,182,39,.22);
+}
+.champ .who{
+  display:block;margin-top:10px;font-family:var(--mono);font-size:13px;font-weight:600;
+  letter-spacing:.16em;text-transform:uppercase;color:var(--amber);
+}
+.scoreline{display:flex;gap:0;flex-wrap:wrap;position:relative;border-top:1px solid var(--line-2);padding-top:18px}
+.scoreline div{padding-right:26px;margin-right:26px;border-right:1px solid var(--line-2)}
+.scoreline div:last-child{border-right:0;margin-right:0;padding-right:0}
+.scoreline dt{font-family:var(--mono);font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
+.scoreline dd{margin:6px 0 0;font-family:var(--disp);font-weight:700;font-size:19px;text-transform:uppercase;letter-spacing:.02em}
+
+.side{display:flex;flex-direction:column;gap:16px}
+.statgrid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:4px;overflow:hidden}
+.stat{background:var(--surface);padding:16px 18px}
+.stat dt{font-family:var(--mono);font-size:9.5px;letter-spacing:.15em;text-transform:uppercase;color:var(--dim)}
+.stat dd{margin:7px 0 0;font-family:var(--disp);font-weight:800;font-size:34px;line-height:.95;font-variant-numeric:tabular-nums;color:var(--amber)}
+.stat dd small{font-family:var(--body);font-size:12px;font-weight:500;color:var(--muted);letter-spacing:0;margin-left:7px;text-transform:none}
+.alert{
+  border:1px solid var(--line-2);border-left:2px solid var(--cyan);border-radius:4px;
+  background:var(--surface);padding:17px 19px;display:flex;flex-direction:column;gap:8px;flex:1;justify-content:center;
+}
+.alert h3{font-size:17px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--cyan)}
+.alert p{font-size:14.5px;color:var(--muted)}
+
+/* ---------- team cards ---------- */
+.teamgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+.team{
+  background:var(--surface);border:1px solid var(--line);border-radius:4px;
+  overflow:hidden;text-align:left;cursor:pointer;width:100%;display:flex;flex-direction:column;
+  transition:border-color .12s,background .12s;
+}
+.team:hover{border-color:var(--amber-dim);background:var(--surface-2)}
+.team:focus-visible{outline:1px solid var(--amber);outline-offset:2px}
+.team-top{padding:15px 17px;border-bottom:1px solid var(--line);display:flex;gap:13px;align-items:center}
+.avatar{
+  width:38px;height:38px;border-radius:3px;flex-shrink:0;display:grid;place-items:center;
+  font-family:var(--disp);font-weight:800;font-size:15px;letter-spacing:.03em;
+  background:var(--surface-3);color:var(--muted);border:1px solid var(--line-2);
+}
+.team-id{min-width:0;flex:1}
+.team-id b{display:block;font-family:var(--disp);font-weight:700;font-size:19px;text-transform:uppercase;letter-spacing:.02em;overflow-wrap:anywhere}
+.team-id span{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin-top:3px}
+.team-body{padding:13px 17px 15px;display:flex;flex-direction:column;gap:9px;flex:1}
+.kv{display:flex;justify-content:space-between;gap:12px;align-items:baseline}
+.kv dt{font-family:var(--mono);font-size:9.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--dim)}
+.kv dd{margin:0;font-family:var(--disp);font-weight:600;font-size:16px;font-variant-numeric:tabular-nums}
+.keeper-mini{display:flex;flex-direction:column;gap:6px;padding-top:11px;border-top:1px solid var(--line)}
+.keeper-mini .k{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+.keeper-mini .k b{font-family:var(--body);font-weight:600;font-size:14.5px}
+.keeper-mini .k span{font-family:var(--mono);font-size:11px;color:var(--amber);white-space:nowrap;letter-spacing:.06em}
+
+/* ---------- detail ---------- */
+.back{background:none;border:0;cursor:pointer;font-family:var(--mono);font-size:10.5px;letter-spacing:.15em;text-transform:uppercase;color:var(--dim);padding:8px 0;margin-top:26px}
+.back:hover{color:var(--amber)}
+.detail-head{display:flex;gap:18px;align-items:center;flex-wrap:wrap;margin-top:8px;padding-bottom:22px;border-bottom:1px solid var(--amber-dim)}
+.detail-head .avatar{width:56px;height:56px;font-size:20px}
+.detail-head h2{font-size:clamp(28px,5vw,44px);font-weight:800;text-transform:uppercase;letter-spacing:.015em}
+.detail-head .sub{margin-top:6px;font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase}
+.detail-cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;margin-top:26px;align-items:start}
+.panel-hd{padding:13px 16px;border-bottom:1px solid var(--line);background:var(--surface-2)}
+
+/* ---------- chips / ladders ---------- */
+.chips{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.chip{
+  font-family:var(--mono);font-size:11.5px;font-weight:600;padding:6px 9px;border-radius:2px;
+  background:var(--surface-2);border:1px solid var(--line-2);color:var(--muted);
+  font-variant-numeric:tabular-nums;white-space:nowrap;letter-spacing:.04em;
+}
+.chip.first{border-color:var(--amber);color:var(--amber);background:var(--amber-glow);box-shadow:0 0 12px rgba(255,182,39,.14)}
+.chip.last{border-color:rgba(255,81,71,.5);color:var(--red);background:var(--red-glow)}
+.chip.dead{border-color:var(--line);color:var(--dim);background:transparent}
+.arrow{color:var(--dim);font-family:var(--mono);font-size:11px}
+
+/* ---------- calc inputs ---------- */
+.calc{border:1px solid var(--line);border-radius:4px;background:var(--surface);overflow:hidden}
+.calc-in{display:flex;flex-wrap:wrap;gap:16px 26px;padding:19px 20px;border-bottom:1px solid var(--line);background:var(--surface-2)}
+.field{display:flex;flex-direction:column;gap:7px;min-width:165px;flex:1}
+.field label{font-family:var(--mono);font-size:9.5px;letter-spacing:.15em;text-transform:uppercase;color:var(--dim)}
+.field select,.field input{
+  font-family:var(--disp);font-size:17px;font-weight:600;color:var(--ink);
+  background:var(--ground);border:1px solid var(--line-2);border-radius:3px;padding:9px 11px;width:100%;
+}
+.field select:focus-visible,.field input:focus-visible{outline:1px solid var(--amber);outline-offset:0;border-color:var(--amber)}
+.calc-out{padding:22px 20px}
+.verdict{display:flex;align-items:center;gap:15px;flex-wrap:wrap;margin-bottom:16px}
+.verdict .big{
+  font-family:var(--disp);font-weight:800;font-size:clamp(34px,6vw,52px);line-height:.9;
+  text-transform:uppercase;color:var(--amber);text-shadow:0 0 26px rgba(255,182,39,.2);
+  font-variant-numeric:tabular-nums;
+}
+.verdict .big.no{color:var(--red);text-shadow:0 0 26px rgba(255,81,71,.2)}
+.verdict .note{color:var(--muted);font-size:15px}
+output.led{
+  font-family:var(--disp);font-weight:800;font-size:38px;line-height:1;color:var(--amber);
+  font-variant-numeric:tabular-nums;text-shadow:0 0 22px rgba(255,182,39,.25);padding:4px 0;
+}
+
+/* ---------- rule cards ---------- */
+.rules{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:4px;overflow:hidden}
+.rule{background:var(--surface);padding:18px 19px}
+.rule h3{font-size:17px;font-weight:700;margin-bottom:7px;text-transform:uppercase;letter-spacing:.04em;color:var(--ink)}
+.rule p{font-size:14.5px;color:var(--muted)}
+
+/* ---------- titles ---------- */
+.titles{display:flex;flex-wrap:wrap;gap:8px}
+.title-card{background:var(--surface);border:1px solid var(--line);border-radius:3px;padding:11px 15px;display:flex;align-items:baseline;gap:10px}
+.title-card .n{font-family:var(--disp);font-weight:800;font-size:26px;color:var(--dim);font-variant-numeric:tabular-nums;line-height:1}
+.title-card .who{font-family:var(--disp);font-weight:600;font-size:16px;text-transform:uppercase;letter-spacing:.04em}
+.title-card.lead{border-color:var(--amber-dim);background:var(--amber-glow)}
+.title-card.lead .n{color:var(--amber)}
+
+/* ---------- next up ---------- */
+.next{display:grid;grid-template-columns:repeat(auto-fit,minmax(255px,1fr));gap:12px}
+.next-item{border:1px solid var(--line);border-top:2px solid var(--line-2);border-radius:3px;padding:16px 18px;background:var(--surface)}
+.next-item h3{font-size:16px;font-weight:700;margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em}
+.next-item p{font-size:14px;color:var(--muted)}
+
+/* ---------- draft board ---------- */
+.orderset{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:11px;padding:19px 20px;background:var(--surface-2);border-bottom:1px solid var(--line)}
+.oslot{display:flex;flex-direction:column;gap:6px}
+.oslot label{font-family:var(--mono);font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:var(--amber)}
+.oslot select{font-family:var(--disp);font-size:15px;font-weight:600;color:var(--ink);background:var(--ground);border:1px solid var(--line-2);border-radius:3px;padding:8px 9px;width:100%}
+.oslot select:focus-visible{outline:1px solid var(--amber);border-color:var(--amber)}
+.warnbar{padding:12px 20px;background:var(--red-glow);color:var(--red);font-size:14px;border-bottom:1px solid rgba(255,81,71,.4);font-family:var(--mono);letter-spacing:.04em}
+
+.board{border-collapse:separate;border-spacing:0;width:100%;min-width:980px}
+.board th,.board td{padding:0;border:0}
+.board thead th{
+  font-family:var(--mono);font-size:9px;letter-spacing:.13em;text-transform:uppercase;color:var(--dim);
+  background:var(--surface-2);padding:10px 8px;text-align:center;border-bottom:1px solid var(--line-2);
+  position:sticky;top:0;z-index:3;
+}
+.board th.rnd{
+  font-family:var(--disp);font-size:16px;font-weight:800;color:var(--amber);
+  background:var(--surface-2);padding:0 14px;text-align:left;white-space:nowrap;
+  border-right:1px solid var(--line-2);border-bottom:1px solid var(--line);position:sticky;left:0;z-index:2;
+}
+.cell{
+  border-right:1px solid var(--line);border-bottom:1px solid var(--line);
+  padding:8px 10px;height:56px;vertical-align:top;background:var(--surface);
+}
+.cell .tm{font-family:var(--disp);font-weight:600;font-size:15px;display:block;line-height:1.15;text-transform:uppercase;letter-spacing:.03em;color:var(--muted)}
+.cell .ov{font-family:var(--mono);font-size:9px;color:var(--dim);display:block;margin-top:4px;letter-spacing:.08em}
+.cell.taken{background:var(--amber-glow);border-right-color:var(--amber-dim);border-bottom-color:var(--amber-dim);box-shadow:inset 2px 0 0 var(--amber)}
+.cell.taken .tm{color:var(--amber)}
+.cell .kp{display:block;font-family:var(--body);font-weight:600;font-size:12.5px;color:var(--ink);margin-top:4px;line-height:1.2}
+
+.checklist{display:flex;flex-direction:column}
+.chk{display:flex;gap:15px;align-items:center;padding:14px 17px;border-bottom:1px solid var(--line)}
+.chk:last-child{border-bottom:0}
+.chk .rd{font-family:var(--mono);font-weight:600;font-size:11.5px;color:var(--amber);background:var(--amber-glow);border:1px solid var(--amber-dim);border-radius:2px;padding:6px 9px;white-space:nowrap;min-width:78px;text-align:center;letter-spacing:.06em}
+.chk .txt b{font-family:var(--disp);font-weight:700;font-size:19px;display:block;text-transform:uppercase;letter-spacing:.02em}
+.chk .txt span{font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.07em;text-transform:uppercase}
+
+td input.capin{
+  font-family:var(--mono);font-size:13px;font-weight:600;color:var(--amber);
+  background:var(--ground);border:1px solid var(--line-2);border-radius:2px;padding:6px 8px;width:66px;text-align:right;
+}
+td input.capin:focus-visible{outline:1px solid var(--amber);border-color:var(--amber)}
+
+footer{margin-top:64px;padding-top:22px;border-top:1px solid var(--line);color:var(--dim);font-size:13.5px;max-width:76ch}
+footer p + p{margin-top:11px}
+
+@media (max-width:860px){.hero{grid-template-columns:1fr}}
+@media (max-width:600px){
+  .topbar-in{flex-wrap:wrap;padding-block:11px;gap:11px;min-height:0}
+  nav{margin-left:0;width:100%}
+  nav button{padding:8px 13px 10px}
+  .champ{padding:24px 20px}
+  .scoreline div{border-right:0;padding-right:0;margin-right:22px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-in">
+    <button class="brand" data-go="home">
+      <svg class="mark" viewBox="0 0 32 32" aria-hidden="true">
+        <circle cx="16" cy="16" r="13.5" fill="none" stroke="#FFB627" stroke-width="2"/>
+        <path d="M2.5 16h27M16 2.5v27" stroke="#FFB627" stroke-width="1.3" opacity=".6"/>
+        <path d="M6.4 6.4c7.6 4 11.4 11.6 11.4 23M25.6 6.4c-7.6 4-11.4 11.6-11.4 23" fill="none" stroke="#FFB627" stroke-width="1.3" opacity=".6"/>
+      </svg>
+      <span class="brand-txt"><b>Kids That Read Good</b><span>Crysterbaters · est 2012</span></span>
+    </button>
+    <nav id="nav">
+      <button data-go="home">Home</button>
+      <button data-go="teams">Teams</button>
+      <button data-go="draft">Draft</button>
+      <button data-go="cap">Games Cap</button>
+      <button data-go="keepers">Keepers</button>
+      <button data-go="history">History</button>
+      <button data-go="rules">Rules</button>
+    </nav>
+  </div>
+</header>
+
+<div class="ticker">
+  <div class="ticker-in">
+    <span><span class="livedot"></span>Yahoo <b>not connected</b> — API pending</span>
+    <span>Season opens <b>Oct 20</b></span>
+    <span>Draft <b>offline · 12 rounds</b></span>
+    <span>Keepers flagged <b id="tkr-k">10</b></span>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <!-- ================= HOME ================= -->
+  <div class="view on" id="v-home">
+    <div class="hero">
+      <div class="champ">
+        <div class="champ-top">
+          <span class="eyebrow">Champion · 2025–26</span>
+          <h1>The JaleNBA</h1>
+          <span class="who">Sean Lewis · 12-6-1</span>
+        </div>
+        <dl class="scoreline">
+          <div><dt>Runner-up</dt><dd>Shai See Me Rollins</dd></div>
+          <div><dt>Third</dt><dd>Summer of George</dd></div>
+          <div><dt>Titles</dt><dd>2 <span class="sub" style="font-family:var(--mono);font-size:11px">'16 '25</span></dd></div>
+        </dl>
+      </div>
+      <div class="side">
+        <dl class="statgrid">
+          <div class="stat"><dt>Seasons</dt><dd>14</dd></div>
+          <div class="stat"><dt>Managers</dt><dd>10</dd></div>
+          <div class="stat"><dt>Pot</dt><dd>500<small>$50 each</small></dd></div>
+          <div class="stat"><dt>Weekly cap</dt><dd>30<small>games</small></dd></div>
+        </dl>
+        <div class="alert">
+          <h3>Waiting on Yahoo</h3>
+          <p>Standings, matchups and the games counter go live once API access is approved. Everything here is already your real league data.</p>
+        </div>
+      </div>
+    </div>
+
+    <section>
+      <div class="sec-head"><h2>Final Standings</h2><span class="eyebrow cool">2025–26</span></div>
+      <div class="rulebar"></div>
+      <p class="lede">David had the best record in the league and lost the final. Sean went 12–6–1 and won it. Eight of ten made the playoffs.</p>
+      <div class="tablewrap" style="margin-top:18px">
+        <table>
+          <thead><tr><th class="num">#</th><th>Team</th><th>Manager</th><th class="num">Record</th><th class="num">Pct</th><th class="num">FAB</th><th class="num">Moves</th></tr></thead>
+          <tbody id="standings"></tbody>
+        </table>
+      </div>
+      <p class="lede" style="margin-top:14px">Reverse that column and you have next season's order — it's already loaded on the <a href="#" data-go="draft">draft board</a>.</p>
+    </section>
+
+    <section>
+      <div class="sec-head"><h2>Keeper Watch</h2><span class="eyebrow cool">Cost for 2026–27</span></div>
+      <div class="rulebar"></div>
+      <p class="lede">Ten players carry a K on their locked roster. Each drops two more rounds. Eligibility was settled by the lock before the playoffs, so nothing after that changes this list.</p>
+      <div class="tablewrap" style="margin-top:18px">
+        <table>
+          <thead><tr><th>Player</th><th>Manager</th><th class="num">Was</th><th class="num">Now</th><th>Remaining</th></tr></thead>
+          <tbody id="watch"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <div class="sec-head"><h2>Drafting Clean</h2><span class="eyebrow cool">No keepers flagged</span></div>
+      <div class="rulebar"></div>
+      <p class="lede">Four teams go in with all twelve picks.</p>
+      <div class="teamgrid" id="nokeepers" style="margin-top:18px"></div>
+    </section>
+  </div>
+
+  <!-- ================= TEAMS ================= -->
+  <div class="view" id="v-teams">
+    <section>
+      <div class="sec-head"><h2>The Ten</h2><span class="eyebrow cool">Tap for locked roster</span></div>
+      <div class="rulebar"></div>
+      <p class="lede">Rosters as they stood when they locked for the 2025–26 playoffs — the record that decides who is keepable.</p>
+      <div class="teamgrid" id="teamgrid" style="margin-top:20px"></div>
+    </section>
+  </div>
+
+  <div class="view" id="v-team">
+    <button class="back" data-go="teams">← All teams</button>
+    <div id="teamdetail"></div>
+  </div>
+
+  <!-- ================= DRAFT ================= -->
+  <div class="view" id="v-draft">
+    <section>
+      <div class="sec-head"><h2>Pre-Draft Board</h2><span class="eyebrow cool">2026–27 · 12 rounds · snake</span></div>
+      <div class="rulebar"></div>
+      <p class="lede">Order is loaded from last season's finish. Change it up top and every keeper drops into the pick it costs, so you can see what's gone before anyone picks.</p>
+
+      <div class="panel" style="margin-top:20px;overflow:hidden">
+        <div class="orderset" id="orderset"></div>
+        <div id="orderwarn"></div>
+        <div style="overflow:auto;max-height:72vh">
+          <table class="board"><thead id="boardhead"></thead><tbody id="boardbody"></tbody></table>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="sec-head"><h2>Enter In Yahoo</h2><span class="eyebrow" id="chkcount"></span></div>
+      <div class="rulebar"></div>
+      <p class="lede">Each keeper takes that team's pick in the round shown. Everything else drafts normally.</p>
+      <div class="panel checklist" id="checklist" style="margin-top:18px"></div>
+    </section>
+
+    <section>
+      <div class="sec-head"><h2>Picks Left</h2></div>
+      <div class="rulebar"></div>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>Team</th><th>Manager</th><th class="num">Keepers</th><th class="num">Picks left</th><th>Rounds gone</th></tr></thead>
+          <tbody id="pickssummary"></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <!-- ================= GAMES CAP ================= -->
+  <div class="view" id="v-cap">
+    <section>
+      <div class="sec-head"><h2>Weekly Games Cap</h2><span class="eyebrow cool">30 a week</span></div>
+      <div class="rulebar"></div>
+      <p class="lede">Thirty player-games a week is the rule, but a week where the NBA barely plays isn't a fair thirty. The cap scales with how much the league actually plays — the calculation you've been doing by hand.</p>
+
+      <div class="calc" style="margin-top:20px">
+        <div class="calc-in">
+          <div class="field"><label for="cnormal">Normal week</label>
+            <input id="cnormal" type="number" min="1" max="120" step="1" value="50"></div>
+          <div class="field"><label for="cbase">Baseline cap</label>
+            <input id="cbase" type="number" min="1" max="120" step="0.01" value="29.76"></div>
+          <div class="field"><label for="cgames">NBA games this week</label>
+            <input id="cgames" type="number" min="0" max="120" step="1" value="29"></div>
+          <div class="field"><label>Suggested cap</label>
+            <output id="cout" class="led">17</output></div>
+        </div>
+        <div class="calc-out">
+          <div class="chips">
+            <span class="chip first">Week's games</span><span class="arrow">÷</span>
+            <span class="chip">normal week</span><span class="arrow">×</span>
+            <span class="chip">baseline</span><span class="arrow">=</span>
+            <span class="chip last">scaled cap</span>
+          </div>
+          <p class="lede" style="margin-top:14px">A week at 29 games is 42% short, so the cap lands near 17 and gets set at 15.</p>
+        </div>
+      </div>
+
+      <div class="tablewrap" style="margin-top:18px">
+        <table>
+          <thead><tr><th class="num">Week</th><th class="num">NBA games</th><th class="num">vs normal</th><th class="num">Scaled</th><th class="num">Cap set</th><th>Note</th></tr></thead>
+          <tbody id="captable"></tbody>
+        </table>
+      </div>
+      <p class="lede" style="margin-top:14px">2025–26 schedule from your calculator tab. The 2026–27 schedule drops in the same way, and once Yahoo is connected the site counts each team's games used against these caps instead of anyone tallying them.</p>
+    </section>
+  </div>
+
+  <!-- ================= KEEPERS ================= -->
+  <div class="view" id="v-keepers">
+    <section>
+      <div class="sec-head"><h2>Keeper Calculator</h2><span class="eyebrow cool">Settle the group chat</span></div>
+      <div class="rulebar"></div>
+      <div class="calc" style="margin-top:18px">
+        <div class="calc-in">
+          <div class="field">
+            <label for="drafted">Drafted in</label>
+            <select id="drafted">
+              <option value="0">Undrafted / waivers</option>
+              <option value="1">Round 1</option><option value="2">Round 2</option>
+              <option value="3">Round 3</option><option value="4">Round 4</option>
+              <option value="5">Round 5</option><option value="6">Round 6</option>
+              <option value="7" selected>Round 7</option><option value="8">Round 8</option>
+              <option value="9">Round 9</option><option value="10">Round 10</option>
+              <option value="11">Round 11</option><option value="12">Round 12</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="held">Seasons already kept</label>
+            <select id="held">
+              <option value="0" selected>None — first time</option>
+              <option value="1">1 season</option><option value="2">2 seasons</option>
+              <option value="3">3 seasons</option><option value="4">4 seasons</option>
+              <option value="5">5 seasons</option>
+            </select>
+          </div>
+        </div>
+        <div class="calc-out">
+          <div class="verdict">
+            <div class="big" id="cost">RD 5</div>
+            <span class="pill ok" id="status">Keepable</span>
+            <p class="note" id="note">Two more seasons after this one.</p>
+          </div>
+          <div class="chips" id="remaining"></div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="sec-head"><h2>Declared Keepers</h2><span class="eyebrow cool">Ladder remaining</span></div>
+      <div class="rulebar"></div>
+      <div id="keeperladders" style="margin-top:18px;display:grid;grid-template-columns:repeat(auto-fit,minmax(310px,1fr));gap:12px"></div>
+    </section>
+  </div>
+
+  <!-- ================= HISTORY ================= -->
+  <div class="view" id="v-history">
+    <section>
+      <div class="sec-head"><h2>Titles</h2><span class="eyebrow cool">2012 – 2025</span></div>
+      <div class="rulebar"></div>
+      <p class="lede">Four managers tied at two. Nobody has three. Two still looking for their first.</p>
+      <div class="titles" id="titles" style="margin-top:18px"></div>
+    </section>
+    <section>
+      <div class="sec-head"><h2>Every Season</h2><span class="eyebrow cool">ESPN 2012–18 · Yahoo since 2019</span></div>
+      <div class="rulebar"></div>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th class="num">Yr</th><th>Champion</th><th>Winning team</th><th>Runner-up</th><th>Third</th><th>League name</th></tr></thead>
+          <tbody id="history"></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <!-- ================= RULES ================= -->
+  <div class="view" id="v-rules">
+    <section>
+      <div class="sec-head"><h2>How Keepers Work</h2><span class="eyebrow cool">Checked against 101 picks</span></div>
+      <div class="rulebar"></div>
+      <p class="lede">One number follows a player for as long as anyone holds him. It gets two rounds more expensive every season, and when it would cost better than a first-round pick, he goes back in the pool.</p>
+      <div class="panel" style="padding:22px;margin-top:18px">
+        <span class="eyebrow">A waiver pickup's full life</span>
+        <div class="chips" style="margin-top:14px">
+          <span class="chip first">RD 11</span><span class="arrow">→</span>
+          <span class="chip">RD 9</span><span class="arrow">→</span>
+          <span class="chip">RD 7</span><span class="arrow">→</span>
+          <span class="chip">RD 5</span><span class="arrow">→</span>
+          <span class="chip">RD 3</span><span class="arrow">→</span>
+          <span class="chip last">RD 1 · last year</span><span class="arrow">→</span>
+          <span class="chip dead">Pool</span>
+        </div>
+      </div>
+      <div class="rules" style="margin-top:16px">
+        <div class="rule"><h3>Where it starts</h3><p>Two rounds better than where he was drafted. A round&nbsp;9 pick keeps at round&nbsp;7. Waiver pickups start at round&nbsp;11.</p></div>
+        <div class="rule"><h3>It climbs</h3><p>Hold him another season and the cost drops two more rounds. No cap on years — the ladder runs out on its own.</p></div>
+        <div class="rule"><h3>When he's gone</h3><p>Once the next cost lands past a first-rounder he isn't keepable. That's why rounds&nbsp;1 and&nbsp;2 are locked the moment they're drafted.</p></div>
+        <div class="rule"><h3>The number is his</h3><p>Trade him or claim him off waivers and the cost comes along. Nobody resets a keeper clock by cycling a player.</p></div>
+        <div class="rule"><h3>Two per team</h3><p>Each keeper takes that round's pick, so keeping at round&nbsp;3 costs you your third-rounder.</p></div>
+        <div class="rule"><h3>Locked before playoffs</h3><p>The frozen roster decides eligibility. Drops during the playoffs don't cost you a keeper.</p></div>
+      </div>
+    </section>
+
+    <section>
+      <div class="sec-head"><h2>The Roster Lock</h2><span class="eyebrow cool">Why the snapshot matters</span></div>
+      <div class="rulebar"></div>
+      <p class="lede">Rosters lock before the playoffs, and that frozen roster — not whatever the team looks like in April — is what keeper eligibility is judged from. Yahoo doesn't preserve it, which is why it currently lives as screenshots pasted into a spreadsheet.</p>
+      <div class="rules" style="margin-top:16px">
+        <div class="rule"><h3>What gets frozen</h3><p>All ten rosters exactly as they stand at the lock, bench and IL included.</p></div>
+        <div class="rule"><h3>What it decides</h3><p>Who each manager may keep. Moves after the lock add and remove nothing.</p></div>
+        <div class="rule"><h3>Why it exists</h3><p>Playoff teams churn rosters chasing a title. Without the lock, chasing a ring would cost you keepers.</p></div>
+        <div class="rule"><h3>What the site will do</h3><p>One button, one timestamp, all ten rosters kept forever and still readable years later.</p></div>
+      </div>
+    </section>
+
+    <section>
+      <div class="sec-head"><h2>League Settings</h2><span class="eyebrow cool">Yahoo · league 33689</span></div>
+      <div class="rulebar"></div>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>Setting</th><th>Value</th></tr></thead>
+          <tbody>
+            <tr><td class="name">Scoring</td><td class="sub">Head-to-head, one win per week</td></tr>
+            <tr><td class="name">Categories</td><td class="sub">FG%, FT%, 3PTM, 3PT%, PTS, REB, AST, ST, BLK, A/T, DD — eleven</td></tr>
+            <tr><td class="name">Roster</td><td class="sub">G, G, F, F, C, Util, six bench, two IL</td></tr>
+            <tr><td class="name">Draft</td><td class="sub">Offline, twelve rounds, order reverse of last season's finish</td></tr>
+            <tr><td class="name">Keeper eligibility</td><td class="sub">Decided by the pre-playoff roster lock, not a date in October</td></tr>
+            <tr><td class="name">Yahoo keeper deadline</td><td class="sub">Mon Oct 19, 2026 — only when Yahoo's tool wants them entered</td></tr>
+            <tr><td class="name">Waivers</td><td class="sub">FAB, continual rolling tiebreak, one-day waiver time</td></tr>
+            <tr><td class="name">Acquisitions</td><td class="sub">Four per week, no season maximum</td></tr>
+            <tr><td class="name">Trade deadline</td><td class="sub">March 4, 2027 · no trade review</td></tr>
+            <tr><td class="name">Playoffs</td><td class="sub">Eight teams, weeks 19–21, ends Sunday Mar 28</td></tr>
+            <tr><td class="name">Weekly games cap</td><td class="sub"><span style="color:var(--amber)">30 — a league rule, not a Yahoo setting.</span> Yahoo will not count or enforce it.</td></tr>
+            <tr><td class="name">Dues</td><td class="sub">$50 a team, $500 in the pot</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <div class="sec-head"><h2>Coming When Yahoo Connects</h2><span class="eyebrow cool">Pending approval</span></div>
+      <div class="rulebar"></div>
+      <div class="next" style="margin-top:18px">
+        <div class="next-item"><h3>Games counter</h3><p>The number nobody wants to count. Games used and games left for every team, daily, flagging anyone about to blow the cap.</p></div>
+        <div class="next-item"><h3>Your team</h3><p>Sign in and land on your own roster, each player's keeper cost and years left sitting next to him.</p></div>
+        <div class="next-item"><h3>Matchups</h3><p>All eleven categories, who's winning each one, both rosters, who still has games tonight.</p></div>
+        <div class="next-item"><h3>Roster lock</h3><p>Freeze all ten rosters at the moment you choose and keep them forever. No more screenshots.</p></div>
+        <div class="next-item"><h3>League polls</h3><p>Put a rule change, a veto or a punishment to a vote. Results public, history kept.</p></div>
+        <div class="next-item"><h3>Standings and dues</h3><p>Records, FAB left, moves made, and who still owes their fifty.</p></div>
+        <div class="next-item"><h3>League chat <span class="pill q">later</span></h3><p>Somewhere to talk trash that isn't a group text. Parked until the rest works.</p></div>
+      </div>
+    </section>
+  </div>
+
+  <footer>
+    <p>Standings, managers and league settings read from Yahoo league 33689. All ten locked rosters and their keeper flags are in. Keeper math reconciles against all 101 recorded picks of the 2024 draft board.</p>
+    <p>Gaps remaining sit in the old ESPN records: 2012 has no champion recorded, and 2014 is filed as Cory with a question mark.</p>
+  </footer>
+</div>
+
+<script>
+(function(){
+"use strict";
+
+var T = [
+  {id:"knuepp", name:"The Knuepp Sluepps", mgr:"Ben Zavelsky", short:"Ben", ini:"BZ",
+   prev:"Patellar Teamdinopathy", titles:[2021,2024],
+   roster:[
+    ["G","Derrick White","BOS",0],["G","Kon Knueppel","CHA",0],["F","Kyle Filipowski","UTA",0],
+    ["F","Precious Achiuwa","SAC",0],["C","Donovan Clingan","POR",0],["Util","Ace Bailey","UTA",0],
+    ["BN","Ty Jerome","MEM",0],["BN","Kawhi Leonard","LAC",1],["BN","Jonathan Kuminga","ATL",0],
+    ["BN","Nique Clifford","SAC",0],["BN","Deni Avdija","POR",1],["BN","Zach Edey","MEM",0],
+    ["IL","Tyrese Haliburton","IND",0]],
+   costs:{"Kawhi Leonard":6,"Deni Avdija":11}},
+
+  {id:"claxton", name:"Nic Claxton's Block Party", mgr:"Anush Rohani-Shukla", short:"Anush", ini:"AR",
+   prev:"Mor-Anta-tetokounmpo to Randle", titles:[2020],
+   roster:[
+    ["G","Cade Cunningham","DET",0],["G","Trey Murphy III","NOP",0],["F","Zion Williamson","NOP",0],
+    ["F","Bam Adebayo","MIA",0],["C","Maxime Raynaud","SAC",0],["Util","Jayson Tatum","BOS",0],
+    ["BN","Trae Young","WAS",0],["BN","Kevin Porter Jr.","MIL",0],["BN","Payton Pritchard","BOS",0],
+    ["BN","Keyonte George","UTA",0],["BN","Nic Claxton","BKN",0],["BN","Andrew Nembhard","IND",0],
+    ["IL","Jalen Williams","OKC",0]],
+   costs:{}},
+
+  {id:"rollins", name:"Shai See Me Rollins", mgr:"David Zavelsky", short:"David", ini:"DZ",
+   prev:"Carmelo Ball", titles:[2018,2019],
+   roster:[
+    ["G","Ryan Rollins","MIL",0],["G","Austin Reaves","LAL",1],["F","Amen Thompson","HOU",1],
+    ["F","Paolo Banchero","ORL",0],["C","Evan Mobley","CLE",0],["Util","Brandin Podziemski","GSW",0],
+    ["BN","Oso Ighodaro","PHX",0],["BN","Neemias Queta","BOS",0],["BN","Shai Gilgeous-Alexander","OKC",0],
+    ["BN","Jalen Green","PHX",0],["BN","Donte DiVincenzo","MIN",0],["BN","Matas Buzelis","CHI",0]],
+   costs:{"Austin Reaves":8,"Amen Thompson":10}},
+
+  {id:"george", name:"It's the Summer of George", mgr:"Jon Abada", short:"Abada", ini:"JA",
+   prev:"Ayton o White Dick", titles:[],
+   roster:[
+    ["G","Reed Sheppard","HOU",0],["G","Luka Dončić","LAL",0],["F","(Empty)","",0],["F","(Empty)","",0],
+    ["C","Alperen Sengun","HOU",0],["Util","Tyler Herro","MIA",0],["BN","OG Anunoby","NYK",0],
+    ["BN","Onyeka Okongwu","ATL",0],["BN","Grayson Allen","PHX",0],["BN","Jalen Suggs","ORL",0],
+    ["BN","VJ Edgecombe","PHI",0],["BN","Brandon Ingram","TOR",0],["BN","Peyton Watson","DEN",0],
+    ["BN","Dylan Harper","SAS",0],["IL","Tyrese Maxey","PHI",0]],
+   costs:{}},
+
+  {id:"rucker", name:"Rucker Legends", mgr:"Tyler Brown", short:"Tyler", ini:"TB",
+   prev:"Regular Season P", titles:[],
+   roster:[
+    ["G","Anthony Black","ORL",0],["G","James Harden","CLE",0],["F","Miles Bridges","CHA",0],
+    ["F","Tobias Harris","DET",0],["C","Myles Turner","MIL",0],["Util","LeBron James","LAL",0],
+    ["BN","CJ McCollum","ATL",0],["BN","Rudy Gobert","MIN",0],["BN","Kevin Durant","HOU",0],
+    ["BN","Jaylen Brown","BOS",0],["BN","Jabari Smith Jr.","HOU",0],["BN","Saddiq Bey","NOP",0],
+    ["IL","Kyrie Irving","DAL",0]],
+   costs:{}},
+
+  {id:"ant", name:"Ant's Babymaking Factory", mgr:"Jonathan Gonzalez", short:"Gonzo", ini:"JG",
+   prev:"Franz's Balkan Warriors", titles:[2022],
+   roster:[
+    ["G","Stephon Castle","SAS",0],["G","Donovan Mitchell","CLE",0],["F","Jaime Jaquez Jr.","MIA",0],
+    ["F","Devin Vassell","SAS",0],["C","Wendell Carter Jr.","ORL",0],["Util","LaMelo Ball","CHA",0],
+    ["BN","DeMar DeRozan","SAC",0],["BN","Anthony Edwards","MIN",0],["BN","Michael Porter Jr.","BKN",0],
+    ["BN","Julius Randle","MIN",0],["BN","Bennedict Mathurin","LAC",0],["BN","Josh Hart","NYK",0]],
+   costs:{}},
+
+  {id:"ysga", name:"Fun to Stay at the Y.S.G.A.", mgr:"Chris Kestle", short:"Chris", ini:"CK",
+   prev:"Fun to Stay at the Y.S.G.A.", titles:[2015],
+   roster:[
+    ["G","Josh Giddey","CHI",1],["G","Russell Westbrook","SAC",0],["F","Karl-Anthony Towns","NYK",0],
+    ["F","Bobby Portis","MIL",0],["C","Jalen Duren","DET",1],["Util","Pascal Siakam","IND",0],
+    ["BN","Jaden McDaniels","MIN",0],["BN","Collin Gillespie","PHX",0],["BN","Jarrett Allen","CLE",0],
+    ["BN","Lauri Markkanen","UTA",0],["BN","Paul George","PHI",0],["BN","Ayo Dosunmu","MIN",0],
+    ["IL","Stephen Curry","GSW",0]],
+   costs:{"Josh Giddey":5,"Jalen Duren":4}},
+
+  {id:"freaky", name:"Real Freaky Naughty", mgr:"Rajat Khanna", short:"Rajat", ini:"RK",
+   prev:"Mid-Range Buckets", titles:[2017],
+   roster:[
+    ["G","Tari Eason","HOU",0],["G","RJ Barrett","TOR",0],["F","Toumani Camara","POR",1],
+    ["F","Jarace Walker","IND",0],["C","Victor Wembanyama","SAS",0],["Util","(Empty)","",0],
+    ["BN","Naz Reid","MIN",0],["BN","Chet Holmgren","OKC",0],["BN","Jamal Murray","DEN",0],
+    ["BN","N. Alexander-Walker","ATL",0],["BN","Aaron Gordon","DEN",0],["BN","Norman Powell","MIA",0],
+    ["BN","Shaedon Sharpe","POR",0],["IL","Joel Embiid","PHI",0]],
+   costs:{"Toumani Camara":11}},
+
+  {id:"giannis", name:"Regular Season Giannis", mgr:"Kabir Sodhi", short:"Kabir", ini:"KS",
+   prev:"AD's Block Party", titles:[2013,2023],
+   roster:[
+    ["G","Mikal Bridges","NYK",0],["G","De'Aaron Fox","SAS",0],["F","Scottie Barnes","TOR",0],
+    ["F","Cooper Flagg","DAL",0],["C","Giannis Antetokounmpo","MIL",0],["Util","Devin Booker","PHX",0],
+    ["BN","Derik Queen","NOP",0],["BN","Dyson Daniels","ATL",1],["BN","John Collins","LAC",0],
+    ["BN","Immanuel Quickley","TOR",0],["BN","Jaylon Tyson","CLE",0],["IL","Alex Sarr","WAS",1],
+    ["IL","Franz Wagner","ORL",0]],
+   costs:{"Dyson Daniels":10,"Alex Sarr":11}},
+
+  {id:"jalenba", name:"The JaleNBA", mgr:"Sean Lewis", short:"Sean", ini:"SL",
+   prev:"Burnin' Bridges", titles:[2016,2025],
+   roster:[
+    ["G","Jrue Holiday","POR",0],["G","Jalen Brunson","NYK",0],["F","Desmond Bane","ORL",0],
+    ["F","Brandon Miller","CHA",0],["C","Nikola Jokić","DEN",0],["Util","Dejounte Murray","NOP",0],
+    ["BN","Jalen Johnson","ATL",1],["BN","Jakob Poeltl","TOR",0],["BN","Kel'el Ware","MIA",0],
+    ["BN","Darius Garland","LAC",0],["BN","Isaiah Collier","UTA",0],["IL","Ivica Zubac","IND",0],
+    ["IL","Anthony Davis","WAS",0]],
+   costs:{"Jalen Johnson":9}}
+];
+
+/* 2025-26 final standings, read from Yahoo. Rank = final playoff finish. */
+var ST={
+  jalenba:{fin:1, rec:"12-6-1", pct:".658", faab:0,   moves:35, po:true},
+  rollins:{fin:2, rec:"14-5-0", pct:".737", faab:100, moves:80, po:true},
+  george: {fin:3, rec:"11-7-1", pct:".605", faab:99,  moves:58, po:true},
+  claxton:{fin:4, rec:"11-8-0", pct:".579", faab:14,  moves:40, po:true},
+  giannis:{fin:5, rec:"7-12-0", pct:".368", faab:5,   moves:20, po:true},
+  rucker: {fin:6, rec:"9-10-0", pct:".474", faab:100, moves:15, po:true},
+  ysga:   {fin:7, rec:"9-10-0", pct:".474", faab:100, moves:19, po:true},
+  freaky: {fin:8, rec:"9-9-1",  pct:".500", faab:95,  moves:20, po:true},
+  knuepp: {fin:9, rec:"6-13-0", pct:".316", faab:100, moves:59, po:false},
+  ant:    {fin:10,rec:"5-13-1", pct:".289", faab:99,  moves:18, po:false}
+};
+
+var HISTORY = [
+  [2025,"Sean","The JaleNBA","Shai See Me Rollins (David)","It's the Summer of George (Jon)","League For Kids That Read Good"],
+  [2024,"Ben","Patellar Teamdinopathy","Carmelo Ball (David)","Ayton o White Dick (Jon)","League For Kids That Read Good"],
+  [2023,"Kabir","Regular Season Lebron","Carmelo Ball (David)","Ja Wick 5 (Sean)","League For Kids That Read Good"],
+  [2022,"Gonzo","Orange Julius Randle","Walker Kessler Ranger (Jon)","Carmelo Ball (David)","League For Kids That Read Good"],
+  [2021,"Ben","Team Young but not too young","Regular Season Harden (Kabir)","Dejá Vucevic (Chris)","League For Kids That Read Good"],
+  [2020,"Anush","block ness monster","THE DONK (Jon)","Jo Momma (Cory)","Harry Giles Fan Club"],
+  [2019,"David","Los Ravishing Ricks","JOKÉMON (Jon)","Ja Rules (Sean)","Harry Giles Fan Club"],
+  [2018,"David","—","Sean","Ben","Gordon Hayward Memorial NBA Hospital League"],
+  [2017,"Rajat","Home Dipo'","One Piece (Sean)","Demarcus Antetokounmpo (Kabir)","Gordon Hayward Memorial NBA Hospital League"],
+  [2016,"Sean","New Orleans Pelicans","—","—","Game of Thrones"],
+  [2015,"Chris","—","—","—","Game of Thrones"],
+  [2014,"Cory †","—","—","—","Game of Thrones"],
+  [2013,"Kabir","—","—","—","Game of Thrones"],
+  [2012,"not recorded †","—","—","—","Fantasy 101"]
+];
+
+function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;");}
+function yearsLeft(c){return Math.max(0,Math.floor((c-1)/2));}
+function byId(id){for(var i=0;i<T.length;i++){if(T[i].id===id)return T[i];}return null;}
+function ordinal(n){var s=["th","st","nd","rd"],v=n%100;return n+(s[(v-20)%10]||s[v]||s[0]);}
+function ladderChips(cost){
+  var out=[],c=cost;
+  while(c>=1){out.push('<span class="chip'+(c===cost?" first":(c-2<1?" last":""))+'">RD '+c+'</span>');c-=2;}
+  return out.join('<span class="arrow">→</span>')+'<span class="arrow">→</span><span class="chip dead">Pool</span>';
+}
+function keepersFor(t){
+  if(!t.roster) return [];
+  return t.roster.filter(function(r){return r[3];}).map(function(r){
+    return {player:r[1], round:t.costs[r[1]]-2, was:t.costs[r[1]]};
+  });
+}
+
+/* ---------- keeper watch ---------- */
+var K=[];
+T.forEach(function(t){keepersFor(t).forEach(function(k){K.push({player:k.player,was:k.was,next:k.round,team:t});});});
+K.sort(function(a,b){return a.next-b.next;});
+document.getElementById("tkr-k").textContent=K.length;
+document.getElementById("watch").innerHTML=K.map(function(k){
+  var l=yearsLeft(k.next);
+  var pill=l===0?'<span class="pill gone">Final year</span>':(l===1?'<span class="pill warn">One more</span>':'<span class="pill ok">'+l+' more</span>');
+  return '<tr class="rowlink" data-team="'+k.team.id+'">'+
+    '<td class="name">'+esc(k.player)+'<span class="kbadge">K</span></td>'+
+    '<td class="mgr">'+esc(k.team.short)+'</td>'+
+    '<td class="num sub">RD '+k.was+'</td>'+
+    '<td class="num" style="color:var(--amber);font-weight:600">RD '+k.next+'</td>'+
+    '<td>'+pill+'</td></tr>';
+}).join("");
+
+/* ---------- standings ---------- */
+document.getElementById("standings").innerHTML=T.slice().sort(function(a,b){
+  return ST[a.id].fin-ST[b.id].fin;
+}).map(function(t){
+  var s=ST[t.id];
+  var badge = s.fin===1?' <span class="pill warn">Champion</span>'
+            : (s.pct===".737"?' <span class="pill ok">Best record</span>':"");
+  return '<tr class="rowlink" data-team="'+t.id+'">'+
+    '<td class="num"><span class="rank'+(s.fin===1?" gold":"")+(s.po&&s.fin!==1?" po":"")+'">'+s.fin+'</span></td>'+
+    '<td class="name">'+esc(t.name)+badge+'</td>'+
+    '<td class="mgr">'+esc(t.short)+'</td>'+
+    '<td class="num">'+s.rec+'</td>'+
+    '<td class="num">'+s.pct+'</td>'+
+    '<td class="num">$'+s.faab+'</td>'+
+    '<td class="num">'+s.moves+'</td></tr>';
+}).join("");
+
+/* ---------- team cards ---------- */
+function teamCard(t){
+  var keepers=keepersFor(t), s=ST[t.id];
+  var kp = keepers.length
+    ? keepers.map(function(k){return '<div class="k"><b>'+esc(k.player)+'</b><span>RD '+k.round+'</span></div>';}).join("")
+    : '<div class="k"><span class="sub">All twelve picks</span></div>';
+  return '<button class="team" data-team="'+t.id+'">'+
+    '<div class="team-top"><div class="avatar">'+t.ini+'</div>'+
+      '<div class="team-id"><b>'+esc(t.name)+'</b><span>'+esc(t.mgr)+'</span></div></div>'+
+    '<div class="team-body">'+
+      '<div class="kv"><dt>2025–26</dt><dd>'+s.rec+' · '+ordinal(s.fin)+'</dd></div>'+
+      '<div class="kv"><dt>Titles</dt><dd>'+(t.titles.length?t.titles.join(" · "):"—")+'</dd></div>'+
+      '<div class="keeper-mini">'+kp+'</div>'+
+    '</div></button>';
+}
+document.getElementById("teamgrid").innerHTML=T.slice().sort(function(a,b){return ST[a.id].fin-ST[b.id].fin;}).map(teamCard).join("");
+document.getElementById("nokeepers").innerHTML=T.filter(function(t){return keepersFor(t).length===0;}).map(teamCard).join("");
+
+/* ---------- keeper ladders ---------- */
+document.getElementById("keeperladders").innerHTML=K.map(function(k){
+  return '<div class="panel">'+
+    '<div class="panel-hd" style="display:flex;justify-content:space-between;gap:10px;align-items:center">'+
+      '<b style="font-family:var(--disp);font-size:19px;text-transform:uppercase;letter-spacing:.02em">'+esc(k.player)+'</b>'+
+      '<span class="mgr" style="font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)">'+esc(k.team.short)+'</span></div>'+
+    '<div style="padding:16px"><div class="chips">'+ladderChips(k.next)+'</div></div></div>';
+}).join("");
+
+/* ---------- team detail ---------- */
+function renderTeam(id){
+  var t=byId(id); if(!t) return;
+  var s=ST[t.id];
+  var rosterHtml='<div class="tablewrap" style="border:0;border-radius:0"><table><thead><tr><th>Pos</th><th>Player</th><th>NBA</th><th class="num">Keeper 26–27</th></tr></thead><tbody>'+
+    t.roster.map(function(r){
+      var k=r[3];
+      return '<tr'+(k?' class="keeprow"':'')+'>'+
+        '<td class="num sub">'+r[0]+'</td>'+
+        '<td class="name" style="font-size:15px">'+esc(r[1])+(k?'<span class="kbadge">K</span>':'')+'</td>'+
+        '<td class="mgr">'+esc(r[2])+'</td>'+
+        '<td class="num">'+(k?'<span style="color:var(--amber)">RD '+(t.costs[r[1]]-2)+'</span>':'<span class="sub">—</span>')+'</td></tr>';
+    }).join("")+'</tbody></table></div>';
+
+  var keepers=keepersFor(t);
+  var ladders = keepers.length
+    ? keepers.map(function(k){
+        var l=yearsLeft(k.round);
+        return '<div style="padding:16px;border-bottom:1px solid var(--line)">'+
+          '<div style="display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:11px">'+
+          '<b style="font-family:var(--disp);font-size:18px;text-transform:uppercase;letter-spacing:.02em">'+esc(k.player)+'</b>'+
+          '<span class="pill '+(l===0?"gone":(l===1?"warn":"ok"))+'">'+(l===0?"Final year":(l===1?"1 more":l+" more"))+'</span></div>'+
+          '<div class="chips">'+ladderChips(k.round)+'</div></div>';
+      }).join("")
+    : '<div style="padding:18px"><p class="sub">Nothing flagged. All twelve picks intact.</p></div>';
+
+  document.getElementById("teamdetail").innerHTML =
+    '<div class="detail-head"><div class="avatar">'+t.ini+'</div>'+
+      '<div><h2>'+esc(t.name)+'</h2>'+
+      '<p class="sub">'+esc(t.mgr)+' · '+s.rec+' · finished '+ordinal(s.fin)+'</p></div></div>'+
+    '<div class="detail-cols">'+
+      '<div class="panel" style="grid-column:span 2;min-width:0">'+
+        '<div class="panel-hd"><span class="eyebrow">Locked roster · 2025–26</span></div>'+rosterHtml+'</div>'+
+      '<div style="display:flex;flex-direction:column;gap:16px">'+
+        '<div class="panel"><div class="panel-hd"><span class="eyebrow">Keeper ladders</span></div>'+ladders+'</div>'+
+        '<div class="panel"><div class="panel-hd"><span class="eyebrow">Franchise</span></div>'+
+          '<div style="padding:16px;display:flex;flex-direction:column;gap:12px">'+
+            '<div class="kv"><dt>Titles</dt><dd>'+(t.titles.length?t.titles.join(" · "):"None yet")+'</dd></div>'+
+            '<div class="kv"><dt>FAB left</dt><dd>$'+s.faab+'</dd></div>'+
+            '<div class="kv"><dt>Moves</dt><dd>'+s.moves+'</dd></div>'+
+            '<div class="kv"><dt>Last name</dt><dd style="text-align:right;font-size:14px">'+esc(t.prev)+'</dd></div>'+
+          '</div></div>'+
+      '</div>'+
+    '</div>';
+}
+
+/* ---------- history ---------- */
+document.getElementById("history").innerHTML=HISTORY.map(function(h){
+  return '<tr><td class="num" style="color:var(--amber);font-weight:600">'+h[0]+'</td>'+
+    '<td class="name" style="font-size:16px">'+esc(h[1])+'</td>'+
+    '<td class="sub">'+esc(h[2])+'</td><td class="sub">'+esc(h[3])+'</td>'+
+    '<td class="sub">'+esc(h[4])+'</td><td class="sub">'+esc(h[5])+'</td></tr>';
+}).join("");
+
+var counts={"Sean":2,"Kabir":2,"David":2,"Ben":2,"Chris":1,"Rajat":1,"Anush":1,"Gonzo":1,"Cory †":1,"Abada":0,"Tyler":0};
+var ordered=Object.keys(counts).sort(function(a,b){return counts[b]-counts[a]||a.localeCompare(b);});
+document.getElementById("titles").innerHTML=ordered.map(function(w){
+  var n=counts[w];
+  return '<div class="title-card'+(n===2?" lead":"")+'"><span class="n">'+n+'</span><span class="who">'+esc(w)+'</span></div>';
+}).join("");
+
+/* ---------- keeper calculator ---------- */
+var dEl=document.getElementById("drafted"),hEl=document.getElementById("held"),
+    cEl=document.getElementById("cost"),sEl=document.getElementById("status"),
+    nEl=document.getElementById("note"),rEl=document.getElementById("remaining");
+function updateCalc(){
+  var d=parseInt(dEl.value,10),h=parseInt(hEl.value,10);
+  var base=d===0?11:d-2, cost=base-2*h;
+  if(cost<1){
+    cEl.textContent="Not keepable"; cEl.className="big no";
+    sEl.textContent="Back in the draft"; sEl.className="pill gone";
+    nEl.textContent=(d===1||d===2)
+      ? "A round "+d+" pick is locked the moment he's drafted — two rounds better is past a first-rounder."
+      : "The ladder has run out. He goes back into the pool.";
+    rEl.innerHTML='<span class="chip dead">Back in the draft</span>';
+    return;
+  }
+  var l=yearsLeft(cost);
+  cEl.textContent="RD "+cost; cEl.className="big";
+  if(l===0){ sEl.textContent="Final year"; sEl.className="pill warn";
+    nEl.textContent="Last season you can hold him — next year costs past a first-rounder."; }
+  else { sEl.textContent="Keepable"; sEl.className="pill ok";
+    nEl.textContent=l===1?"One more season after this one.":l+" more seasons after this one."; }
+  rEl.innerHTML=ladderChips(cost);
+}
+dEl.addEventListener("change",updateCalc); hEl.addEventListener("change",updateCalc); updateCalc();
+
+/* ---------- draft board ---------- */
+var ROUNDS=12, SLOTS=10;
+var DEFAULT_ORDER=Object.keys(ST).sort(function(a,b){return ST[b].fin-ST[a].fin;});
+var order=DEFAULT_ORDER.slice();
+try{
+  var saved=localStorage.getItem("cb-draft-order-v3");
+  if(saved){var p=JSON.parse(saved); if(Array.isArray(p)&&p.length===SLOTS) order=p;}
+}catch(e){}
+
+function renderOrderControls(){
+  var opts=T.map(function(t){return '<option value="'+t.id+'">'+esc(t.short)+' — '+esc(t.name)+'</option>';}).join("");
+  var html="";
+  for(var i=0;i<SLOTS;i++){
+    html+='<div class="oslot"><label for="os'+i+'">Pick '+(i+1)+'</label>'+
+      '<select id="os'+i+'" data-slot="'+i+'">'+opts+'</select></div>';
+  }
+  document.getElementById("orderset").innerHTML=html;
+  for(var j=0;j<SLOTS;j++){document.getElementById("os"+j).value=order[j];}
+}
+
+function renderBoard(){
+  var seen={},dupList=[];
+  order.forEach(function(id){seen[id]=(seen[id]||0)+1;});
+  Object.keys(seen).forEach(function(id){if(seen[id]>1){var t=byId(id); dupList.push(t?t.short:id);}});
+  document.getElementById("orderwarn").innerHTML = dupList.length
+    ? '<div class="warnbar">'+esc(dupList.join(", "))+' appears more than once — every team needs exactly one slot.</div>' : "";
+
+  var head='<tr><th class="rnd">RD</th>';
+  for(var s=1;s<=SLOTS;s++) head+='<th>Pick '+s+'</th>';
+  document.getElementById("boardhead").innerHTML=head+'</tr>';
+
+  var body="";
+  for(var r=1;r<=ROUNDS;r++){
+    var seq=(r%2===1)?order:order.slice().reverse();
+    body+='<tr><th class="rnd">'+r+'</th>';
+    for(var i=0;i<SLOTS;i++){
+      var t=byId(seq[i]);
+      var overall=(r-1)*SLOTS+i+1;
+      var kp=t?keepersFor(t).filter(function(k){return k.round===r;}):[];
+      body+='<td class="cell'+(kp.length?" taken":"")+'">'+
+        '<span class="tm">'+(t?esc(t.short):"—")+'</span>'+
+        (kp.length? '<span class="kp">'+kp.map(function(k){return esc(k.player);}).join(" + ")+'</span>'
+                  : '<span class="ov">#'+overall+'</span>')+'</td>';
+    }
+    body+='</tr>';
+  }
+  document.getElementById("boardbody").innerHTML=body;
+
+  var items=[];
+  T.forEach(function(t){
+    keepersFor(t).forEach(function(k){
+      var pos=order.indexOf(t.id);
+      var slot=(k.round%2===1)?pos+1:SLOTS-pos;
+      items.push({t:t,k:k,slot:slot,overall:(k.round-1)*SLOTS+slot});
+    });
+  });
+  items.sort(function(a,b){return a.overall-b.overall;});
+  document.getElementById("checklist").innerHTML=items.map(function(it){
+    return '<div class="chk"><span class="rd">RD '+it.k.round+' · P'+it.slot+'</span>'+
+      '<span class="txt"><b>'+esc(it.k.player)+'</b>'+
+      '<span>'+esc(it.t.short)+' · '+esc(it.t.name)+' · overall #'+it.overall+'</span></span></div>';
+  }).join("");
+  document.getElementById("chkcount").textContent=items.length+" to enter";
+
+  document.getElementById("pickssummary").innerHTML=T.slice().sort(function(a,b){
+    return order.indexOf(a.id)-order.indexOf(b.id);
+  }).map(function(t){
+    var kp=keepersFor(t);
+    return '<tr class="rowlink" data-team="'+t.id+'">'+
+      '<td class="name" style="font-size:16px">'+esc(t.name)+'</td>'+
+      '<td class="mgr">'+esc(t.short)+'</td>'+
+      '<td class="num">'+kp.length+'</td>'+
+      '<td class="num">'+(ROUNDS-kp.length)+'</td>'+
+      '<td class="sub">'+(kp.length?kp.map(function(k){return "RD "+k.round;}).join(", "):"—")+'</td></tr>';
+  }).join("");
+}
+
+document.addEventListener("change",function(e){
+  var sel=e.target.closest("[data-slot]");
+  if(!sel) return;
+  order[parseInt(sel.dataset.slot,10)]=sel.value;
+  try{localStorage.setItem("cb-draft-order-v3",JSON.stringify(order));}catch(err){}
+  renderBoard();
+});
+renderOrderControls();
+renderBoard();
+
+/* ---------- games cap ---------- */
+var WEEKS=[
+  {w:"1",g:42,note:"Opening week",set:25},{w:"2",g:52,note:"",set:30},{w:"3",g:53,note:"",set:30},
+  {w:"4",g:52,note:"",set:30},{w:"5",g:51,note:"",set:30},{w:"6",g:49,note:"",set:30},
+  {w:"7",g:55,note:"",set:30},{w:"8",g:29,note:"NBA Cup knockout",set:15},{w:"9",g:39,note:"NBA Cup final",set:20},
+  {w:"10",g:50,note:"",set:30},{w:"11",g:55,note:"",set:30},{w:"12",g:56,note:"",set:30},
+  {w:"13",g:50,note:"",set:30},{w:"14",g:53,note:"",set:30},{w:"15",g:55,note:"",set:30},
+  {w:"16",g:49,note:"",set:30},{w:"17a",g:67,note:"All-Star · first half",set:null},
+  {w:"17b",g:51,note:"All-Star · 35 across both",set:35},{w:"18",g:52,note:"",set:30},
+  {w:"19",g:52,note:"Playoffs begin",set:30},{w:"20",g:54,note:"",set:30},{w:"21",g:54,note:"",set:30},
+  {w:"22",g:52,note:"",set:30},{w:"23",g:58,note:"",set:30}
+];
+var nEl2=document.getElementById("cnormal"),bEl=document.getElementById("cbase"),
+    gEl=document.getElementById("cgames"),oEl=document.getElementById("cout"),
+    capBody=document.getElementById("captable");
+function scaled(games){
+  var normal=parseFloat(nEl2.value)||50, base=parseFloat(bEl.value)||30;
+  return base*(games/normal);
+}
+function renderCap(){
+  var normal=parseFloat(nEl2.value)||50;
+  oEl.textContent=Math.round(scaled(parseFloat(gEl.value)||0));
+  capBody.innerHTML=WEEKS.map(function(wk,i){
+    var dev=Math.round((wk.g/normal-1)*100);
+    var flag = dev<=-15 ? '<span class="pill gone">short</span>' : (dev>=15?'<span class="pill warn">heavy</span>':"");
+    return '<tr>'+
+      '<td class="num name" style="font-size:16px">'+wk.w+'</td>'+
+      '<td class="num">'+wk.g+'</td>'+
+      '<td class="num sub">'+(dev>0?"+":"")+dev+'%</td>'+
+      '<td class="num sub">'+scaled(wk.g).toFixed(1)+'</td>'+
+      '<td class="num"><input class="capin" type="number" min="0" max="99" step="1" id="cap'+i+'" value="'+(wk.set===null?"":wk.set)+'"></td>'+
+      '<td class="sub">'+esc(wk.note)+' '+flag+'</td></tr>';
+  }).join("");
+}
+[nEl2,bEl,gEl].forEach(function(el){el.addEventListener("input",renderCap);});
+renderCap();
+
+/* ---------- routing ---------- */
+var views={home:"v-home",teams:"v-teams",team:"v-team",draft:"v-draft",cap:"v-cap",keepers:"v-keepers",history:"v-history",rules:"v-rules"};
+function go(v){
+  Object.keys(views).forEach(function(k){document.getElementById(views[k]).classList.toggle("on",k===v);});
+  var navKey=(v==="team")?"teams":v;
+  Array.prototype.forEach.call(document.querySelectorAll("#nav button"),function(b){
+    if(b.dataset.go===navKey){b.setAttribute("aria-current","page");}else{b.removeAttribute("aria-current");}
+  });
+  window.scrollTo({top:0,behavior:"instant"});
+}
+document.addEventListener("click",function(e){
+  var g=e.target.closest("[data-go]"); if(g){e.preventDefault();go(g.dataset.go);return;}
+  var t=e.target.closest("[data-team]"); if(t){renderTeam(t.dataset.team);go("team");}
+});
+go("home");
+})();
+</script>
+
+</body>
+</html>
