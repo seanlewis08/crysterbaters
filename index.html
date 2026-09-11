@@ -479,7 +479,7 @@ td input.capin:focus-visible{outline:1px solid var(--amber);border-color:var(--a
 
 .acct{display:flex;align-items:center;gap:12px;flex-shrink:0;margin-left:6px}
 .acct .who{display:flex;flex-direction:column;line-height:1;text-align:right}
-.acct .who b{font-family:var(--disp);font-weight:700;font-size:14px;text-transform:uppercase;letter-spacing:.04em}
+.acct .who b{font-family:var(--disp);font-weight:700;font-size:14px;text-transform:uppercase;letter-spacing:.04em;max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .acct .who span{font-family:var(--mono);font-size:8.5px;letter-spacing:.15em;text-transform:uppercase;color:var(--dim);margin-top:4px}
 
 .notice{padding:12px 18px;border:1px solid var(--line-2);border-left:3px solid var(--cyan);border-radius:3px;background:var(--surface);font-size:14px;color:var(--muted);margin-bottom:18px}
@@ -907,7 +907,7 @@ footer p + p{margin-top:11px}
       <div id="polls-notice"></div>
 
       <div id="signin-panel">
-        <p class="lede">Any of the ten managers can put a question to the league. Sign in with the email address Yahoo has for you and we'll send a one-tap link — no password to remember.</p>
+        <p class="lede">Any of the ten managers can put a question to the league. Sign in with any email you like — we send a one-tap link, no password to remember. First time in, you'll claim your team.</p>
         <div class="calc signin" style="margin-top:18px">
           <div class="calc-in">
             <div class="row">
@@ -916,6 +916,40 @@ footer p + p{margin-top:11px}
             </div>
           </div>
           <p id="signin-msg"></p>
+        </div>
+      </div>
+
+      <div id="claim-panel" hidden>
+        <p class="lede">You're signed in. Now tell us which team is yours and enter the league code Sean sent around. Each team can only be claimed once.</p>
+        <div class="calc signin" style="margin-top:18px;max-width:760px">
+          <div class="calc-in">
+            <div class="row">
+              <div class="field"><label for="claim-team">Your team</label><select id="claim-team"></select></div>
+              <div class="field" style="flex:0 1 180px"><label for="claim-code">League code</label><input id="claim-code" autocomplete="off" autocapitalize="characters" placeholder="e.g. KIDS26"></div>
+              <button class="btn" id="claim-btn">Claim team</button>
+            </div>
+          </div>
+          <p id="claim-msg"></p>
+        </div>
+        <p style="margin-top:14px;font-size:13.5px;color:var(--dim)">Signed in as <b id="claim-email"></b> · <button class="back" id="claim-signout" style="margin:0;padding:0">not you? sign out</button></p>
+      </div>
+
+      <div id="commish-panel" hidden>
+        <div class="ptools" style="margin-top:6px">
+          <button class="btn quiet sm" id="commish-toggle">Manage members</button>
+        </div>
+        <div class="calc" id="commish" hidden style="margin-bottom:22px">
+          <div class="calc-in">
+            <div class="field" style="flex:0 1 260px"><label for="code-input">League code (share it with the group)</label><input id="code-input" autocomplete="off" autocapitalize="characters"></div>
+            <div class="field" style="flex:0 0 auto;justify-content:flex-end"><button class="btn sm" id="code-save">Save code</button></div>
+            <span id="code-msg" style="align-self:flex-end;font-size:13px;color:var(--muted)"></span>
+          </div>
+          <div class="tablewrap" style="border:0;border-radius:0;box-shadow:none">
+            <table>
+              <thead><tr><th>Team</th><th>Manager</th><th>Claimed by</th><th></th></tr></thead>
+              <tbody id="commish-rows"></tbody>
+            </table>
+          </div>
         </div>
       </div>
 
@@ -1593,19 +1627,15 @@ renderCap();
 var SB={url:"",anon:""};
 
 var Polls=(function(){
-  var me=null, polls=[], votes=[], tallies={}, members=[], store=null, loading=false;
+  var me=null, profile=null, profiles=[], polls=[], votes=[], tallies={}, claimed=[], store=null, loading=false, isCommish=false;
   var VIS={named:"Names shown",anon:"Secret ballot",anon_until_close:"Secret until it closes"};
   function $(id){return document.getElementById(id);}
 
   function isOpen(p){ return !p.closed && (!p.closes_at || new Date(p.closes_at) > new Date()); }
-  function memberFor(email){
-    email=(email||"").toLowerCase();
-    for(var i=0;i<members.length;i++){ if((members[i].email||"").toLowerCase()===email) return members[i]; }
-    return null;
-  }
-  function nameFor(email){
-    var m=memberFor(email);
-    if(m){ var t=byId(m.team_id); return t?t.short:m.manager; }
+  function profFor(uid){ for(var i=0;i<profiles.length;i++){ if(profiles[i].user_id===uid) return profiles[i]; } return null; }
+  function nameFor(uid,email){
+    var pr=profFor(uid);
+    if(pr){ var t=byId(pr.team_id); if(t) return t.short; }
     return email ? email.split("@")[0] : "Someone";
   }
   function fmtDate(iso){ return new Date(iso).toLocaleDateString(undefined,{month:"short",day:"numeric"}); }
@@ -1619,25 +1649,38 @@ var Polls=(function(){
   var baseNotice="";
   function setNotice(html,cls){ $("polls-notice").innerHTML = html ? '<div class="notice '+(cls||"")+'">'+html+'</div>' : ""; }
   function fail(e){ setNotice(esc((e&&e.message)||e||"Something went wrong."),"bad"); }
+  function msgOf(e){ return (e&&e.message)||String(e); }
 
   /* ----- preview store: this browser only, no server ----- */
   function PreviewStore(){
-    var KEY="cb-polls-preview-v1", db=null;
+    var KEY="cb-polls-preview-v2", db=null, CODE="KIDS26";
     try{ db=JSON.parse(localStorage.getItem(KEY)||"null"); }catch(e){}
-    if(!db) db={polls:[],votes:[],me:null};
+    if(!db) db={polls:[],votes:[],profiles:[],me:null,code:CODE};
     function save(){ try{ localStorage.setItem(KEY,JSON.stringify(db)); }catch(e){} }
-    var mem=T.map(function(t){ return {email:t.id+"@preview.local",manager:t.mgr,team_id:t.id,is_commissioner:t.id==="jalenba"}; });
     function findPoll(id){ return db.polls.filter(function(p){return p.id===id;})[0]; }
+    function myProf(){ return db.me ? db.profiles.filter(function(p){return p.user_id===db.me.id;})[0]||null : null; }
+    function commish(){ var p=myProf(); return !!p && p.team_id==="jalenba"; }
     return {
       preview:true,
       init:function(){ return Promise.resolve(db.me); },
-      members:function(){ return Promise.resolve(mem); },
-      signInAs:function(team_id){
-        var m=mem.filter(function(x){return x.team_id===team_id;})[0];
-        db.me={id:"u-"+team_id,email:m.email}; save(); return Promise.resolve(db.me);
+      sendLink:function(email){
+        db.me={id:"u-"+email.toLowerCase().replace(/[^a-z0-9]/g,""),email:email}; save();
+        return Promise.resolve({ok:true,msg:"Preview: you're signed in straight away (no email is sent until the database is connected).",signedIn:db.me});
       },
-      sendLink:function(){ return Promise.resolve({ok:false,msg:"Preview mode — pick a manager below instead. Real email links switch on once the league database is connected."}); },
       signOut:function(){ db.me=null; save(); return Promise.resolve(); },
+      session:function(){
+        var p=myProf();
+        return Promise.resolve({profile:p, claimed:db.profiles.map(function(x){return x.team_id;}), commissioner:commish(), profiles:p?db.profiles.slice():[]});
+      },
+      claimTeam:function(team_id,code){
+        if((code||"").trim().toUpperCase()!==db.code.toUpperCase()) return Promise.reject(new Error("That league code isn't right."));
+        if(myProf()) return Promise.reject(new Error("You already have a team."));
+        if(db.profiles.some(function(p){return p.team_id===team_id;})) return Promise.reject(new Error("That team has already been claimed. Ask Sean if it's yours."));
+        db.profiles.push({user_id:db.me.id,email:db.me.email,team_id:team_id,created_at:new Date().toISOString()}); save(); return Promise.resolve();
+      },
+      releaseTeam:function(team_id){ db.profiles=db.profiles.filter(function(p){return p.team_id!==team_id;}); save(); return Promise.resolve(); },
+      getCode:function(){ return Promise.resolve(db.code); },
+      setCode:function(c){ db.code=c; save(); return Promise.resolve(); },
       load:function(){
         var uid=db.me&&db.me.id;
         var vis=db.votes.filter(function(v){
@@ -1674,18 +1717,29 @@ var Polls=(function(){
       preview:false,
       init:function(){ return client.auth.getSession().then(function(r){ return user(r.data.session); }); },
       onChange:function(cb){ client.auth.onAuthStateChange(function(ev,s){ cb(user(s)); }); },
-      members:function(){ return client.from("members").select("*").then(function(r){ return r.data||[]; }); },
       sendLink:function(email){
         return client.auth.signInWithOtp({email:email,options:{emailRedirectTo:location.origin+location.pathname}}).then(function(r){
-          if(r.error){
-            var m=r.error.message||"";
-            if(/not a league member|Database error|Signups not allowed/i.test(m)) return {ok:false,msg:"That address isn't on the league roster. Ask Sean to add it."};
-            return {ok:false,msg:m};
-          }
+          if(r.error) return {ok:false,msg:r.error.message||"Couldn't send the link."};
           return {ok:true,msg:"Check your inbox — the link signs you in on this device."};
         });
       },
       signOut:function(){ return client.auth.signOut(); },
+      session:function(){
+        return Promise.all([
+          client.from("profiles").select("*"),
+          client.from("claimed_teams").select("*"),
+          client.rpc("is_commissioner")
+        ]).then(function(rs){
+          chk(rs[0]); chk(rs[1]);
+          var all=rs[0].data||[], mine=null;
+          all.forEach(function(p){ if(me&&p.user_id===me.id) mine=p; });
+          return {profile:mine, claimed:(rs[1].data||[]).map(function(r){return r.team_id;}), commissioner:!!rs[2].data, profiles:all};
+        });
+      },
+      claimTeam:function(team_id,code){ return client.rpc("claim_team",{p_team_id:team_id,p_code:code}).then(chk); },
+      releaseTeam:function(team_id){ return client.rpc("release_team",{p_team_id:team_id}).then(chk); },
+      getCode:function(){ return client.from("league_settings").select("invite_code").eq("id",1).maybeSingle().then(function(r){ chk(r); return r.data?r.data.invite_code:""; }); },
+      setCode:function(c){ return client.rpc("set_invite_code",{p_code:c}).then(chk); },
       load:function(){
         return Promise.all([
           client.from("polls").select("*").order("created_at",{ascending:false}),
@@ -1709,41 +1763,68 @@ var Polls=(function(){
   function renderAcct(){
     var el=$("acct");
     if(me){
-      var m=memberFor(me.email), t=m?byId(m.team_id):null;
-      el.innerHTML='<div class="who"><b>'+esc(m?m.manager:me.email)+'</b><span>'+esc(t?t.name:"League member")+'</span></div>'+
+      var t=profile?byId(profile.team_id):null;
+      el.innerHTML='<div class="who"><b>'+esc(t?t.mgr:me.email.split("@")[0])+'</b><span>'+esc(t?t.name:"Claim your team")+'</span></div>'+
         '<button class="btn quiet sm" id="signout-btn">Sign out</button>';
-      $("signout-btn").addEventListener("click",function(){ store.signOut().then(function(){ setMe(null); }).catch(fail); });
+      $("signout-btn").addEventListener("click",signOut);
     } else {
       el.innerHTML='<button class="btn ghost sm" data-go="polls">Sign in</button>';
     }
   }
+  function signOut(){ store.signOut().then(function(){ setMe(null); }).catch(fail); }
 
   function setMe(u){
-    me=u;
-    if(me){ store.members().then(function(m){ members=m; renderAcct(); refresh(); }).catch(fail); }
-    else { members=[]; polls=[]; votes=[]; tallies={}; renderAcct(); refresh(); }
+    me=u; profile=null; profiles=[]; claimed=[]; isCommish=false; polls=[]; votes=[]; tallies={};
+    if(!me){ $("commish").hidden=true; $("newpoll").hidden=true; renderAcct(); refresh(); return; }
+    store.session().then(function(s){
+      profile=s.profile; profiles=s.profiles; claimed=s.claimed; isCommish=s.commissioner;
+      renderAcct(); refresh();
+    }).catch(fail);
   }
 
   function refresh(){
     if(!store) return;
-    var signed=!!me;
+    var signed=!!me, member=signed&&!!profile;
     $("signin-panel").hidden=signed;
-    $("polls-body").hidden=!signed;
-    $("polls-eyebrow").textContent= signed ? "Signed in as "+nameFor(me.email) : "Members only";
-    if(!signed){ renderList(); return; }
+    $("claim-panel").hidden=!(signed&&!profile);
+    $("polls-body").hidden=!member;
+    $("commish-panel").hidden=!(member&&isCommish);
+    $("polls-eyebrow").textContent= member ? "Signed in as "+nameFor(me.id,me.email) : (signed ? "Claim your team" : "Members only");
+    if(signed&&!profile) renderClaim();
+    if(member&&isCommish) renderCommish();
+    if(!member){ renderList(); return; }
     if(loading) return;
     loading=true;
     store.load().then(function(d){ loading=false; polls=d.polls; votes=d.votes; tallies=d.tallies; renderList(); })
       .catch(function(e){ loading=false; fail(e); });
   }
 
+  function renderClaim(){
+    $("claim-email").textContent=me.email;
+    var sel=$("claim-team"), cur=sel.value;
+    sel.innerHTML='<option value="">Pick your team…</option>'+T.map(function(t){
+      var taken=claimed.indexOf(t.id)>=0;
+      return '<option value="'+t.id+'"'+(taken?' disabled':'')+'>'+esc(t.name)+' — '+esc(t.mgr)+(taken?' (claimed)':'')+'</option>';
+    }).join("");
+    if(cur) sel.value=cur;
+  }
+
+  function renderCommish(){
+    $("commish-rows").innerHTML=T.map(function(t){
+      var pr=profiles.filter(function(p){return p.team_id===t.id;})[0];
+      return '<tr><td><b>'+esc(t.name)+'</b></td><td class="mgr">'+esc(t.mgr)+'</td>'+
+        '<td>'+(pr?esc(pr.email):'<span class="pill q">Unclaimed</span>')+'</td>'+
+        '<td class="num">'+(pr?'<button class="btn quiet sm" data-release="'+t.id+'">Release</button>':'')+'</td></tr>';
+    }).join("");
+  }
+
   function renderList(){
     var open=polls.filter(isOpen), closed=polls.filter(function(p){return !isOpen(p);});
     $("polls-open").innerHTML = open.length ? open.map(card).join("") : '<div class="empty">No open polls. Be the one who starts something.</div>';
-    $("polls-closed").innerHTML = closed.length ? closed.map(card).join("") : '<div class="empty">'+(me?"Nothing has closed yet.":"Sign in to see how past polls went.")+'</div>';
+    $("polls-closed").innerHTML = closed.length ? closed.map(card).join("") : '<div class="empty">'+(profile?"Nothing has closed yet.":"Sign in to see how past polls went.")+'</div>';
     $("polls-count").textContent = open.length+" open · "+closed.length+" closed";
     $("hist-count").textContent = closed.length ? closed.length+" settled" : "Every question the league has settled";
-    var hc=document.querySelector("#hc-polls .hc-n"); if(hc) hc.textContent = me ? String(open.length) : "—";
+    var hc=document.querySelector("#hc-polls .hc-n"); if(hc) hc.textContent = profile ? String(open.length) : "—";
   }
 
   function card(p){
@@ -1753,10 +1834,10 @@ var Polls=(function(){
     Object.keys(tl).forEach(function(k){ total+=tl[k]; if(tl[k]>max) max=tl[k]; });
     var showResults=!!mine||!open;
     var showNames=p.visibility==="named"||(p.visibility==="anon_until_close"&&!open);
-    var owner=!!me&&(p.created_by===me.id||!!(memberFor(me.email)||{}).is_commissioner);
+    var owner=!!me&&(p.created_by===me.id||isCommish);
     var html='<article class="poll'+(open?"":" closed")+'" data-poll="'+esc(p.id)+'">';
     html+='<div class="poll-head"><h3>'+esc(p.question)+'</h3><div class="poll-meta">'+
-      '<span>Asked by '+esc(nameFor(p.created_by_email))+' · '+fmtDate(p.created_at)+'</span>'+
+      '<span>Asked by '+esc(nameFor(p.created_by,p.created_by_email))+' · '+fmtDate(p.created_at)+'</span>'+
       '<span>'+esc(VIS[p.visibility]||p.visibility)+'</span>'+
       (p.closes_at&&open?'<span>'+esc(fmtWhen(p.closes_at))+'</span>':'')+
       '<span class="pill '+(open?"ok":"q")+'">'+(open?"Open":"Closed")+'</span></div></div>';
@@ -1767,7 +1848,7 @@ var Polls=(function(){
       var tag=open?"button":"div";
       var names="";
       if(showResults&&showNames&&n){
-        names=votes.filter(function(v){return v.poll_id===p.id&&v.option_index===i;}).map(function(v){return nameFor(v.voter_email);}).join(", ");
+        names=votes.filter(function(v){return v.poll_id===p.id&&v.option_index===i;}).map(function(v){return nameFor(v.user_id,v.voter_email);}).join(", ");
       }
       html+='<'+tag+' class="'+cls+'"'+(open?' type="button" data-vote="'+i+'"':'')+'>'+
         (showResults?'<span class="bar" style="width:'+pct+'%"></span>':'')+
@@ -1796,7 +1877,9 @@ var Polls=(function(){
     var c=e.target.closest("[data-close]");
     if(c){ act(store.closePoll(c.dataset.close)); return; }
     var d=e.target.closest("[data-del]");
-    if(d){ if(d.dataset.armed){ act(store.deletePoll(d.dataset.del)); } else { d.dataset.armed="1"; d.textContent="Really delete?"; } }
+    if(d){ if(d.dataset.armed){ act(store.deletePoll(d.dataset.del)); } else { d.dataset.armed="1"; d.textContent="Really delete?"; } return; }
+    var r=e.target.closest("[data-release]");
+    if(r){ if(r.dataset.armed){ store.releaseTeam(r.dataset.release).then(function(){ setMe(me); }).catch(fail); } else { r.dataset.armed="1"; r.textContent="Really release?"; } }
   });
 
   $("newpoll-btn").addEventListener("click",function(){
@@ -1814,7 +1897,7 @@ var Polls=(function(){
     $("np-save").disabled=true;
     store.createPoll({question:q,options:opts,visibility:$("np-vis").value,closes_at:closes}).then(function(){
       $("np-q").value=""; $("np-opts").value=""; $("newpoll").hidden=true; $("np-save").disabled=false; refresh();
-    }).catch(function(e){ $("np-save").disabled=false; msg.textContent=(e&&e.message)||String(e); });
+    }).catch(function(e){ $("np-save").disabled=false; msg.textContent=msgOf(e); });
   });
 
   function sendLink(){
@@ -1823,10 +1906,33 @@ var Polls=(function(){
     $("signin-btn").disabled=true; m.style.color="var(--muted)"; m.textContent="Sending…";
     store.sendLink(em).then(function(r){
       $("signin-btn").disabled=false; m.style.color=r.ok?"var(--green)":"var(--red)"; m.textContent=r.msg;
-    }).catch(function(e){ $("signin-btn").disabled=false; m.style.color="var(--red)"; m.textContent=(e&&e.message)||String(e); });
+      if(r.signedIn) setMe(r.signedIn);
+    }).catch(function(e){ $("signin-btn").disabled=false; m.style.color="var(--red)"; m.textContent=msgOf(e); });
   }
   $("signin-btn").addEventListener("click",sendLink);
   $("signin-email").addEventListener("keydown",function(k){ if(k.key==="Enter") sendLink(); });
+
+  $("claim-btn").addEventListener("click",function(){
+    var team=$("claim-team").value, code=$("claim-code").value.trim(), m=$("claim-msg");
+    m.style.color="var(--red)";
+    if(!team){ m.textContent="Pick your team first."; return; }
+    if(!code){ m.textContent="Enter the league code."; return; }
+    $("claim-btn").disabled=true; m.style.color="var(--muted)"; m.textContent="Claiming…";
+    store.claimTeam(team,code).then(function(){ $("claim-btn").disabled=false; m.textContent=""; $("claim-code").value=""; setMe(me); })
+      .catch(function(e){ $("claim-btn").disabled=false; m.style.color="var(--red)"; m.textContent=msgOf(e); });
+  });
+  $("claim-code").addEventListener("keydown",function(k){ if(k.key==="Enter") $("claim-btn").click(); });
+  $("claim-signout").addEventListener("click",signOut);
+
+  $("commish-toggle").addEventListener("click",function(){
+    var c=$("commish"); c.hidden=!c.hidden;
+    if(!c.hidden){ store.getCode().then(function(code){ $("code-input").value=code||""; }).catch(fail); }
+  });
+  $("code-save").addEventListener("click",function(){
+    var c=$("code-input").value.trim(), m=$("code-msg");
+    if(c.length<4){ m.style.color="var(--red)"; m.textContent="Make it at least four characters."; return; }
+    store.setCode(c).then(function(){ m.style.color="var(--green)"; m.textContent="Saved. Send it to the group."; }).catch(function(e){ m.style.color="var(--red)"; m.textContent=msgOf(e); });
+  });
 
   /* ----- boot ----- */
   function start(){
@@ -1846,14 +1952,8 @@ var Polls=(function(){
       document.head.appendChild(s);
     } else {
       store=PreviewStore();
-      setNotice("<b>Preview mode.</b> Polls made here are saved only in this browser. Email sign-in and league-wide polls switch on once the league database is connected.","warn");
+      setNotice("<b>Preview mode.</b> Sign-in is instant, the league code is <b>KIDS26</b>, and everything is saved only in this browser. Real email links and league-wide polls switch on once the database is connected.","warn");
       baseNotice=$("polls-notice").innerHTML;
-      var bar=document.createElement("div"); bar.className="calc signin"; bar.style.marginTop="14px";
-      bar.innerHTML='<div class="calc-in"><div class="previewbar"><span class="eyebrow">Preview · sign in as</span>'+
-        '<select id="pv-who">'+T.map(function(t){return '<option value="'+t.id+'">'+esc(t.mgr)+' · '+esc(t.name)+'</option>';}).join("")+'</select>'+
-        '<button class="btn sm" id="pv-go">Sign in</button></div></div>';
-      $("signin-panel").appendChild(bar);
-      $("pv-go").addEventListener("click",function(){ store.signInAs($("pv-who").value).then(setMe); });
       start();
     }
   }

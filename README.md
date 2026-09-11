@@ -24,9 +24,9 @@ Vercel is connected to this repository. Pushing to `main` deploys automatically.
 
 ## Logins and polls
 
-Members sign in with a magic link sent to their email (no passwords) and can post polls, vote, and read the poll history. The backend is a free Supabase project: `supabase/schema.sql` creates the tables, the ten-address allowlist, and the row-level security rules. The poll's creator picks whether votes are shown with names, kept secret until the poll closes, or kept secret for good.
+Members sign in with a magic link sent to their email (no passwords). The first time in, they pick their team from the ten and enter the league code the commissioner shares; each team can be claimed once, and the commissioner can release a claim or change the code from the site. Members can post polls, vote, and read the poll history. The poll's creator picks whether votes are shown with names, kept secret until the poll closes, or kept secret for good.
 
-To switch it on, set `SB.url` and `SB.anon` near the bottom of `index.html` to the project's URL and anon (public) key. With both empty the Polls page runs in a preview mode that lives only in the visitor's browser.
+The backend is a free Supabase project: `supabase/schema.sql` creates the tables, the claim/release functions, and the row-level security rules (the visibility rules are enforced in the database, not just on the page). To switch it on, set `SB.url` and `SB.anon` near the bottom of `index.html` to the project's URL and anon (public) key. With both empty the Polls page runs in a preview mode that lives only in the visitor's browser.
 
 ## Still to come
 

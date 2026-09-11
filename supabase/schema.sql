@@ -1,65 +1,95 @@
 -- League For Kids That Read Good — database for logins and polls.
 -- Run this once in the Supabase dashboard: SQL Editor → New query → paste → Run.
 -- Safe to re-run: every statement is "if not exists" or "create or replace".
+--
+-- How membership works: anyone can request a sign-in link, but they can't
+-- see or do anything until they claim one of the ten teams with the league
+-- code. Each team can be claimed once. The commissioner can release a claim
+-- and change the code from the site.
 
 create extension if not exists pgcrypto;
+drop trigger if exists only_members_may_join on auth.users;  -- from an earlier draft
 
 -- ----------------------------------------------------------------------
--- 1. Members: the only ten email addresses allowed to sign in.
---    Fill in the real addresses below (lower-case). team_id must match the
---    ids used in index.html.
+-- 1. League settings: the invite code and who the commissioner is.
 -- ----------------------------------------------------------------------
-create table if not exists public.members (
-  email           text primary key,
-  manager         text not null,
-  team_id         text not null,
-  is_commissioner boolean not null default false
+create table if not exists public.league_settings (
+  id                 int primary key check (id = 1),
+  invite_code        text not null,
+  commissioner_email text not null
+);
+insert into public.league_settings (id, invite_code, commissioner_email)
+  values (1, 'KIDS26', 'seanlewis08@gmail.com')
+on conflict (id) do nothing;   -- keeps whatever code Sean has set since
+
+-- ----------------------------------------------------------------------
+-- 2. Profiles: one signed-in user ↔ one team.
+-- ----------------------------------------------------------------------
+create table if not exists public.profiles (
+  user_id    uuid primary key references auth.users (id) on delete cascade,
+  email      text not null,
+  team_id    text not null unique check (team_id in
+               ('knuepp','claxton','rollins','george','rucker','ant','ysga','freaky','giannis','jalenba')),
+  created_at timestamptz not null default now()
 );
 
-insert into public.members (email, manager, team_id, is_commissioner) values
-  ('seanlewis08@gmail.com',      'Sean Lewis',            'jalenba', true),
-  ('ben@example.com',            'Ben Zavelsky',          'knuepp',  false),
-  ('anush@example.com',          'Anush Rohani-Shukla',   'claxton', false),
-  ('david@example.com',          'David Zavelsky',        'rollins', false),
-  ('abada@example.com',          'Jon Abada',             'george',  false),
-  ('tyler@example.com',          'Tyler Brown',           'rucker',  false),
-  ('gonzo@example.com',          'Jonathan Gonzalez',     'ant',     false),
-  ('chris@example.com',          'Chris Kestle',          'ysga',    false),
-  ('rajat@example.com',          'Rajat Khanna',          'freaky',  false),
-  ('kabir@example.com',          'Kabir Sodhi',           'giannis', false)
-on conflict (email) do update
-  set manager = excluded.manager, team_id = excluded.team_id, is_commissioner = excluded.is_commissioner;
-
--- Block anyone who is not on the list from creating an account, even if
--- they request a magic link. The site shows a friendly message when this fires.
-create or replace function public.only_members_may_join()
-returns trigger language plpgsql security definer set search_path = public as $$
-begin
-  if not exists (select 1 from public.members m where lower(m.email) = lower(new.email)) then
-    raise exception 'not a league member';
-  end if;
-  return new;
-end $$;
-
-drop trigger if exists only_members_may_join on auth.users;
-create trigger only_members_may_join
-  before insert on auth.users
-  for each row execute function public.only_members_may_join();
-
--- Helper used by the policies below.
+-- Helpers. security definer so policies can call them without recursion.
 create or replace function public.is_member()
 returns boolean language sql stable security definer set search_path = public as $$
-  select exists (select 1 from public.members m where lower(m.email) = lower(coalesce(auth.jwt() ->> 'email', '')));
+  select exists (select 1 from public.profiles p where p.user_id = auth.uid());
 $$;
 
 create or replace function public.is_commissioner()
 returns boolean language sql stable security definer set search_path = public as $$
-  select coalesce((select m.is_commissioner from public.members m
-                   where lower(m.email) = lower(coalesce(auth.jwt() ->> 'email', ''))), false);
+  select exists (
+    select 1 from public.profiles p
+    join public.league_settings s on lower(s.commissioner_email) = lower(p.email)
+    where p.user_id = auth.uid() and s.id = 1
+  );
 $$;
 
+-- Which teams are already taken (no emails exposed). Readable before you
+-- are a member so the claim screen can grey them out.
+create or replace view public.claimed_teams
+with (security_invoker = false) as
+  select team_id from public.profiles;
+
+create or replace function public.claim_team(p_team_id text, p_code text)
+returns void language plpgsql security definer set search_path = public as $$
+declare v_code text;
+begin
+  if auth.uid() is null then raise exception 'Sign in first.'; end if;
+  select invite_code into v_code from public.league_settings where id = 1;
+  if v_code is null or upper(trim(p_code)) <> upper(trim(v_code)) then
+    raise exception 'That league code isn''t right.';
+  end if;
+  if exists (select 1 from public.profiles where user_id = auth.uid()) then
+    raise exception 'You already have a team.';
+  end if;
+  if exists (select 1 from public.profiles where team_id = p_team_id) then
+    raise exception 'That team has already been claimed. Ask Sean if it''s yours.';
+  end if;
+  insert into public.profiles (user_id, email, team_id)
+    values (auth.uid(), coalesce(auth.jwt() ->> 'email', ''), p_team_id);
+end $$;
+
+create or replace function public.release_team(p_team_id text)
+returns void language plpgsql security definer set search_path = public as $$
+begin
+  if not public.is_commissioner() then raise exception 'Commissioner only.'; end if;
+  delete from public.profiles where team_id = p_team_id;
+end $$;
+
+create or replace function public.set_invite_code(p_code text)
+returns void language plpgsql security definer set search_path = public as $$
+begin
+  if not public.is_commissioner() then raise exception 'Commissioner only.'; end if;
+  if length(trim(p_code)) < 4 then raise exception 'Make the code at least four characters.'; end if;
+  update public.league_settings set invite_code = trim(p_code) where id = 1;
+end $$;
+
 -- ----------------------------------------------------------------------
--- 2. Polls
+-- 3. Polls
 -- ----------------------------------------------------------------------
 create table if not exists public.polls (
   id               uuid primary key default gen_random_uuid(),
@@ -99,15 +129,22 @@ with (security_invoker = false) as
   group by poll_id, option_index;
 
 -- ----------------------------------------------------------------------
--- 3. Row-level security
+-- 4. Row-level security
 -- ----------------------------------------------------------------------
-alter table public.members enable row level security;
-alter table public.polls   enable row level security;
-alter table public.votes   enable row level security;
+alter table public.league_settings enable row level security;
+alter table public.profiles        enable row level security;
+alter table public.polls           enable row level security;
+alter table public.votes           enable row level security;
 
-drop policy if exists members_read on public.members;
-create policy members_read on public.members
-  for select to authenticated using (public.is_member());
+drop policy if exists settings_read on public.league_settings;
+create policy settings_read on public.league_settings
+  for select to authenticated using (public.is_commissioner());
+
+-- You can always see your own profile row (to know whether you've claimed);
+-- members see everyone's.
+drop policy if exists profiles_read on public.profiles;
+create policy profiles_read on public.profiles
+  for select to authenticated using (user_id = auth.uid() or public.is_member());
 
 drop policy if exists polls_read on public.polls;
 create policy polls_read on public.polls
@@ -166,7 +203,9 @@ create policy votes_change on public.votes
                      and option_index < array_length(p.options, 1)));
 
 grant usage on schema public to authenticated;
-grant select on public.members, public.poll_tallies to authenticated;
+grant select on public.league_settings, public.profiles, public.claimed_teams, public.poll_tallies to authenticated;
 grant select, insert, update, delete on public.polls to authenticated;
 grant select, insert, update on public.votes to authenticated;
-revoke all on public.members, public.polls, public.votes, public.poll_tallies from anon;
+grant execute on function public.is_member(), public.is_commissioner(), public.claim_team(text, text),
+  public.release_team(text), public.set_invite_code(text) to authenticated;
+revoke all on public.league_settings, public.profiles, public.claimed_teams, public.polls, public.votes, public.poll_tallies from anon;
