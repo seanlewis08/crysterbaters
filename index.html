@@ -460,6 +460,9 @@ td input.capin{
   font-family:var(--mono);font-size:13px;font-weight:600;color:var(--amber);
   background:var(--surface);border:1px solid var(--line-2);border-radius:2px;padding:6px 8px;width:66px;text-align:right;
 }
+td input.capin.g{color:var(--ink)}
+td input.capin.lbl{width:56px;text-align:left;font-family:var(--disp);font-size:16px;font-weight:700;color:var(--ink)}
+td input.capin.note{width:100%;min-width:170px;text-align:left;font-family:var(--body);font-weight:500;color:var(--muted)}
 td input.capin:focus-visible{outline:1px solid var(--amber);border-color:var(--amber)}
 
 /* ---------- account + polls ---------- */
@@ -823,13 +826,24 @@ footer p + p{margin-top:11px}
         </div>
       </div>
 
-      <div class="tablewrap" style="margin-top:18px">
-        <table>
-          <thead><tr><th class="num">Week</th><th class="num">NBA games</th><th class="num">vs normal</th><th class="num">Scaled</th><th class="num">Cap set</th><th>Note</th></tr></thead>
-          <tbody id="captable"></tbody>
-        </table>
+      <div class="calc" style="margin-top:22px">
+        <div class="calc-in">
+          <div class="field" style="flex:0 1 200px"><label for="cstart">Week 1 starts (Monday)</label>
+            <input id="cstart" type="date"></div>
+          <div class="field" style="flex:0 1 120px"><label for="cweeks">Weeks</label>
+            <input id="cweeks" type="number" min="1" max="30" step="1"></div>
+          <div class="field" style="flex:0 0 auto;justify-content:flex-end"><button class="btn" id="cfetch">Count NBA games</button></div>
+          <div class="field" style="flex:0 0 auto;justify-content:flex-end"><button class="btn quiet" id="creset">Reset to 2025–26</button></div>
+          <div class="field" style="flex:1 1 220px;justify-content:flex-end"><span id="cmsg" style="font-size:13.5px;color:var(--muted);padding-bottom:9px"></span></div>
+        </div>
+        <div class="tablewrap" style="border:0;border-radius:0;box-shadow:none">
+          <table>
+            <thead><tr><th>Week</th><th>Dates</th><th class="num">NBA games</th><th class="num">vs normal</th><th class="num">Scaled</th><th class="num">Cap set</th><th>Note</th></tr></thead>
+            <tbody id="captable"></tbody>
+          </table>
+        </div>
       </div>
-      <p class="lede" style="margin-top:14px">2025–26 schedule from your calculator tab. The 2026–27 schedule drops in the same way, and once Yahoo is connected the site counts each team's games used against these caps instead of anyone tallying them.</p>
+      <p class="lede" style="margin-top:14px">Every cell is editable and remembered in this browser. <b>Count NBA games</b> pulls the season schedule and tallies regular-season games in each Monday–Sunday week, so next year is one click plus your corrections. Once Yahoo is connected the site counts each team's games used against these caps instead of anyone tallying them.</p>
     </section>
   </div>
 
@@ -1587,41 +1601,118 @@ renderBoard();
 })();
 
 /* ---------- games cap ---------- */
-var WEEKS=[
+var CAP_DEFAULT={start:"2025-10-20",weeks:[
   {w:"1",g:42,note:"Opening week",set:25},{w:"2",g:52,note:"",set:30},{w:"3",g:53,note:"",set:30},
   {w:"4",g:52,note:"",set:30},{w:"5",g:51,note:"",set:30},{w:"6",g:49,note:"",set:30},
   {w:"7",g:55,note:"",set:30},{w:"8",g:29,note:"NBA Cup knockout",set:15},{w:"9",g:39,note:"NBA Cup final",set:20},
   {w:"10",g:50,note:"",set:30},{w:"11",g:55,note:"",set:30},{w:"12",g:56,note:"",set:30},
   {w:"13",g:50,note:"",set:30},{w:"14",g:53,note:"",set:30},{w:"15",g:55,note:"",set:30},
-  {w:"16",g:49,note:"",set:30},{w:"17a",g:67,note:"All-Star · first half",set:null},
-  {w:"17b",g:51,note:"All-Star · 35 across both",set:35},{w:"18",g:52,note:"",set:30},
+  {w:"16",g:49,note:"",set:30},{w:"17a",g:35,note:"All-Star · double week, 35 across both",set:35},
+  {w:"17a",g:36,note:"All-Star · second half",set:null},{w:"17b",g:51,note:"",set:30},{w:"18",g:52,note:"",set:30},
   {w:"19",g:52,note:"Playoffs begin",set:30},{w:"20",g:54,note:"",set:30},{w:"21",g:54,note:"",set:30},
   {w:"22",g:52,note:"",set:30},{w:"23",g:58,note:"",set:30}
-];
+]};
+var CAP_KEY="cb-cap-v2", CAP=null;
+try{ CAP=JSON.parse(localStorage.getItem(CAP_KEY)||"null"); }catch(e){}
+if(!CAP||!CAP.weeks) CAP=JSON.parse(JSON.stringify(CAP_DEFAULT));
+function capSave(){ try{ localStorage.setItem(CAP_KEY,JSON.stringify(CAP)); }catch(e){} }
+
 var nEl2=document.getElementById("cnormal"),bEl=document.getElementById("cbase"),
     gEl=document.getElementById("cgames"),oEl=document.getElementById("cout"),
-    capBody=document.getElementById("captable");
+    capBody=document.getElementById("captable"),cStart=document.getElementById("cstart"),
+    cWeeks=document.getElementById("cweeks"),cMsg=document.getElementById("cmsg");
 function scaled(games){
   var normal=parseFloat(nEl2.value)||50, base=parseFloat(bEl.value)||30;
   return base*(games/normal);
 }
+function ymd(d){ return d.getFullYear()+"-"+("0"+(d.getMonth()+1)).slice(-2)+"-"+("0"+d.getDate()).slice(-2); }
+function parseYmd(s){ var p=s.split("-"); return new Date(+p[0],+p[1]-1,+p[2]); }
+function weekDates(i){
+  var a=parseYmd(CAP.start); a.setDate(a.getDate()+i*7); var b=new Date(a); b.setDate(b.getDate()+6);
+  var f=function(d){ return d.toLocaleDateString(undefined,{month:"short",day:"numeric"}); };
+  return f(a)+" – "+f(b);
+}
 function renderCap(){
   var normal=parseFloat(nEl2.value)||50;
   oEl.textContent=Math.round(scaled(parseFloat(gEl.value)||0));
-  capBody.innerHTML=WEEKS.map(function(wk,i){
+  cStart.value=CAP.start; cWeeks.value=CAP.weeks.length;
+  capBody.innerHTML=CAP.weeks.map(function(wk,i){
     var dev=Math.round((wk.g/normal-1)*100);
     var flag = dev<=-15 ? '<span class="pill gone">short</span>' : (dev>=15?'<span class="pill warn">heavy</span>':"");
     return '<tr>'+
-      '<td class="num name" style="font-size:16px">'+wk.w+'</td>'+
-      '<td class="num">'+wk.g+'</td>'+
+      '<td><input class="capin lbl" data-i="'+i+'" data-k="w" value="'+esc(wk.w)+'"></td>'+
+      '<td class="sub" style="white-space:nowrap">'+weekDates(i)+'</td>'+
+      '<td class="num"><input class="capin g" type="number" min="0" max="120" step="1" data-i="'+i+'" data-k="g" value="'+wk.g+'"></td>'+
       '<td class="num sub">'+(dev>0?"+":"")+dev+'%</td>'+
       '<td class="num sub">'+scaled(wk.g).toFixed(1)+'</td>'+
-      '<td class="num"><input class="capin" type="number" min="0" max="99" step="1" id="cap'+i+'" value="'+(wk.set===null?"":wk.set)+'"></td>'+
-      '<td class="sub">'+esc(wk.note)+' '+flag+'</td></tr>';
+      '<td class="num"><input class="capin" type="number" min="0" max="99" step="1" data-i="'+i+'" data-k="set" value="'+(wk.set===null?"":wk.set)+'"></td>'+
+      '<td><div style="display:flex;gap:8px;align-items:center"><input class="capin note" data-i="'+i+'" data-k="note" value="'+esc(wk.note)+'">'+flag+'</div></td></tr>';
   }).join("");
 }
+capBody.addEventListener("input",function(e){
+  var el=e.target.closest(".capin"); if(!el) return;
+  var wk=CAP.weeks[+el.dataset.i], k=el.dataset.k;
+  if(k==="g"){ wk.g=parseInt(el.value,10)||0; }
+  else if(k==="set"){ wk.set=el.value===""?null:(parseInt(el.value,10)||0); }
+  else { wk[k]=el.value; }
+  capSave();
+  if(k==="g"){ /* refresh the derived columns without losing focus */
+    var normal=parseFloat(nEl2.value)||50, row=el.closest("tr"), dev=Math.round((wk.g/normal-1)*100);
+    row.children[3].textContent=(dev>0?"+":"")+dev+"%"; row.children[4].textContent=scaled(wk.g).toFixed(1);
+  }
+});
+cStart.addEventListener("change",function(){ if(cStart.value){ CAP.start=cStart.value; capSave(); renderCap(); } });
+cWeeks.addEventListener("change",function(){
+  var n=Math.max(1,Math.min(30,parseInt(cWeeks.value,10)||CAP.weeks.length));
+  while(CAP.weeks.length<n) CAP.weeks.push({w:String(CAP.weeks.length+1),g:0,note:"",set:null});
+  CAP.weeks.length=n; capSave(); renderCap();
+});
+document.getElementById("creset").addEventListener("click",function(){
+  CAP=JSON.parse(JSON.stringify(CAP_DEFAULT)); capSave(); renderCap(); cMsg.textContent="Back to the 2025–26 table.";
+});
 [nEl2,bEl,gEl].forEach(function(el){el.addEventListener("input",renderCap);});
 renderCap();
+
+/* Count regular-season games per week from ESPN's public NBA schedule. */
+var ET=new Intl.DateTimeFormat("en-US",{timeZone:"America/New_York",year:"numeric",month:"2-digit",day:"2-digit"});
+function etDayNumber(iso){
+  var parts=ET.formatToParts(new Date(iso)), o={}; parts.forEach(function(p){o[p.type]=p.value;});
+  return Math.floor(Date.UTC(+o.year,+o.month-1,+o.day)/86400000);
+}
+document.getElementById("cfetch").addEventListener("click",function(){
+  var btn=this, start=parseYmd(CAP.start), startDay=Math.floor(Date.UTC(start.getFullYear(),start.getMonth(),start.getDate())/86400000);
+  var maxWeeks=30, chunks=[];
+  for(var c=0;c<maxWeeks;c+=4){
+    var a=new Date(start); a.setDate(a.getDate()+c*7); var b=new Date(a); b.setDate(b.getDate()+27);
+    chunks.push(ymd(a).replace(/-/g,"")+"-"+ymd(b).replace(/-/g,""));
+  }
+  btn.disabled=true; cMsg.style.color="var(--muted)"; cMsg.textContent="Counting…";
+  Promise.all(chunks.map(function(r){
+    return fetch("https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates="+r+"&limit=1000")
+      .then(function(res){ if(!res.ok) throw new Error("ESPN answered "+res.status); return res.json(); });
+  })).then(function(all){
+    var seen={}, counts=[], total=0;
+    all.forEach(function(d){ (d.events||[]).forEach(function(ev){
+      if(seen[ev.id]) return; seen[ev.id]=1;
+      if(!ev.season||ev.season.type!==2) return;               /* regular season only */
+      var wi=Math.floor((etDayNumber(ev.date)-startDay)/7); if(wi<0||wi>=maxWeeks) return;
+      counts[wi]=(counts[wi]||0)+1; total++;
+    }); });
+    var last=counts.length; while(last>0&&!counts[last-1]) last--;
+    if(!total){ throw new Error("No regular-season games found from that Monday — is the schedule out yet, and is the date right?"); }
+    var keepNotes=CAP.weeks;
+    CAP.weeks=[];
+    for(var i=0;i<last;i++){
+      var prev=keepNotes[i]||{};
+      CAP.weeks.push({w:prev.w||String(i+1),g:counts[i]||0,note:prev.note||"",set:prev.set===undefined?null:prev.set});
+    }
+    capSave(); renderCap(); btn.disabled=false;
+    cMsg.style.color="var(--green)"; cMsg.textContent="Counted "+total+" regular-season games across "+last+" weeks. Check the NBA Cup and All-Star weeks, then set the caps.";
+  }).catch(function(e){
+    btn.disabled=false; cMsg.style.color="var(--red)";
+    cMsg.textContent=(e&&e.message?e.message:"Couldn't reach the schedule.")+" You can still type the counts in by hand.";
+  });
+});
 
 /* ---------- accounts + polls ---------- */
 /* Supabase project URL + anon (public) key. Leave both empty for preview mode. */
