@@ -679,6 +679,7 @@ footer p + p{margin-top:11px}
 
   <!-- ================= HOME ================= -->
   <div class="view on" id="v-home">
+    <div id="home-notice"></div>
 
     <div class="onnow">
       <div><dt>Keeper deadline</dt><dd class="hot">Oct 19<small id="cd-keep">—</small></dd></div>
@@ -1790,6 +1791,9 @@ var Polls=(function(){
     $("polls-body").hidden=!member;
     $("commish-panel").hidden=!(member&&isCommish);
     $("polls-eyebrow").textContent= member ? "Signed in as "+nameFor(me.id,me.email) : (signed ? "Claim your team" : "Members only");
+    $("home-notice").innerHTML = (signed&&!profile)
+      ? '<div class="notice warn" style="margin:26px 0 -8px;display:flex;gap:14px;align-items:center;flex-wrap:wrap"><span style="flex:1"><b>You\'re signed in.</b> One more step — tell us which team is yours and you\'ll be able to vote.</span><button class="btn sm" data-go="polls">Claim your team</button></div>'
+      : "";
     if(signed&&!profile) renderClaim();
     if(member&&isCommish) renderCommish();
     if(!member){ renderList(); return; }
@@ -1906,7 +1910,7 @@ var Polls=(function(){
     $("signin-btn").disabled=true; m.style.color="var(--muted)"; m.textContent="Sending…";
     store.sendLink(em).then(function(r){
       $("signin-btn").disabled=false; m.style.color=r.ok?"var(--green)":"var(--red)"; m.textContent=r.msg;
-      if(r.signedIn) setMe(r.signedIn);
+      if(r.signedIn){ setMe(r.signedIn); go("home"); }
     }).catch(function(e){ $("signin-btn").disabled=false; m.style.color="var(--red)"; m.textContent=msgOf(e); });
   }
   $("signin-btn").addEventListener("click",sendLink);
@@ -1940,7 +1944,7 @@ var Polls=(function(){
     store.init().then(function(u){
       setMe(u);
       if(store.onChange) store.onChange(function(u2){ if(((u2&&u2.id)||null)!==((me&&me.id)||null)) setMe(u2); });
-      if(fromLink){ go("polls"); try{ history.replaceState(null,"",location.pathname); }catch(e){} }
+      if(fromLink){ go("home"); try{ history.replaceState(null,"",location.pathname); }catch(e){} }
     }).catch(fail);
   }
   function boot(){
