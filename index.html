@@ -563,6 +563,17 @@ td input.capin:focus-visible{outline:1px solid var(--amber);border-color:var(--a
 .previewbar{display:flex;gap:10px 16px;align-items:center;flex-wrap:wrap}
 .previewbar select{font-family:var(--disp);font-size:14px;font-weight:600;color:var(--ink);background:var(--surface);border:1px solid var(--line-2);border-radius:3px;padding:6px 9px}
 
+.modal{position:fixed;inset:0;z-index:90;background:rgba(34,25,14,.55);display:flex;align-items:center;justify-content:center;padding:20px}
+.modal[hidden]{display:none}
+.modal-card{position:relative;width:min(420px,100%);background:var(--surface);border:1px solid var(--line-2);border-radius:5px;box-shadow:0 24px 60px rgba(34,25,14,.35);padding:24px 24px 20px;display:flex;flex-direction:column;gap:14px}
+.modal-card h2{font-size:26px;font-weight:800;text-transform:uppercase;letter-spacing:.03em;margin-top:-6px}
+.modal-card .field input{font-family:var(--body);font-weight:500;font-size:16px;text-transform:none;letter-spacing:0}
+.modal-row{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-top:4px}
+.modal-x{position:absolute;top:10px;right:12px;background:none;border:0;font-size:24px;line-height:1;color:var(--dim);cursor:pointer}
+.modal-x:hover{color:var(--ink)}
+.modal-foot{font-size:14px;color:var(--muted);border-top:1px solid var(--line);padding-top:12px;margin-top:2px}
+#si-msg,#rp-msg{font-size:13.5px;min-height:1em;margin:0}
+#si-msg:empty,#rp-msg:empty{display:none}
 footer{margin-top:64px;padding-top:22px;border-top:1px solid var(--line);color:var(--dim);font-size:13.5px;max-width:76ch}
 footer p + p{margin-top:11px}
 
@@ -691,6 +702,31 @@ footer p + p{margin-top:11px}
     </div>
   </div>
 </header>
+
+<div class="modal" id="signin-modal" hidden>
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="si-title">
+    <button class="modal-x" id="si-close" aria-label="Close">×</button>
+    <span class="eyebrow">League For Kids That Read Good</span>
+    <h2 id="si-title">Sign in</h2>
+    <div class="field"><label for="si-email">Email</label><input id="si-email" type="email" autocomplete="email" inputmode="email"></div>
+    <div class="field"><label for="si-pass">Password</label><input id="si-pass" type="password" autocomplete="current-password"></div>
+    <div class="modal-row">
+      <button class="btn" id="si-go">Sign in</button>
+      <button class="back" id="si-forgot" style="margin:0;padding:0">Forgot password?</button>
+    </div>
+    <p id="si-msg"></p>
+    <p class="modal-foot">First time here? <button class="back" data-go="signup" style="margin:0;padding:0;color:var(--amber)">Claim your team →</button></p>
+  </div>
+</div>
+<div class="modal" id="reset-modal" hidden>
+  <div class="modal-card" role="dialog" aria-modal="true">
+    <span class="eyebrow">Password reset</span>
+    <h2>Choose a new password</h2>
+    <div class="field"><label for="rp-pass">New password</label><input id="rp-pass" type="password" autocomplete="new-password" placeholder="at least 8 characters"></div>
+    <div class="modal-row"><button class="btn" id="rp-go">Save password</button></div>
+    <p id="rp-msg"></p>
+  </div>
+</div>
 
 <div class="ticker">
   <div class="ticker-in">
@@ -973,52 +1009,14 @@ footer p + p{margin-top:11px}
       <div class="rulebar"></div>
       <div id="polls-notice"></div>
 
-      <div id="signin-panel">
-        <p class="lede">Any of the ten managers can put a question to the league. Sign in with any email you like — we send a one-tap link, no password to remember. First time in, you'll claim your team.</p>
-        <div class="calc signin" style="margin-top:18px">
-          <div class="calc-in">
-            <div class="row">
-              <div class="field"><label for="signin-email">Your email</label><input id="signin-email" type="email" autocomplete="email" placeholder="you@example.com" inputmode="email"></div>
-              <button class="btn" id="signin-btn">Send sign-in link</button>
-            </div>
-          </div>
-          <p id="signin-msg"></p>
+      <div id="polls-locked" class="calc signin" style="margin-top:18px">
+        <p style="padding:18px 20px 6px;font-size:15px;color:var(--muted)">Polls are for the ten managers. Sign in to vote, or claim your team if this is your first time here.</p>
+        <div class="calc-out" style="display:flex;gap:10px;flex-wrap:wrap;padding-top:8px">
+          <button class="btn" data-signin>Sign in</button>
+          <button class="btn quiet" data-go="signup">Claim your team</button>
         </div>
       </div>
-
-      <div id="claim-panel" hidden>
-        <p class="lede">You're signed in. Now tell us which team is yours and enter the league code Sean sent around. Each team can only be claimed once.</p>
-        <div class="calc signin" style="margin-top:18px;max-width:760px">
-          <div class="calc-in">
-            <div class="row">
-              <div class="field"><label for="claim-team">Your team</label><select id="claim-team"></select></div>
-              <div class="field" style="flex:0 1 180px"><label for="claim-code">League code</label><input id="claim-code" autocomplete="off" autocapitalize="characters" placeholder="e.g. KIDS26"></div>
-              <button class="btn" id="claim-btn">Claim team</button>
-            </div>
-          </div>
-          <p id="claim-msg"></p>
-        </div>
-        <p style="margin-top:14px;font-size:13.5px;color:var(--dim)">Signed in as <b id="claim-email"></b> · <button class="back" id="claim-signout" style="margin:0;padding:0">not you? sign out</button></p>
-      </div>
-
-      <div id="commish-panel" hidden>
-        <div class="ptools" style="margin-top:6px">
-          <button class="btn quiet sm" id="commish-toggle">Manage members</button>
-        </div>
-        <div class="calc" id="commish" hidden style="margin-bottom:22px">
-          <div class="calc-in">
-            <div class="field" style="flex:0 1 260px"><label for="code-input">League code (share it with the group)</label><input id="code-input" autocomplete="off" autocapitalize="characters"></div>
-            <div class="field" style="flex:0 0 auto;justify-content:flex-end"><button class="btn sm" id="code-save">Save code</button></div>
-            <span id="code-msg" style="align-self:flex-end;font-size:13px;color:var(--muted)"></span>
-          </div>
-          <div class="tablewrap" style="border:0;border-radius:0;box-shadow:none">
-            <table>
-              <thead><tr><th>Team</th><th>Manager</th><th>Claimed by</th><th></th></tr></thead>
-              <tbody id="commish-rows"></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
+      <div id="polls-noteam" hidden><div class="notice warn" style="margin-top:18px;display:flex;gap:14px;align-items:center;flex-wrap:wrap"><span style="flex:1">You're signed in but haven't claimed a team yet.</span><button class="btn sm" data-go="signup">Claim your team</button></div></div>
 
       <div id="polls-body" hidden>
         <div class="ptools">
@@ -1052,6 +1050,51 @@ footer p + p{margin-top:11px}
           </div>
         </div>
         <div class="polls" id="polls-open"></div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ================= SIGN UP / CLAIM ================= -->
+  <div class="view" id="v-signup">
+    <section>
+      <div class="sec-head"><h2>Claim Your Team</h2><span class="eyebrow cool">One manager per team</span></div>
+      <div class="rulebar"></div>
+      <p class="lede">First time here? Tell us which team is yours, enter the league code Sean sent around, and pick a username and password. Each team can only be claimed once — if yours already says "claimed" and it wasn't you, tell Sean.</p>
+      <div class="calc newpoll" style="margin-top:20px;max-width:760px">
+        <div class="calc-in">
+          <div class="field wide"><label for="su-email">Email</label><input id="su-email" type="email" autocomplete="email" inputmode="email" placeholder="you@example.com"></div>
+          <div class="field"><label for="su-team">Your team</label><select id="su-team"></select></div>
+          <div class="field"><label for="su-code">League code</label><input id="su-code" autocomplete="off" autocapitalize="characters" placeholder="from Sean"></div>
+          <div class="field" id="su-name-f"><label for="su-name">Username</label><input id="su-name" autocomplete="nickname" maxlength="24" placeholder="what the league sees"></div>
+          <div class="field" id="su-pass-f"><label for="su-pass">Password</label><input id="su-pass" type="password" autocomplete="new-password" placeholder="at least 8 characters"></div>
+        </div>
+        <div class="calc-out">
+          <button class="btn" id="su-go">Claim team</button>
+          <button class="btn quiet" data-signin id="su-have">I already have an account</button>
+          <span id="su-msg" style="font-size:13.5px;color:var(--red)"></span>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ================= MANAGER (commissioner only) ================= -->
+  <div class="view" id="v-manager">
+    <section>
+      <div class="sec-head"><h2>League Manager</h2><span class="eyebrow cool">Commissioner only</span></div>
+      <div class="rulebar"></div>
+      <p class="lede">Only you see this page. The league code is what managers type to claim their team; change it any time and the old one stops working. Release a claim if someone grabbed the wrong team or lost their login.</p>
+      <div class="calc" style="margin-top:20px">
+        <div class="calc-in">
+          <div class="field" style="flex:0 1 260px"><label for="code-input">League code (share it with the group)</label><input id="code-input" autocomplete="off" autocapitalize="characters"></div>
+          <div class="field" style="flex:0 0 auto;justify-content:flex-end"><button class="btn sm" id="code-save">Save code</button></div>
+          <span id="code-msg" style="align-self:flex-end;font-size:13px;color:var(--muted)"></span>
+        </div>
+        <div class="tablewrap" style="border:0;border-radius:0;box-shadow:none">
+          <table>
+            <thead><tr><th>Team</th><th>Manager</th><th>Claimed by</th><th>Username</th><th></th></tr></thead>
+            <tbody id="commish-rows"></tbody>
+          </table>
+        </div>
       </div>
     </section>
   </div>
@@ -1923,8 +1966,9 @@ var ARCHIVE={"2019":{"league":"Harry Giles Fan Club","yid":"48593","teams":[["FR
 })();
 
 /* ---------- accounts + polls ---------- */
-/* Supabase project URL + anon (public) key. Leave both empty for preview mode. */
+/* Supabase project URL + publishable key. Off the real site (previews, local files) a browser-only preview store is used instead. */
 var SB={url:"https://gtpvhvnshzyiczyxwpsv.supabase.co",anon:"sb_publishable__Y0fvTsbMqyQHPlw8ycQ-A_8OQzR0lg"};
+var LIVE_HOSTS=/(^|\.)crysterbaters\.(vercel\.app|com)$|^localhost$/;
 
 var Polls=(function(){
   var me=null, profile=null, profiles=[], polls=[], votes=[], tallies={}, claimed=[], store=null, loading=false, isCommish=false;
@@ -1935,7 +1979,7 @@ var Polls=(function(){
   function profFor(uid){ for(var i=0;i<profiles.length;i++){ if(profiles[i].user_id===uid) return profiles[i]; } return null; }
   function nameFor(uid,email){
     var pr=profFor(uid);
-    if(pr){ var t=byId(pr.team_id); if(t) return t.short; }
+    if(pr){ if(pr.display_name) return pr.display_name; var t=byId(pr.team_id); if(t) return t.short; }
     return email ? email.split("@")[0] : "Someone";
   }
   function fmtDate(iso){ return new Date(iso).toLocaleDateString(undefined,{month:"short",day:"numeric"}); }
@@ -1946,46 +1990,56 @@ var Polls=(function(){
     if(diff<48) return "closes in "+Math.round(diff)+" h";
     return "closes "+fmtDate(iso);
   }
-  var baseNotice="";
   function setNotice(html,cls){ $("polls-notice").innerHTML = html ? '<div class="notice '+(cls||"")+'">'+html+'</div>' : ""; }
-  function fail(e){ setNotice(esc((e&&e.message)||e||"Something went wrong."),"bad"); }
   function msgOf(e){ return (e&&e.message)||String(e); }
+  function fail(e){ setNotice(esc(msgOf(e)||"Something went wrong."),"bad"); }
+  function say(id,text,ok){ var m=$(id); m.style.color=ok?"var(--green)":"var(--red)"; m.textContent=text||""; }
 
   /* ----- preview store: this browser only, no server ----- */
   function PreviewStore(){
-    var KEY="cb-polls-preview-v2", db=null, CODE="KIDS26";
+    var KEY="cb-polls-preview-v3", db=null;
     try{ db=JSON.parse(localStorage.getItem(KEY)||"null"); }catch(e){}
-    if(!db) db={polls:[],votes:[],profiles:[],me:null,code:CODE};
+    if(!db) db={polls:[],votes:[],profiles:[],users:[],me:null,code:"KIDS26"};
     function save(){ try{ localStorage.setItem(KEY,JSON.stringify(db)); }catch(e){} }
     function findPoll(id){ return db.polls.filter(function(p){return p.id===id;})[0]; }
     function myProf(){ return db.me ? db.profiles.filter(function(p){return p.user_id===db.me.id;})[0]||null : null; }
     function commish(){ var p=myProf(); return !!p && p.team_id==="jalenba"; }
+    function uid(email){ return "u-"+email.toLowerCase().replace(/[^a-z0-9]/g,""); }
     return {
       preview:true,
       init:function(){ return Promise.resolve(db.me); },
-      sendLink:function(email){
-        db.me={id:"u-"+email.toLowerCase().replace(/[^a-z0-9]/g,""),email:email}; save();
-        return Promise.resolve({ok:true,msg:"Preview: you're signed in straight away (no email is sent until the database is connected).",signedIn:db.me});
+      checkCode:function(code){ return Promise.resolve((code||"").trim().toUpperCase()===db.code.toUpperCase()); },
+      signUp:function(email,password){
+        if(db.users.some(function(u){return u.email===email.toLowerCase();})) return Promise.reject(new Error("That email already has an account — sign in instead."));
+        db.users.push({email:email.toLowerCase(),password:password}); db.me={id:uid(email),email:email}; save(); return Promise.resolve(db.me);
       },
+      signIn:function(email,password){
+        var u=db.users.filter(function(x){return x.email===email.toLowerCase();})[0];
+        if(!u||u.password!==password) return Promise.reject(new Error("Wrong email or password."));
+        db.me={id:uid(email),email:email}; save(); return Promise.resolve(db.me);
+      },
+      resetPassword:function(){ return Promise.resolve({msg:"Preview mode — no email is sent."}); },
+      setPassword:function(){ return Promise.resolve(); },
       signOut:function(){ db.me=null; save(); return Promise.resolve(); },
       session:function(){
         var p=myProf();
         return Promise.resolve({profile:p, claimed:db.profiles.map(function(x){return x.team_id;}), commissioner:commish(), profiles:p?db.profiles.slice():[]});
       },
-      claimTeam:function(team_id,code){
+      claimedList:function(){ return Promise.resolve(db.profiles.map(function(x){return x.team_id;})); },
+      claimTeam:function(team_id,code,name){
         if((code||"").trim().toUpperCase()!==db.code.toUpperCase()) return Promise.reject(new Error("That league code isn't right."));
         if(myProf()) return Promise.reject(new Error("You already have a team."));
         if(db.profiles.some(function(p){return p.team_id===team_id;})) return Promise.reject(new Error("That team has already been claimed. Ask Sean if it's yours."));
-        db.profiles.push({user_id:db.me.id,email:db.me.email,team_id:team_id,created_at:new Date().toISOString()}); save(); return Promise.resolve();
+        db.profiles.push({user_id:db.me.id,email:db.me.email,team_id:team_id,display_name:name||null,created_at:new Date().toISOString()}); save(); return Promise.resolve();
       },
       releaseTeam:function(team_id){ db.profiles=db.profiles.filter(function(p){return p.team_id!==team_id;}); save(); return Promise.resolve(); },
       getCode:function(){ return Promise.resolve(db.code); },
       setCode:function(c){ db.code=c; save(); return Promise.resolve(); },
       load:function(){
-        var uid=db.me&&db.me.id;
+        var u=db.me&&db.me.id;
         var vis=db.votes.filter(function(v){
           var p=findPoll(v.poll_id); if(!p) return false;
-          return v.user_id===uid || p.visibility==="named" || (p.visibility==="anon_until_close" && !isOpen(p));
+          return v.user_id===u || p.visibility==="named" || (p.visibility==="anon_until_close" && !isOpen(p));
         });
         var tl={};
         db.votes.forEach(function(v){ tl[v.poll_id]=tl[v.poll_id]||{}; tl[v.poll_id][v.option_index]=(tl[v.poll_id][v.option_index]||0)+1; });
@@ -1995,10 +2049,10 @@ var Polls=(function(){
         p.id="p"+Date.now(); p.created_by=db.me.id; p.created_by_email=db.me.email;
         p.created_at=new Date().toISOString(); p.closed=false; db.polls.unshift(p); save(); return Promise.resolve();
       },
-      vote:function(pid,idx,uid){
-        var ex=db.votes.filter(function(v){return v.poll_id===pid&&v.user_id===uid;})[0];
+      vote:function(pid,idx,u){
+        var ex=db.votes.filter(function(v){return v.poll_id===pid&&v.user_id===u;})[0];
         if(ex) ex.option_index=idx;
-        else db.votes.push({poll_id:pid,user_id:uid,voter_email:db.me.email,option_index:idx,created_at:new Date().toISOString()});
+        else db.votes.push({poll_id:pid,user_id:u,voter_email:db.me.email,option_index:idx,created_at:new Date().toISOString()});
         save(); return Promise.resolve();
       },
       closePoll:function(pid){ var p=findPoll(pid); if(p) p.closed=true; save(); return Promise.resolve(); },
@@ -2013,16 +2067,33 @@ var Polls=(function(){
   function SupaStore(client){
     function chk(r){ if(r.error) throw r.error; return r; }
     function user(s){ return s ? {id:s.user.id,email:s.user.email} : null; }
+    function friendly(e){
+      var m=(e&&e.message)||"";
+      if(/invalid login credentials/i.test(m)) return new Error("Wrong email or password.");
+      if(/already registered/i.test(m)) return new Error("That email already has an account — sign in instead.");
+      if(/password should be/i.test(m)) return new Error("Password needs to be at least 8 characters.");
+      if(/rate limit/i.test(m)) return new Error("Too many attempts for now — try again in a little while.");
+      return e;
+    }
     return {
       preview:false,
       init:function(){ return client.auth.getSession().then(function(r){ return user(r.data.session); }); },
-      onChange:function(cb){ client.auth.onAuthStateChange(function(ev,s){ cb(user(s)); }); },
-      sendLink:function(email){
-        return client.auth.signInWithOtp({email:email,options:{emailRedirectTo:location.origin+location.pathname}}).then(function(r){
-          if(r.error) return {ok:false,msg:r.error.message||"Couldn't send the link."};
-          return {ok:true,msg:"Check your inbox — the link signs you in on this device."};
+      onChange:function(cb){ client.auth.onAuthStateChange(function(ev,s){ cb(user(s),ev); }); },
+      checkCode:function(code){ return client.rpc("check_invite_code",{p_code:code}).then(function(r){ chk(r); return !!r.data; }); },
+      signUp:function(email,password,name){
+        return client.auth.signUp({email:email,password:password,options:{data:{display_name:name}}}).then(function(r){
+          if(r.error) throw friendly(r.error);
+          if(!r.data.session) throw new Error("Account created — check your email to confirm it, then sign in and claim your team.");
+          return user(r.data.session);
         });
       },
+      signIn:function(email,password){
+        return client.auth.signInWithPassword({email:email,password:password}).then(function(r){ if(r.error) throw friendly(r.error); return user(r.data.session); });
+      },
+      resetPassword:function(email){
+        return client.auth.resetPasswordForEmail(email,{redirectTo:location.origin+location.pathname}).then(function(r){ if(r.error) throw friendly(r.error); return {msg:"Check your inbox for a reset link."}; });
+      },
+      setPassword:function(pw){ return client.auth.updateUser({password:pw}).then(function(r){ if(r.error) throw friendly(r.error); }); },
       signOut:function(){ return client.auth.signOut(); },
       session:function(){
         return Promise.all([
@@ -2036,7 +2107,8 @@ var Polls=(function(){
           return {profile:mine, claimed:(rs[1].data||[]).map(function(r){return r.team_id;}), commissioner:!!rs[2].data, profiles:all};
         });
       },
-      claimTeam:function(team_id,code){ return client.rpc("claim_team",{p_team_id:team_id,p_code:code}).then(chk); },
+      claimedList:function(){ return client.from("claimed_teams").select("*").then(function(r){ return (r.data||[]).map(function(x){return x.team_id;}); }); },
+      claimTeam:function(team_id,code,name){ return client.rpc("claim_team",{p_team_id:team_id,p_code:code,p_display_name:name||null}).then(chk); },
       releaseTeam:function(team_id){ return client.rpc("release_team",{p_team_id:team_id}).then(chk); },
       getCode:function(){ return client.from("league_settings").select("invite_code").eq("id",1).maybeSingle().then(function(r){ chk(r); return r.data?r.data.invite_code:""; }); },
       setCode:function(c){ return client.rpc("set_invite_code",{p_code:c}).then(chk); },
@@ -2053,29 +2125,41 @@ var Polls=(function(){
         });
       },
       createPoll:function(p){ return client.from("polls").insert({question:p.question,options:p.options,visibility:p.visibility,closes_at:p.closes_at}).then(chk); },
-      vote:function(pid,idx,uid){ return client.from("votes").upsert({poll_id:pid,user_id:uid,option_index:idx},{onConflict:"poll_id,user_id"}).then(chk); },
+      vote:function(pid,idx,u){ return client.from("votes").upsert({poll_id:pid,user_id:u,option_index:idx},{onConflict:"poll_id,user_id"}).then(chk); },
       closePoll:function(pid){ return client.from("polls").update({closed:true}).eq("id",pid).then(chk); },
       deletePoll:function(pid){ return client.from("polls").delete().eq("id",pid).then(chk); }
     };
   }
 
-  /* ----- rendering ----- */
+  /* ----- header, nav, modal ----- */
   function renderAcct(){
     var el=$("acct");
     if(me){
       var t=profile?byId(profile.team_id):null;
-      el.innerHTML='<div class="who"><b>'+esc(t?t.mgr:me.email.split("@")[0])+'</b><span>'+esc(t?t.name:"Claim your team")+'</span></div>'+
+      var who=profile&&profile.display_name ? profile.display_name : (t?t.mgr:me.email.split("@")[0]);
+      el.innerHTML='<div class="who"><b>'+esc(who)+'</b><span>'+esc(t?t.name:"Claim your team")+'</span></div>'+
         '<button class="btn quiet sm" id="signout-btn">Sign out</button>';
       $("signout-btn").addEventListener("click",signOut);
     } else {
-      el.innerHTML='<button class="btn ghost sm" data-go="polls">Sign in</button>';
+      el.innerHTML='<button class="btn ghost sm" data-signin>Sign in</button>';
     }
+    var nav=document.getElementById("nav"), mb=document.getElementById("nav-manager");
+    if(isCommish&&!mb){
+      mb=document.createElement("button"); mb.id="nav-manager"; mb.dataset.go="manager"; mb.textContent="Manager";
+      nav.insertBefore(mb, nav.querySelector('[data-go="history"]'));
+    } else if(!isCommish&&mb){ mb.remove(); }
   }
-  function signOut(){ store.signOut().then(function(){ setMe(null); }).catch(fail); }
+  function signOut(){ store.signOut().then(function(){ setMe(null); go("home"); }).catch(fail); }
+  function openSignin(){ $("signin-modal").hidden=false; say("si-msg",""); setTimeout(function(){ $("si-email").focus(); },30); }
+  function closeSignin(){ $("signin-modal").hidden=true; }
 
   function setMe(u){
     me=u; profile=null; profiles=[]; claimed=[]; isCommish=false; polls=[]; votes=[]; tallies={};
-    if(!me){ $("commish").hidden=true; $("newpoll").hidden=true; renderAcct(); refresh(); return; }
+    if(!me){
+      $("newpoll").hidden=true; renderAcct(); refresh();
+      store.claimedList().then(function(c){ claimed=c; renderSignup(); }).catch(function(){});
+      return;
+    }
     store.session().then(function(s){
       profile=s.profile; profiles=s.profiles; claimed=s.claimed; isCommish=s.commissioner;
       renderAcct(); refresh();
@@ -2085,16 +2169,15 @@ var Polls=(function(){
   function refresh(){
     if(!store) return;
     var signed=!!me, member=signed&&!!profile;
-    $("signin-panel").hidden=signed;
-    $("claim-panel").hidden=!(signed&&!profile);
+    $("polls-locked").hidden=signed;
+    $("polls-noteam").hidden=!(signed&&!profile);
     $("polls-body").hidden=!member;
-    $("commish-panel").hidden=!(member&&isCommish);
-    $("polls-eyebrow").textContent= member ? "Signed in as "+nameFor(me.id,me.email) : (signed ? "Claim your team" : "Members only");
+    $("polls-eyebrow").textContent= member ? "Signed in as "+nameFor(me.id,me.email) : "Members only";
     $("home-notice").innerHTML = (signed&&!profile)
-      ? '<div class="notice warn" style="margin:26px 0 -8px;display:flex;gap:14px;align-items:center;flex-wrap:wrap"><span style="flex:1"><b>You\'re signed in.</b> One more step — tell us which team is yours and you\'ll be able to vote.</span><button class="btn sm" data-go="polls">Claim your team</button></div>'
+      ? '<div class="notice warn" style="margin:26px 0 -8px;display:flex;gap:14px;align-items:center;flex-wrap:wrap"><span style="flex:1"><b>You\'re signed in.</b> One more step — tell us which team is yours and you\'ll be able to vote.</span><button class="btn sm" data-go="signup">Claim your team</button></div>'
       : "";
-    if(signed&&!profile) renderClaim();
-    if(member&&isCommish) renderCommish();
+    renderSignup();
+    if(isCommish) renderCommish();
     if(!member){ renderList(); return; }
     if(loading) return;
     loading=true;
@@ -2102,14 +2185,20 @@ var Polls=(function(){
       .catch(function(e){ loading=false; fail(e); });
   }
 
-  function renderClaim(){
-    $("claim-email").textContent=me.email;
-    var sel=$("claim-team"), cur=sel.value;
+  function renderSignup(){
+    var sel=$("su-team"), cur=sel.value;
     sel.innerHTML='<option value="">Pick your team…</option>'+T.map(function(t){
       var taken=claimed.indexOf(t.id)>=0;
       return '<option value="'+t.id+'"'+(taken?' disabled':'')+'>'+esc(t.name)+' — '+esc(t.mgr)+(taken?' (claimed)':'')+'</option>';
     }).join("");
     if(cur) sel.value=cur;
+    /* already signed in: only the claim is missing */
+    var signed=!!me;
+    $("su-email").value = signed ? me.email : $("su-email").value;
+    $("su-email").disabled=signed;
+    $("su-pass-f").hidden=signed;
+    $("su-have").hidden=signed;
+    $("su-go").textContent = signed ? "Claim team" : "Create account & claim team";
   }
 
   function renderCommish(){
@@ -2117,8 +2206,10 @@ var Polls=(function(){
       var pr=profiles.filter(function(p){return p.team_id===t.id;})[0];
       return '<tr><td><b>'+esc(t.name)+'</b></td><td class="mgr">'+esc(t.mgr)+'</td>'+
         '<td>'+(pr?esc(pr.email):'<span class="pill q">Unclaimed</span>')+'</td>'+
+        '<td class="sub">'+(pr&&pr.display_name?esc(pr.display_name):'—')+'</td>'+
         '<td class="num">'+(pr?'<button class="btn quiet sm" data-release="'+t.id+'">Release</button>':'')+'</td></tr>';
     }).join("");
+    store.getCode().then(function(code){ if(document.activeElement!==$("code-input")) $("code-input").value=code||""; }).catch(function(){});
   }
 
   function renderList(){
@@ -2173,8 +2264,9 @@ var Polls=(function(){
   }
 
   /* ----- interactions ----- */
-  function act(pr){ pr.then(function(){ $("polls-notice").innerHTML=baseNotice; refresh(); }).catch(fail); }
+  function act(pr){ pr.then(function(){ setNotice(""); refresh(); }).catch(fail); }
   document.addEventListener("click",function(e){
+    if(e.target.closest("[data-signin]")){ e.preventDefault(); openSignin(); return; }
     var v=e.target.closest("[data-vote]");
     if(v&&me){ var art=v.closest("[data-poll]"); act(store.vote(art.dataset.poll,+v.dataset.vote,me.id)); return; }
     var c=e.target.closest("[data-close]");
@@ -2182,9 +2274,60 @@ var Polls=(function(){
     var d=e.target.closest("[data-del]");
     if(d){ if(d.dataset.armed){ act(store.deletePoll(d.dataset.del)); } else { d.dataset.armed="1"; d.textContent="Really delete?"; } return; }
     var r=e.target.closest("[data-release]");
-    if(r){ if(r.dataset.armed){ store.releaseTeam(r.dataset.release).then(function(){ setMe(me); }).catch(fail); } else { r.dataset.armed="1"; r.textContent="Really release?"; } }
+    if(r){ if(r.dataset.armed){ store.releaseTeam(r.dataset.release).then(function(){ setMe(me); }).catch(fail); } else { r.dataset.armed="1"; r.textContent="Really release?"; } return; }
+    if(e.target===$("signin-modal")) closeSignin();
+  });
+  document.addEventListener("keydown",function(k){ if(k.key==="Escape"&&!$("signin-modal").hidden) closeSignin(); });
+  $("si-close").addEventListener("click",closeSignin);
+  document.addEventListener("click",function(e){ if(e.target.closest("#signin-modal [data-go]")) closeSignin(); });
+
+  /* sign in */
+  function doSignin(){
+    var em=$("si-email").value.trim(), pw=$("si-pass").value;
+    if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)){ say("si-msg","That doesn't look like an email address."); return; }
+    if(!pw){ say("si-msg","Enter your password."); return; }
+    $("si-go").disabled=true; say("si-msg","Signing in…",true);
+    store.signIn(em,pw).then(function(u){ $("si-go").disabled=false; $("si-pass").value=""; closeSignin(); setMe(u); go("home"); })
+      .catch(function(e){ $("si-go").disabled=false; say("si-msg",msgOf(e)); });
+  }
+  $("si-go").addEventListener("click",doSignin);
+  $("si-pass").addEventListener("keydown",function(k){ if(k.key==="Enter") doSignin(); });
+  $("si-email").addEventListener("keydown",function(k){ if(k.key==="Enter") $("si-pass").focus(); });
+  $("si-forgot").addEventListener("click",function(){
+    var em=$("si-email").value.trim();
+    if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)){ say("si-msg","Type your email first, then tap Forgot password."); return; }
+    store.resetPassword(em).then(function(r){ say("si-msg",r.msg,true); }).catch(function(e){ say("si-msg",msgOf(e)); });
+  });
+  $("rp-go").addEventListener("click",function(){
+    var pw=$("rp-pass").value;
+    if(pw.length<8){ say("rp-msg","At least 8 characters."); return; }
+    store.setPassword(pw).then(function(){ $("reset-modal").hidden=true; $("rp-pass").value=""; setNotice("Password updated.","warn"); go("home"); }).catch(function(e){ say("rp-msg",msgOf(e)); });
   });
 
+  /* sign up + claim */
+  $("su-go").addEventListener("click",function(){
+    var em=$("su-email").value.trim(), team=$("su-team").value, code=$("su-code").value.trim(), name=$("su-name").value.trim(), pw=$("su-pass").value;
+    var btn=$("su-go");
+    say("su-msg","");
+    if(!me&&!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)){ say("su-msg","That doesn't look like an email address."); return; }
+    if(!team){ say("su-msg","Pick your team."); return; }
+    if(!code){ say("su-msg","Enter the league code."); return; }
+    if(!name){ say("su-msg","Pick a username."); return; }
+    if(!me&&pw.length<8){ say("su-msg","Password needs at least 8 characters."); return; }
+    btn.disabled=true;
+    store.checkCode(code).then(function(ok){
+      if(!ok) throw new Error("That league code isn't right.");
+      return me ? me : store.signUp(em,pw,name);
+    }).then(function(u){
+      me=u;
+      return store.claimTeam(team,code,name);
+    }).then(function(){
+      btn.disabled=false; $("su-code").value=""; $("su-pass").value="";
+      setMe(me); go("home");
+    }).catch(function(e){ btn.disabled=false; say("su-msg",msgOf(e)); if(me&&!profile) renderAcct(); });
+  });
+
+  /* new poll */
   $("newpoll-btn").addEventListener("click",function(){
     var f=$("newpoll"); f.hidden=!f.hidden; if(!f.hidden) $("np-q").focus();
   });
@@ -2203,51 +2346,34 @@ var Polls=(function(){
     }).catch(function(e){ $("np-save").disabled=false; msg.textContent=msgOf(e); });
   });
 
-  function sendLink(){
-    var em=$("signin-email").value.trim(), m=$("signin-msg");
-    if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)){ m.style.color="var(--red)"; m.textContent="That doesn't look like an email address."; return; }
-    $("signin-btn").disabled=true; m.style.color="var(--muted)"; m.textContent="Sending…";
-    store.sendLink(em).then(function(r){
-      $("signin-btn").disabled=false; m.style.color=r.ok?"var(--green)":"var(--red)"; m.textContent=r.msg;
-      if(r.signedIn){ setMe(r.signedIn); go("home"); }
-    }).catch(function(e){ $("signin-btn").disabled=false; m.style.color="var(--red)"; m.textContent=msgOf(e); });
-  }
-  $("signin-btn").addEventListener("click",sendLink);
-  $("signin-email").addEventListener("keydown",function(k){ if(k.key==="Enter") sendLink(); });
-
-  $("claim-btn").addEventListener("click",function(){
-    var team=$("claim-team").value, code=$("claim-code").value.trim(), m=$("claim-msg");
-    m.style.color="var(--red)";
-    if(!team){ m.textContent="Pick your team first."; return; }
-    if(!code){ m.textContent="Enter the league code."; return; }
-    $("claim-btn").disabled=true; m.style.color="var(--muted)"; m.textContent="Claiming…";
-    store.claimTeam(team,code).then(function(){ $("claim-btn").disabled=false; m.textContent=""; $("claim-code").value=""; setMe(me); })
-      .catch(function(e){ $("claim-btn").disabled=false; m.style.color="var(--red)"; m.textContent=msgOf(e); });
-  });
-  $("claim-code").addEventListener("keydown",function(k){ if(k.key==="Enter") $("claim-btn").click(); });
-  $("claim-signout").addEventListener("click",signOut);
-
-  $("commish-toggle").addEventListener("click",function(){
-    var c=$("commish"); c.hidden=!c.hidden;
-    if(!c.hidden){ store.getCode().then(function(code){ $("code-input").value=code||""; }).catch(fail); }
-  });
+  /* manager page */
   $("code-save").addEventListener("click",function(){
-    var c=$("code-input").value.trim(), m=$("code-msg");
-    if(c.length<4){ m.style.color="var(--red)"; m.textContent="Make it at least four characters."; return; }
-    store.setCode(c).then(function(){ m.style.color="var(--green)"; m.textContent="Saved. Send it to the group."; }).catch(function(e){ m.style.color="var(--red)"; m.textContent=msgOf(e); });
+    var c=$("code-input").value.trim();
+    if(c.length<4){ say("code-msg","Make it at least four characters."); return; }
+    store.setCode(c).then(function(){ say("code-msg","Saved. Send it to the group.",true); }).catch(function(e){ say("code-msg",msgOf(e)); });
   });
+
+  function onView(v){
+    if(v==="polls"||v==="pollhist") refresh();
+    if(v==="signup") renderSignup();
+    if(v==="manager"){ if(!isCommish){ go("home"); return; } renderCommish(); }
+  }
 
   /* ----- boot ----- */
   function start(){
-    var fromLink=/access_token=|type=magiclink/.test(location.hash);
+    var recovery=/type=recovery/.test(location.hash);
     store.init().then(function(u){
       setMe(u);
-      if(store.onChange) store.onChange(function(u2){ if(((u2&&u2.id)||null)!==((me&&me.id)||null)) setMe(u2); });
-      if(fromLink){ go("home"); try{ history.replaceState(null,"",location.pathname); }catch(e){} }
+      if(store.onChange) store.onChange(function(u2,ev){
+        if(ev==="PASSWORD_RECOVERY"){ $("reset-modal").hidden=false; return; }
+        if(((u2&&u2.id)||null)!==((me&&me.id)||null)) setMe(u2);
+      });
+      if(recovery) $("reset-modal").hidden=false;
+      if(/access_token=|type=/.test(location.hash)){ try{ history.replaceState(null,"",location.pathname); }catch(e){} }
     }).catch(fail);
   }
   function boot(){
-    if(SB.url&&SB.anon){
+    if(SB.url&&SB.anon&&LIVE_HOSTS.test(location.hostname)){
       var s=document.createElement("script");
       s.src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.js";
       s.onload=function(){ store=SupaStore(window.supabase.createClient(SB.url,SB.anon)); start(); };
@@ -2259,16 +2385,16 @@ var Polls=(function(){
     }
   }
   boot();
-  return {refresh:refresh};
+  return {refresh:refresh,onView:onView};
 })();
 window.Polls=Polls;
 
 /* ---------- routing ---------- */
-var views={home:"v-home",teams:"v-teams",team:"v-team",draft:"v-draft",cap:"v-cap",keepers:"v-keepers",polls:"v-polls",pollhist:"v-pollhist",history:"v-history",rules:"v-rules"};
+var views={home:"v-home",teams:"v-teams",team:"v-team",draft:"v-draft",cap:"v-cap",keepers:"v-keepers",polls:"v-polls",pollhist:"v-pollhist",signup:"v-signup",manager:"v-manager",history:"v-history",rules:"v-rules"};
 function go(v){
   Object.keys(views).forEach(function(k){document.getElementById(views[k]).classList.toggle("on",k===v);});
   var navKey=(v==="team")?"teams":(v==="pollhist"?"polls":v);
-  if(v==="polls"||v==="pollhist"){ if(window.Polls) Polls.refresh(); }
+  if(window.Polls) Polls.onView(v);
   Array.prototype.forEach.call(document.querySelectorAll("#nav button"),function(b){
     if(b.dataset.go===navKey){b.setAttribute("aria-current","page");}else{b.removeAttribute("aria-current");}
   });

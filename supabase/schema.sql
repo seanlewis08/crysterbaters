@@ -2,10 +2,12 @@
 -- Run this once in the Supabase dashboard: SQL Editor → New query → paste → Run.
 -- Safe to re-run: every statement is "if not exists" or "create or replace".
 --
--- How membership works: anyone can request a sign-in link, but they can't
--- see or do anything until they claim one of the ten teams with the league
--- code. Each team can be claimed once. The commissioner can release a claim
--- and change the code from the site.
+-- How membership works: managers sign up with email + password on the
+-- site's Claim Your Team page, which checks the league code first, creates
+-- the account, then claims one of the ten teams. Each team can be claimed
+-- once. The commissioner can release a claim and change the code from the
+-- site's Manager page. Turn OFF "Confirm email" under Authentication →
+-- Sign In / Providers → Email so sign-up needs no email at all.
 
 create extension if not exists pgcrypto;
 drop trigger if exists only_members_may_join on auth.users;  -- from an earlier draft
@@ -26,12 +28,14 @@ on conflict (id) do nothing;   -- keeps whatever code Sean has set since
 -- 2. Profiles: one signed-in user ↔ one team.
 -- ----------------------------------------------------------------------
 create table if not exists public.profiles (
-  user_id    uuid primary key references auth.users (id) on delete cascade,
-  email      text not null,
-  team_id    text not null unique check (team_id in
-               ('knuepp','claxton','rollins','george','rucker','ant','ysga','freaky','giannis','jalenba')),
-  created_at timestamptz not null default now()
+  user_id      uuid primary key references auth.users (id) on delete cascade,
+  email        text not null,
+  team_id      text not null unique check (team_id in
+                 ('knuepp','claxton','rollins','george','rucker','ant','ysga','freaky','giannis','jalenba')),
+  display_name text,
+  created_at   timestamptz not null default now()
 );
+alter table public.profiles add column if not exists display_name text;
 
 -- Helpers. security definer so policies can call them without recursion.
 create or replace function public.is_member()
@@ -54,7 +58,15 @@ create or replace view public.claimed_teams
 with (security_invoker = false) as
   select team_id from public.profiles;
 
-create or replace function public.claim_team(p_team_id text, p_code text)
+-- The sign-up page checks the code before it creates an account, so a
+-- wrong code never leaves a stray login behind. Yes/no only.
+create or replace function public.check_invite_code(p_code text)
+returns boolean language sql stable security definer set search_path = public as $$
+  select upper(trim(p_code)) = upper(trim(s.invite_code)) from public.league_settings s where s.id = 1;
+$$;
+
+drop function if exists public.claim_team(text, text);
+create or replace function public.claim_team(p_team_id text, p_code text, p_display_name text default null)
 returns void language plpgsql security definer set search_path = public as $$
 declare v_code text;
 begin
@@ -69,8 +81,8 @@ begin
   if exists (select 1 from public.profiles where team_id = p_team_id) then
     raise exception 'That team has already been claimed. Ask Sean if it''s yours.';
   end if;
-  insert into public.profiles (user_id, email, team_id)
-    values (auth.uid(), coalesce(auth.jwt() ->> 'email', ''), p_team_id);
+  insert into public.profiles (user_id, email, team_id, display_name)
+    values (auth.uid(), coalesce(auth.jwt() ->> 'email', ''), p_team_id, nullif(trim(coalesce(p_display_name, '')), ''));
 end $$;
 
 create or replace function public.release_team(p_team_id text)
@@ -204,8 +216,10 @@ create policy votes_change on public.votes
 
 grant usage on schema public to authenticated;
 grant select on public.league_settings, public.profiles, public.claimed_teams, public.poll_tallies to authenticated;
+grant select on public.claimed_teams to anon;   -- team ids only, so the sign-up page can grey out taken teams
 grant select, insert, update, delete on public.polls to authenticated;
 grant select, insert, update on public.votes to authenticated;
-grant execute on function public.is_member(), public.is_commissioner(), public.claim_team(text, text),
+grant execute on function public.is_member(), public.is_commissioner(), public.claim_team(text, text, text),
   public.release_team(text), public.set_invite_code(text) to authenticated;
-revoke all on public.league_settings, public.profiles, public.claimed_teams, public.polls, public.votes, public.poll_tallies from anon;
+grant execute on function public.check_invite_code(text) to anon, authenticated;
+revoke all on public.league_settings, public.profiles, public.polls, public.votes, public.poll_tallies from anon;

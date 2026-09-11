@@ -24,9 +24,9 @@ Vercel is connected to this repository. Pushing to `main` deploys automatically.
 
 ## Logins and polls
 
-Members sign in with a magic link sent to their email (no passwords). The first time in, they pick their team from the ten and enter the league code the commissioner shares; each team can be claimed once, and the commissioner can release a claim or change the code from the site. Members can post polls, vote, and read the poll history. The poll's creator picks whether votes are shown with names, kept secret until the poll closes, or kept secret for good.
+Managers create an account on the site's **Claim Your Team** page: email, team, the league code the commissioner shares, a username and a password. The code is checked before the account is created and each team can be claimed once. Signing in is a small popup (email + password, with a forgot-password link). The commissioner — recognised by the email in `league_settings` — gets a **Manager** page nobody else sees, with the league code and the ten teams' claims (release a claim if someone picked wrong). Members can post polls, vote, and read the poll history; the poll's creator picks whether votes are shown with names, kept secret until the poll closes, or kept secret for good.
 
-The backend is a free Supabase project: `supabase/schema.sql` creates the tables, the claim/release functions, and the row-level security rules (the visibility rules are enforced in the database, not just on the page). To switch it on, set `SB.url` and `SB.anon` near the bottom of `index.html` to the project's URL and anon (public) key. With both empty the Polls page runs in a preview mode that lives only in the visitor's browser.
+The backend is a free Supabase project: `supabase/schema.sql` creates the tables, the claim/release functions, and the row-level security rules (the visibility rules are enforced in the database, not just on the page). The project URL and publishable key live in `SB` near the bottom of `index.html`; off the real hostnames the Polls page runs in a browser-only preview mode. In Supabase, turn off "Confirm email" (Authentication → Sign In / Providers → Email) so sign-up needs no email.
 
 ## Still to come
 
