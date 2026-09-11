@@ -8,7 +8,7 @@ Yahoo league ID `33689`. Site is currently a single static page; it becomes a fu
 
 `index.html` — the whole site. No build step, no dependencies. Vercel serves it as-is.
 
-Pages: standings, teams and their locked rosters, the pre-draft board, the weekly games-cap calculator, the keeper calculator, league history, and the rules.
+Pages: standings, teams and their locked rosters, the pre-draft board (with pick trades), the weekly games-cap calculator, the keeper calculator, league history with a season archive (Yahoo standings and full draft boards since 2019), polls, and the rules.
 
 ## Deploying
 

@@ -425,6 +425,29 @@ output.led{
 .oslot label{font-family:var(--mono);font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:var(--amber)}
 .oslot select{font-family:var(--disp);font-size:15px;font-weight:600;color:var(--ink);background:var(--surface);border:1px solid var(--line-2);border-radius:3px;padding:8px 9px;width:100%}
 .oslot select:focus-visible{outline:1px solid var(--amber);border-color:var(--amber)}
+.tradebar{display:flex;flex-wrap:wrap;gap:10px 12px;align-items:center;padding:14px 20px;background:var(--surface);border-bottom:1px solid var(--line)}
+.tradebar label{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);display:flex;align-items:center;gap:8px}
+.tradebar select{font-family:var(--disp);font-size:14px;font-weight:600;color:var(--ink);background:var(--surface);border:1px solid var(--line-2);border-radius:3px;padding:7px 9px}
+.tradebar .arrow{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.tradelist{display:flex;flex-wrap:wrap;gap:8px;padding:0 20px 14px;background:var(--surface);border-bottom:1px solid var(--line)}
+.tradelist:empty{display:none}
+.trade{display:inline-flex;align-items:center;gap:9px;border:1px solid var(--amber-dim);background:var(--amber-glow);border-radius:3px;padding:6px 10px;font-family:var(--mono);font-size:11.5px;letter-spacing:.05em}
+.trade b{color:var(--amber);font-weight:600}
+.trade button{background:none;border:0;cursor:pointer;color:var(--dim);font-size:15px;line-height:1;padding:0 2px}
+.trade button:hover{color:var(--red)}
+.cell.traded{background:var(--cyan-glow);box-shadow:inset 2px 0 0 var(--cyan)}
+.cell.traded .tm{color:var(--cyan)}
+.cell .via{display:block;font-family:var(--mono);font-size:9px;color:var(--dim);margin-top:3px;letter-spacing:.06em}
+.seasons{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
+.seasons button{font-family:var(--disp);font-weight:700;font-size:17px;padding:8px 16px;border-radius:3px;border:1px solid var(--line-2);background:var(--surface);color:var(--muted);cursor:pointer;letter-spacing:.03em}
+.seasons button:hover{color:var(--ink);border-color:var(--ink)}
+.seasons button[aria-pressed="true"]{background:var(--amber);border-color:var(--amber);color:#FFF8EC}
+.podium{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:4px;overflow:hidden;margin-top:18px}
+.podium div{background:var(--surface);padding:14px 18px}
+.podium dt{font-family:var(--mono);font-size:9.5px;letter-spacing:.15em;text-transform:uppercase;color:var(--dim)}
+.podium dd{margin:6px 0 0;font-family:var(--disp);font-weight:800;font-size:20px;text-transform:uppercase;letter-spacing:.02em;line-height:1.1}
+.podium dd small{display:block;font-family:var(--body);font-size:13px;font-weight:500;color:var(--muted);text-transform:none;letter-spacing:0;margin-top:4px}
+.podium div:first-child dd{color:var(--amber)}
 .warnbar{padding:12px 20px;background:var(--red-glow);color:var(--red);font-size:14px;border-bottom:1px solid rgba(255,81,71,.4);font-family:var(--mono);letter-spacing:.04em}
 
 .board{border-collapse:separate;border-spacing:0;width:100%;min-width:980px}
@@ -755,10 +778,20 @@ footer p + p{margin-top:11px}
     <section>
       <div class="sec-head"><h2>Pre-Draft Board</h2><span class="eyebrow cool">2026–27 · 12 rounds · snake</span></div>
       <div class="rulebar"></div>
-      <p class="lede">Order is loaded from last season's finish. Change it up top and every keeper drops into the pick it costs, so you can see what's gone before anyone picks.</p>
+      <p class="lede">Order is loaded from last season's finish. Change it up top, log any pick trades, and every keeper drops into the pick it costs — so you can see what's gone before anyone picks. Traded picks show in blue with who they came from.</p>
 
       <div class="panel" style="margin-top:20px;overflow:hidden">
         <div class="orderset" id="orderset"></div>
+        <div class="tradebar">
+          <span class="eyebrow">Pick trades</span>
+          <label>Round <select id="tr-round"></select></label>
+          <select id="tr-from"></select>
+          <span class="arrow">gives its pick to</span>
+          <select id="tr-to"></select>
+          <button class="btn sm" id="tr-add">Add trade</button>
+          <span id="tr-msg" style="font-size:13px;color:var(--red)"></span>
+        </div>
+        <div class="tradelist" id="tradelist"></div>
         <div id="orderwarn"></div>
         <div style="overflow:auto;max-height:72vh">
           <table class="board"><thead id="boardhead"></thead><tbody id="boardbody"></tbody></table>
@@ -911,6 +944,13 @@ footer p + p{margin-top:11px}
           <tbody id="history"></tbody>
         </table>
       </div>
+    </section>
+    <section>
+      <div class="sec-head"><h2>Season Archive</h2><span class="eyebrow cool">Yahoo years · standings and full draft boards</span></div>
+      <div class="rulebar"></div>
+      <p class="lede">Pick a season. Final standings as Yahoo closed them, with the podium, and every draft pick that year. A manager picking twice in one round means a pick changed hands.</p>
+      <div class="seasons" id="seasons"></div>
+      <div id="season"></div>
     </section>
   </div>
 
@@ -1208,13 +1248,13 @@ var ST={
 };
 
 var HISTORY = [
-  [2025,"Sean","The JaleNBA","Shai See Me Rollins (David)","It's the Summer of George (Jon)","League For Kids That Read Good"],
-  [2024,"Ben","Patellar Teamdinopathy","Carmelo Ball (David)","Ayton o White Dick (Jon)","League For Kids That Read Good"],
+  [2025,"Sean","The JaleNBA","Shai See Me Rollins (David)","It's the Summer of George (Abada)","League For Kids That Read Good"],
+  [2024,"Ben","Patellar Teamdinopathy","Carmelo Ball (David)","Ayton o White Dick (Abada)","League For Kids That Read Good"],
   [2023,"Kabir","Regular Season Lebron","Carmelo Ball (David)","Ja Wick 5 (Sean)","League For Kids That Read Good"],
-  [2022,"Gonzo","Orange Julius Randle","Walker Kessler Ranger (Jon)","Carmelo Ball (David)","League For Kids That Read Good"],
+  [2022,"Gonzo","Orange Julius Randle","Walker Kessler Ranger (Abada)","Carmelo Ball (David)","League For Kids That Read Good"],
   [2021,"Ben","Team Young but not too young","Regular Season Harden (Kabir)","Dejá Vucevic (Chris)","League For Kids That Read Good"],
-  [2020,"Anush","block ness monster","THE DONK (Jon)","Jo Momma (Cory)","Harry Giles Fan Club"],
-  [2019,"David","Los Ravishing Ricks","JOKÉMON (Jon)","Ja Rules (Sean)","Harry Giles Fan Club"],
+  [2020,"Anush","block ness monster","THE DONK (Abada)","Jo Momma (Cory)","Harry Giles Fan Club"],
+  [2019,"David","Los Ravishing Ricks","JOKÉMON (Abada)","Ja Rules (Chris)","Harry Giles Fan Club"],
   [2018,"David","—","Sean","Ben","Gordon Hayward Memorial NBA Hospital League"],
   [2017,"Rajat","Home Dipo'","One Piece (Sean)","Demarcus Antetokounmpo (Kabir)","Gordon Hayward Memorial NBA Hospital League"],
   [2016,"Sean","New Orleans Pelicans","—","—","Game of Thrones"],
@@ -1492,7 +1532,46 @@ function renderOrderControls(){
   for(var j=0;j<SLOTS;j++){document.getElementById("os"+j).value=order[j];}
 }
 
+var trades=[];
+try{ trades=JSON.parse(localStorage.getItem("cb-draft-trades-v1")||"[]")||[]; }catch(e){ trades=[]; }
+function tradesSave(){ try{ localStorage.setItem("cb-draft-trades-v1",JSON.stringify(trades)); }catch(e){} }
+function ownerOf(r,orig){
+  var cur=orig, hops=0;
+  while(hops++<12){
+    var t=null;
+    for(var i=0;i<trades.length;i++){ if(trades[i].r===r&&trades[i].from===cur){ t=trades[i]; break; } }
+    if(!t) break; cur=t.to;
+  }
+  return cur;
+}
+function renderTrades(){
+  var rs=document.getElementById("tr-round");
+  if(!rs.options.length){
+    var o=""; for(var r=1;r<=ROUNDS;r++) o+='<option value="'+r+'">'+r+'</option>'; rs.innerHTML=o;
+    var teams=T.map(function(t){return '<option value="'+t.id+'">'+esc(t.short)+' — '+esc(t.name)+'</option>';}).join("");
+    document.getElementById("tr-from").innerHTML=teams; document.getElementById("tr-to").innerHTML=teams;
+    document.getElementById("tr-to").selectedIndex=1;
+  }
+  document.getElementById("tradelist").innerHTML=trades.map(function(t,i){
+    var a=byId(t.from), b=byId(t.to);
+    return '<span class="trade">RD '+t.r+' · <b>'+esc(a?a.short:t.from)+'</b> → <b>'+esc(b?b.short:t.to)+'</b>'+
+      '<button type="button" data-untrade="'+i+'" title="Remove">×</button></span>';
+  }).join("");
+}
+document.getElementById("tr-add").addEventListener("click",function(){
+  var r=+document.getElementById("tr-round").value, from=document.getElementById("tr-from").value, to=document.getElementById("tr-to").value, m=document.getElementById("tr-msg");
+  m.textContent="";
+  if(from===to){ m.textContent="Pick two different teams."; return; }
+  if(ownerOf(r,from)!==from && !trades.some(function(t){return t.r===r&&t.to===from;})){ m.textContent=byId(from).short+" already traded that pick away."; return; }
+  trades.push({r:r,from:from,to:to}); tradesSave(); renderTrades(); renderBoard();
+});
+document.addEventListener("click",function(e){
+  var u=e.target.closest("[data-untrade]"); if(!u) return;
+  trades.splice(+u.dataset.untrade,1); tradesSave(); renderTrades(); renderBoard();
+});
+
 function renderBoard(){
+  renderTrades();
   var seen={},dupList=[];
   order.forEach(function(id){seen[id]=(seen[id]||0)+1;});
   Object.keys(seen).forEach(function(id){if(seen[id]>1){var t=byId(id); dupList.push(t?t.short:id);}});
@@ -1511,8 +1590,10 @@ function renderBoard(){
       var t=byId(seq[i]);
       var overall=(r-1)*SLOTS+i+1;
       var kp=t?keepersFor(t).filter(function(k){return k.round===r;}):[];
-      body+='<td class="cell'+(kp.length?" taken":"")+'">'+
-        '<span class="tm">'+(t?esc(t.short):"—")+'</span>'+
+      var ownId=t?ownerOf(r,t.id):null, own=ownId?byId(ownId):null, moved=own&&t&&own.id!==t.id;
+      body+='<td class="cell'+(kp.length?" taken":"")+(moved?" traded":"")+'">'+
+        '<span class="tm">'+(own?esc(own.short):(t?esc(t.short):"—"))+'</span>'+
+        (moved?'<span class="via">via '+esc(t.short)+(kp.length?' · keeper conflict':'')+'</span>':'')+
         (kp.length? '<span class="kp">'+kp.map(function(k){return esc(k.player);}).join(" + ")+'</span>'
                   : '<span class="ov">#'+overall+'</span>')+'</td>';
     }
@@ -1528,8 +1609,16 @@ function renderBoard(){
       items.push({t:t,k:k,slot:slot,overall:(k.round-1)*SLOTS+slot});
     });
   });
+  trades.forEach(function(tr){
+    var a=byId(tr.from), b=byId(tr.to); if(!a||!b) return;
+    var pos=order.indexOf(a.id), slot=(tr.r%2===1)?pos+1:SLOTS-pos;
+    items.push({trade:tr,a:a,b:b,slot:slot,overall:(tr.r-1)*SLOTS+slot});
+  });
   items.sort(function(a,b){return a.overall-b.overall;});
   document.getElementById("checklist").innerHTML=items.map(function(it){
+    if(it.trade) return '<div class="chk"><span class="rd" style="color:var(--cyan);background:var(--cyan-glow);border-color:var(--cyan)">RD '+it.trade.r+' · P'+it.slot+'</span>'+
+      '<span class="txt"><b>Pick goes to '+esc(it.b.short)+'</b>'+
+      '<span>traded from '+esc(it.a.short)+' · overall #'+it.overall+' · move it in Yahoo\'s trade-picks tool</span></span></div>';
     return '<div class="chk"><span class="rd">RD '+it.k.round+' · P'+it.slot+'</span>'+
       '<span class="txt"><b>'+esc(it.k.player)+'</b>'+
       '<span>'+esc(it.t.short)+' · '+esc(it.t.name)+' · overall #'+it.overall+'</span></span></div>';
@@ -1539,13 +1628,17 @@ function renderBoard(){
   document.getElementById("pickssummary").innerHTML=T.slice().sort(function(a,b){
     return order.indexOf(a.id)-order.indexOf(b.id);
   }).map(function(t){
-    var kp=keepersFor(t);
+    var kp=keepersFor(t), out=0, inn=0, gone=kp.map(function(k){return "RD "+k.round;});
+    for(var r=1;r<=ROUNDS;r++){
+      if(ownerOf(r,t.id)!==t.id){ out++; gone.push("RD "+r+" → "+byId(ownerOf(r,t.id)).short); }
+      T.forEach(function(o){ if(o.id!==t.id&&ownerOf(r,o.id)===t.id) inn++; });
+    }
     return '<tr class="rowlink" data-team="'+t.id+'">'+
       '<td class="name" style="font-size:16px">'+esc(t.name)+'</td>'+
       '<td class="mgr">'+esc(t.short)+'</td>'+
       '<td class="num">'+kp.length+'</td>'+
-      '<td class="num">'+(ROUNDS-kp.length)+'</td>'+
-      '<td class="sub">'+(kp.length?kp.map(function(k){return "RD "+k.round;}).join(", "):"—")+'</td></tr>';
+      '<td class="num">'+(ROUNDS-kp.length-out+inn)+'</td>'+
+      '<td class="sub">'+(gone.length?gone.join(", "):"—")+(inn?' <span class="pill ok">+'+inn+' via trade</span>':'')+'</td></tr>';
   }).join("");
 }
 
@@ -1713,6 +1806,63 @@ document.getElementById("cfetch").addEventListener("click",function(){
     cMsg.textContent=(e&&e.message?e.message:"Couldn't reach the schedule.")+" You can still type the counts in by hand.";
   });
 });
+
+var ARCHIVE={"2019":{"league":"Harry Giles Fan Club","yid":"48593","teams":[["FREE DEANDRE AYTON","Anush",24,4],["Ja Rules","Chris",19,0],["Jo Momma","Cory",64,4],["JOKÉMON","Abada",50,4],["Los Ravishing Ricks","David",70,3],["The Zion King","Sean",43,4],["Total Kawhialation","Ben",69,1],["Twin Towers","Kabir",8,2],["Tyler's Team","Tyler",11,2],["Whiteslide in ur DMs","Rajat",13,0]],"standings":[[1,"Los Ravishing Ricks","David","15-4-0",".789"],[2,"JOKÉMON","Abada","13-6-0",".684"],[3,"Ja Rules","Chris","11-6-2",".632"],[4,"Twin Towers","Kabir","11-8-0",".579"],[5,"The Zion King","Sean","11-8-0",".579"],[6,"Whiteslide in ur DMs","Rajat","10-8-1",".553"],[7,"Total Kawhialation","Ben","7-12-0",".368"],[8,"FREE DEANDRE AYTON","Anush","6-12-1",".342"],[9,"Jo Momma","Cory","5-13-1",".289"],[10,"Tyler's Team","Tyler","3-15-1",".184"]],"draft":[[1,1,"Giannis Antetokounmpo","Chris"],[1,2,"Anthony Davis","Kabir"],[1,3,"James Harden","Sean"],[1,4,"Stephen Curry","Tyler"],[1,5,"Karl-Anthony Towns","Cory"],[1,6,"LeBron James","Rajat"],[1,7,"Bradley Beal","Anush"],[1,8,"Nikola Jokić","Abada"],[1,9,"Joel Embiid","Ben"],[1,10,"Damian Lillard","David"],[2,1,"Kyrie Irving","David"],[2,2,"Kawhi Leonard","Ben"],[2,3,"Trae Young","Abada"],[2,4,"Paul George","Anush"],[2,5,"Kristaps Porziņģis","Rajat"],[2,6,"Nikola Vučević","Cory"],[2,7,"Jimmy Butler III","Tyler"],[2,8,"Devin Booker","Sean"],[2,9,"Rudy Gobert","Kabir"],[2,10,"Andre Drummond","Chris"],[3,1,"Luka Dončić","Chris"],[3,2,"Ben Simmons","Kabir"],[3,3,"Donovan Mitchell","Sean"],[3,4,"Jrue Holiday","Tyler"],[3,5,"Russell Westbrook","Cory"],[3,6,"Zach LaVine","Rajat"],[3,7,"Deandre Ayton","Anush"],[3,8,"John Collins","Abada"],[3,9,"Zion Williamson","Ben"],[3,10,"Bam Adebayo","David"],[4,1,"Clint Capela","David"],[4,2,"Lauri Markkanen","Ben"],[4,3,"Kemba Walker","Abada"],[4,4,"Pascal Siakam","Anush"],[4,5,"Jamal Murray","Rajat"],[4,6,"Draymond Green","Cory"],[4,7,"Myles Turner","Tyler"],[4,8,"Robert Covington","Sean"],[4,9,"De'Aaron Fox","Kabir"],[4,10,"D'Angelo Russell","Chris"],[5,1,"DeMar DeRozan","Chris"],[5,2,"Blake Griffin","Kabir"],[5,3,"LaMarcus Aldridge","Sean"],[5,4,"Chris Paul","Tyler"],[5,5,"Kyle Lowry","Cory"],[5,6,"Khris Middleton","Rajat"],[5,7,"Mitchell Robinson","Anush"],[5,8,"Jaren Jackson Jr.","Abada"],[5,9,"Buddy Hield","Ben"],[5,10,"Jonas Valančiūnas","David"],[6,1,"Jayson Tatum","David"],[6,2,"Kevin Love","Ben"],[6,3,"Mike Conley","Abada"],[6,4,"CJ McCollum","Anush"],[6,5,"Brook Lopez","Rajat"],[6,6,"Victor Oladipo","Cory"],[6,7,"Otto Porter Jr.","Tyler"],[6,8,"Tobias Harris","Sean"],[6,9,"Aaron Gordon","Kabir"],[6,10,"Ja Morant","Chris"],[7,1,"Steven Adams","Chris"],[7,2,"Lonzo Ball","Kabir"],[7,3,"Julius Randle","Sean"],[7,4,"Eric Bledsoe","Tyler"],[7,5,"Marvin Bagley III","Cory"],[7,6,"Danilo Gallinari","Rajat"],[7,7,"Dejounte Murray","Anush"],[7,8,"Thomas Bryant","Abada"],[7,9,"Derrick Favors","Ben"],[7,10,"Terry Rozier","David"],[8,1,"Shai Gilgeous-Alexander","David"],[8,2,"Wendell Carter Jr.","Ben"],[8,3,"Domantas Sabonis","Abada"],[8,4,"Malcolm Brogdon","Anush"],[8,5,"Hassan Whiteside","Rajat"],[8,6,"Caris LeVert","Cory"],[8,7,"Al Horford","Tyler"],[8,8,"Josh Richardson","Sean"],[8,9,"Marc Gasol","Kabir"],[8,10,"Montrezl Harrell","Chris"],[9,1,"Gordon Hayward","Chris"],[9,2,"Andrew Wiggins","Kabir"],[9,3,"T.J. Warren","Sean"],[9,4,"Jonathan Isaac","Tyler"],[9,5,"DeAndre Jordan","Cory"],[9,6,"Bojan Bogdanović","Rajat"],[9,7,"Kelly Oubre Jr.","Anush"],[9,8,"Larry Nance Jr.","Abada"],[9,9,"Miles Bridges","Ben"],[9,10,"Ricky Rubio","David"],[10,1,"JaVale McGee","David"],[10,2,"Kyle Kuzma","Ben"],[10,3,"Gary Harris","Abada"],[10,4,"Jarrett Allen","Anush"],[10,5,"Enes Freedom","Rajat"],[10,6,"Lou Williams","Cory"],[10,7,"Fred VanVleet","Tyler"],[10,8,"Marcus Smart","Sean"],[10,9,"Brandon Ingram","Kabir"],[10,10,"Serge Ibaka","Chris"],[11,1,"Joe Ingles","Chris"],[11,2,"Goran Dragić","Kabir"],[11,3,"Taurean Prince","Sean"],[11,4,"Jeremy Lamb","Tyler"],[11,5,"Zach Collins","Cory"],[11,6,"JJ Redick","Rajat"],[11,7,"Jeff Teague","Anush"],[11,8,"Paul Millsap","Abada"],[11,9,"Delon Wright","Ben"],[11,10,"Dario Šarić","David"],[12,1,"Bogdan Bogdanović","David"],[12,2,"RJ Barrett","Ben"],[12,3,"Mikal Bridges","Abada"],[12,4,"Dewayne Dedmon","Anush"],[12,5,"Tyler Herro","Rajat"],[12,6,"Dwight Howard","Cory"],[12,7,"Nicolas Batum","Tyler"],[12,8,"Ivica Zubac","Sean"],[12,9,"Rui Hachimura","Kabir"],[12,10,"Kevin Huerter","Chris"]]},"2020":{"league":"Harry Giles Fan Club","yid":"66818","teams":[["block ness monster","Anush",31,2],["Buddy the OG","Rajat",7,0],["Carmelo Ball","David",53,0],["Jo Momma","Cory",48,0],["Redemption","Tyler",12,0],["Regular Season P","Kabir",20,1],["THE DONK","Abada",45,1],["The First Joel","Chris",22,0],["The Kawhikaning","Ben",52,0],["Win? Hamidou That","Sean",43,0]],"standings":[[1,"block ness monster","Anush","11-3-1",".767"],[2,"THE DONK","Abada","10-5-0",".667"],[3,"Jo Momma","Cory","11-4-0",".733"],[4,"Win? Hamidou That","Sean","8-7-0",".533"],[5,"The Kawhikaning","Ben","6-9-0",".400"],[6,"Carmelo Ball","David","6-7-2",".467"],[7,"Redemption","Tyler","8-7-0",".533"],[8,"The First Joel","Chris","7-8-0",".467"],[9,"Regular Season P","Kabir","5-10-0",".333"],[10,"Buddy the OG","Rajat","1-13-1",".100"]],"draft":[[1,1,"James Harden","Sean"],[1,2,"Anthony Davis","Kabir"],[1,3,"Karl-Anthony Towns","Ben"],[1,4,"Luka Dončić","Abada"],[1,5,"Giannis Antetokounmpo","Cory"],[1,6,"Stephen Curry","Anush"],[1,7,"Nikola Jokić","David"],[1,8,"Damian Lillard","Tyler"],[1,9,"Trae Young","Chris"],[1,10,"Kevin Durant","Rajat"],[2,1,"Jayson Tatum","Rajat"],[2,2,"Joel Embiid","Chris"],[2,3,"Devin Booker","Tyler"],[2,4,"LeBron James","David"],[2,5,"Bradley Beal","Anush"],[2,6,"Bam Adebayo","Cory"],[2,7,"Deandre Ayton","Abada"],[2,8,"Kawhi Leonard","Ben"],[2,9,"Paul George","Kabir"],[2,10,"Kyrie Irving","Sean"],[3,1,"John Collins","Sean"],[3,2,"Donovan Mitchell","Kabir"],[3,3,"Andre Drummond","Ben"],[3,4,"Jimmy Butler III","Abada"],[3,5,"Russell Westbrook","Cory"],[3,6,"Rudy Gobert","Anush"],[3,7,"Jusuf Nurkić","David"],[3,8,"Ja Morant","Tyler"],[3,9,"Nikola Vučević","Chris"],[3,10,"Ben Simmons","Rajat"],[4,1,"Jamal Murray","Rajat"],[4,2,"Shai Gilgeous-Alexander","Chris"],[4,3,"Zion Williamson","Tyler"],[4,4,"De'Aaron Fox","David"],[4,5,"Zach LaVine","Anush"],[4,6,"Pascal Siakam","Cory"],[4,7,"Fred VanVleet","Abada"],[4,8,"Domantas Sabonis","Ben"],[4,9,"Jrue Holiday","Kabir"],[4,10,"Khris Middleton","Sean"],[5,1,"Christian Wood","Sean"],[5,2,"Malcolm Brogdon","Kabir"],[5,3,"Brandon Ingram","Ben"],[5,4,"Kyle Lowry","Abada"],[5,5,"John Wall","Cory"],[5,6,"Jaylen Brown","Anush"],[5,7,"Chris Paul","David"],[5,8,"DeMar DeRozan","Tyler"],[5,9,"D'Angelo Russell","Chris"],[5,10,"Buddy Hield","Rajat"],[6,1,"T.J. Warren","Rajat"],[6,2,"Kelly Oubre Jr.","Chris"],[6,3,"Kristaps Porziņģis","Tyler"],[6,4,"Hassan Whiteside","David"],[6,5,"Mitchell Robinson","Anush"],[6,6,"Robert Covington","Cory"],[6,7,"Michael Porter Jr.","Abada"],[6,8,"LaMarcus Aldridge","Ben"],[6,9,"CJ McCollum","Kabir"],[6,10,"Jonas Valančiūnas","Sean"],[7,1,"Thomas Bryant","Sean"],[7,2,"Lonzo Ball","Kabir"],[7,3,"Tobias Harris","Ben"],[7,4,"Wendell Carter Jr.","Abada"],[7,5,"LaMelo Ball","Cory"],[7,6,"Myles Turner","Anush"],[7,7,"Dejounte Murray","David"],[7,8,"Clint Capela","Tyler"],[7,9,"Steven Adams","Chris"],[7,10,"OG Anunoby","Rajat"],[8,1,"Andrew Wiggins","Rajat"],[8,2,"Coby White","Chris"],[8,3,"Gordon Hayward","Tyler"],[8,4,"Draymond Green","David"],[8,5,"Dāvis Bertāns","Anush"],[8,6,"Julius Randle","Cory"],[8,7,"Kevin Love","Abada"],[8,8,"Jaren Jackson Jr.","Ben"],[8,9,"Aaron Gordon","Kabir"],[8,10,"Victor Oladipo","Sean"],[9,1,"Richaun Holmes","Sean"],[9,2,"Ricky Rubio","Kabir"],[9,3,"Mikal Bridges","Ben"],[9,4,"Lauri Markkanen","Abada"],[9,5,"Blake Griffin","Cory"],[9,6,"Tyler Herro","Anush"],[9,7,"DeMarcus Cousins","David"],[9,8,"James Wiseman","Tyler"],[9,9,"Eric Bledsoe","Chris"],[9,10,"Josh Richardson","Rajat"],[10,1,"Brook Lopez","Rajat"],[10,2,"Montrezl Harrell","Chris"],[10,3,"Mike Conley","Tyler"],[10,4,"Marcus Smart","David"],[10,5,"Devonte' Graham","Anush"],[10,6,"Lou Williams","Cory"],[10,7,"Brandon Clarke","Abada"],[10,8,"Derrick White","Ben"],[10,9,"Collin Sexton","Kabir"],[10,10,"Otto Porter Jr.","Sean"],[11,1,"Jerami Grant","Sean"],[11,2,"Bogdan Bogdanović","Kabir"],[11,3,"Markelle Fultz","Ben"],[11,4,"Al Horford","Abada"],[11,5,"Darius Bazley","Cory"],[11,6,"Duncan Robinson","Anush"],[11,7,"Nerlens Noel","David"],[11,8,"Kemba Walker","Tyler"],[11,9,"Serge Ibaka","Chris"],[11,10,"Marvin Bagley III","Rajat"],[12,1,"Dennis Schröder","Rajat"],[12,2,"Evan Fournier","Chris"],[12,3,"Derrick Rose","Tyler"],[12,4,"Bojan Bogdanović","David"],[12,5,"Caris LeVert","Anush"],[12,6,"Goran Dragić","Cory"],[12,7,"Danilo Gallinari","Abada"],[12,8,"Norman Powell","Ben"],[12,9,"Jarrett Allen","Kabir"],[12,10,"Delon Wright","Sean"]]},"2021":{"league":"League For Kids That Read Good","yid":"120986","teams":[["block ness monster","Anush",55,4],["Carmelo Ball","David",61,0],["Dejá Vucevic","Chris",26,0],["Jo Momma","Cory",21,1],["Redemption","Tyler",20,0],["Regular Season Harden","Kabir",46,2],["Shairese Gilgeburton","Abada",52,3],["Team Autodraft","Rajat",21,2],["Team Young but not too young","Ben",74,0],["Win? Hamidou That","Sean",64,2]],"standings":[[1,"Team Young but not too young","Ben","12-6-1",".658"],[2,"Regular Season Harden","Kabir","12-5-2",".684"],[3,"Dejá Vucevic","Chris","7-11-1",".395"],[4,"Redemption","Tyler","7-10-2",".421"],[5,"Shairese Gilgeburton","Abada","12-5-2",".684"],[6,"block ness monster","Anush","12-6-1",".658"],[7,"Carmelo Ball","David","9-7-3",".553"],[8,"Team Autodraft","Rajat","7-11-1",".395"],[9,"Win? Hamidou That","Sean","7-11-1",".395"],[10,"Jo Momma","Cory","3-16-0",".158"]],"draft":[[1,1,"Nikola Jokić","Anush"],[1,2,"Stephen Curry","Sean"],[1,3,"James Harden","Kabir"],[1,4,"Luka Dončić","David"],[1,5,"Giannis Antetokounmpo","Tyler"],[1,6,"Karl-Anthony Towns","Chris"],[1,7,"Kevin Durant","Ben"],[1,8,"Joel Embiid","Abada"],[1,9,"Damian Lillard","Cory"],[1,10,"LeBron James","Rajat"],[2,1,"Paul George","Rajat"],[2,2,"Bradley Beal","Cory"],[2,3,"Jayson Tatum","Abada"],[2,4,"Trae Young","Ben"],[2,5,"Nikola Vučević","Chris"],[2,6,"Zach LaVine","Tyler"],[2,7,"Anthony Davis","David"],[2,8,"Domantas Sabonis","Kabir"],[2,9,"Bam Adebayo","Sean"],[2,10,"Russell Westbrook","Anush"],[3,1,"Jimmy Butler III","Anush"],[3,2,"Rudy Gobert","Sean"],[3,3,"Fred VanVleet","Kabir"],[3,4,"Julius Randle","David"],[3,5,"Devin Booker","Tyler"],[3,6,"LaMelo Ball","Chris"],[3,7,"Michael Porter Jr.","Ben"],[3,8,"Shai Gilgeous-Alexander","Abada"],[3,9,"Brandon Ingram","Cory"],[3,10,"Donovan Mitchell","Rajat"],[4,1,"Khris Middleton","Rajat"],[4,2,"Clint Capela","Cory"],[4,3,"Deandre Ayton","Abada"],[4,4,"Richaun Holmes","Ben"],[4,5,"De'Aaron Fox","Chris"],[4,6,"Chris Paul","Tyler"],[4,7,"Jaylen Brown","David"],[4,8,"Christian Wood","Kabir"],[4,9,"Kristaps Porziņģis","Sean"],[4,10,"John Collins","Anush"],[5,1,"Ja Morant","Anush"],[5,2,"CJ McCollum","Sean"],[5,3,"Tobias Harris","Kabir"],[5,4,"Anthony Edwards","David"],[5,5,"Jusuf Nurkić","Tyler"],[5,6,"Jrue Holiday","Chris"],[5,7,"Jonas Valančiūnas","Ben"],[5,8,"OG Anunoby","Abada"],[5,9,"Jaren Jackson Jr.","Cory"],[5,10,"Malcolm Brogdon","Rajat"],[6,1,"Myles Turner","Rajat"],[6,2,"Zion Williamson","Cory"],[6,3,"Tyrese Haliburton","Abada"],[6,4,"Dejounte Murray","Ben"],[6,5,"Isaiah Stewart","Chris"],[6,6,"Gordon Hayward","Tyler"],[6,7,"Lonzo Ball","David"],[6,8,"DeMar DeRozan","Kabir"],[6,9,"Kyle Lowry","Sean"],[6,10,"Robert Williams III","Anush"],[7,1,"Jakob Poeltl","Anush"],[7,2,"Jarrett Allen","Sean"],[7,3,"Pascal Siakam","Kabir"],[7,4,"Draymond Green","David"],[7,5,"Terry Rozier","Tyler"],[7,6,"Jerami Grant","Chris"],[7,7,"Cade Cunningham","Ben"],[7,8,"Darius Garland","Abada"],[7,9,"Kevin Porter Jr.","Cory"],[7,10,"Jalen Green","Rajat"],[8,1,"Keldon Johnson","Rajat"],[8,2,"Mike Conley","Cory"],[8,3,"D'Angelo Russell","Abada"],[8,4,"Ben Simmons","Ben"],[8,5,"Marcus Smart","Chris"],[8,6,"Collin Sexton","Tyler"],[8,7,"Derrick White","David"],[8,8,"Buddy Hield","Kabir"],[8,9,"Josh Giddey","Sean"],[8,10,"Daniel Gafford","Anush"],[9,1,"RJ Barrett","Anush"],[9,2,"Robert Covington","Sean"],[9,3,"Kyrie Irving","Kabir"],[9,4,"Mikal Bridges","David"],[9,5,"Bogdan Bogdanović","Tyler"],[9,6,"Devonte' Graham","Chris"],[9,7,"Kemba Walker","Ben"],[9,8,"Mitchell Robinson","Abada"],[9,9,"Jordan Poole","Cory"],[9,10,"Nickeil Alexander-Walker","Rajat"],[10,1,"Spencer Dinwiddie","Rajat"],[10,2,"Caris LeVert","Cory"],[10,3,"Evan Mobley","Abada"],[10,4,"Norman Powell","Ben"],[10,5,"Chris Boucher","Chris"],[10,6,"Andrew Wiggins","Tyler"],[10,7,"Kelly Olynyk","David"],[10,8,"Kyle Anderson","Kabir"],[10,9,"Evan Fournier","Sean"],[10,10,"P.J. Washington","Anush"],[11,1,"Jordan Clarkson","Anush"],[11,2,"Bojan Bogdanović","Sean"],[11,3,"Tim Hardaway Jr.","Kabir"],[11,4,"Mo Bamba","David"],[11,5,"Al Horford","Tyler"],[11,6,"Harrison Barnes","Chris"],[11,7,"Jonathan Isaac","Ben"],[11,8,"Wendell Carter Jr.","Abada"],[11,9,"Mason Plumlee","Cory"],[11,10,"Miles Bridges","Rajat"],[12,1,"Brook Lopez","Rajat"],[12,2,"Alperen Şengün","Cory"],[12,3,"Tyler Herro","Abada"],[12,4,"Khem Birch","Ben"],[12,5,"Klay Thompson","Chris"],[12,6,"Jalen Suggs","Tyler"],[12,7,"Ivica Zubac","David"],[12,8,"Kyle Kuzma","Kabir"],[12,9,"John Wall","Sean"],[12,10,"Duncan Robinson","Anush"]]},"2022":{"league":"League For Kids That Read Good","yid":"80336","teams":[["Carmelo Ball","David",78,0],["everybody loves draymond","Anush",43,2],["Golden State Bulls","Tyler",4,0],["Kermit The Frog","Rajat",28,0],["King James","Sean",51,0],["Orange Julius Randle","Gonzo",15,0],["Regular Season P","Kabir",28,1],["SudoWoodo used Harden","Chris",21,0],["Switching Back and Forth","Ben",56,0],["Walker Kessler Ranger","Abada",75,1]],"standings":[[1,"Orange Julius Randle","Gonzo","9-10-0",".474"],[2,"Walker Kessler Ranger","Abada","10-9-0",".526"],[3,"Carmelo Ball","David","9-10-0",".474"],[4,"everybody loves draymond","Anush","9-10-0",".474"],[5,"Switching Back and Forth","Ben","12-6-1",".658"],[6,"SudoWoodo used Harden","Chris","10-9-0",".526"],[7,"King James","Sean","9-9-1",".500"],[8,"Kermit The Frog","Rajat","12-7-0",".632"],[9,"Regular Season P","Kabir","7-12-0",".368"],[10,"Golden State Bulls","Tyler","7-12-0",".368"]],"draft":[[1,1,"Nikola Jokić","Gonzo"],[1,2,"Giannis Antetokounmpo","Rajat"],[1,3,"Joel Embiid","Kabir"],[1,4,"Luka Dončić","Ben"],[1,5,"James Harden","Chris"],[1,6,"Kevin Durant","Abada"],[1,7,"Stephen Curry","Tyler"],[1,8,"Karl-Anthony Towns","David"],[1,9,"Jayson Tatum","Anush"],[1,10,"LeBron James","Sean"],[2,1,"Dejounte Murray","Sean"],[2,2,"Damian Lillard","Anush"],[2,3,"Tyrese Haliburton","David"],[2,4,"Trae Young","Tyler"],[2,5,"Devin Booker","Abada"],[2,6,"LaMelo Ball","Chris"],[2,7,"Anthony Davis","Ben"],[2,8,"Paul George","Kabir"],[2,9,"Anthony Edwards","Rajat"],[2,10,"Ja Morant","Gonzo"],[3,1,"Kawhi Leonard","Gonzo"],[3,2,"Domantas Sabonis","Rajat"],[3,3,"Bam Adebayo","Kabir"],[3,4,"Cade Cunningham","Ben"],[3,5,"Pascal Siakam","Chris"],[3,6,"Rudy Gobert","Abada"],[3,7,"DeMar DeRozan","Tyler"],[3,8,"Kyrie Irving","David"],[3,9,"Zion Williamson","Anush"],[3,10,"Fred VanVleet","Sean"],[4,1,"Myles Turner","Sean"],[4,2,"Donovan Mitchell","Anush"],[4,3,"Kristaps Porziņģis","David"],[4,4,"Nikola Vučević","Tyler"],[4,5,"Jrue Holiday","Abada"],[4,6,"Evan Mobley","Chris"],[4,7,"Scottie Barnes","Ben"],[4,8,"Darius Garland","Kabir"],[4,9,"Bradley Beal","Rajat"],[4,10,"Jaylen Brown","Gonzo"],[5,1,"Jimmy Butler III","Gonzo"],[5,2,"Desmond Bane","Rajat"],[5,3,"CJ McCollum","Kabir"],[5,4,"Jarrett Allen","Ben"],[5,5,"Shai Gilgeous-Alexander","Chris"],[5,6,"Chris Paul","Abada"],[5,7,"Zach LaVine","Tyler"],[5,8,"Terry Rozier","David"],[5,9,"Deandre Ayton","Anush"],[5,10,"Brandon Ingram","Sean"],[6,1,"Jonas Valančiūnas","Sean"],[6,2,"Tyrese Maxey","Anush"],[6,3,"Josh Giddey","David"],[6,4,"Klay Thompson","Tyler"],[6,5,"Khris Middleton","Abada"],[6,6,"Jamal Murray","Chris"],[6,7,"Mikal Bridges","Ben"],[6,8,"OG Anunoby","Kabir"],[6,9,"Jakob Poeltl","Rajat"],[6,10,"Jalen Brunson","Gonzo"],[7,1,"Julius Randle","Gonzo"],[7,2,"Jerami Grant","Rajat"],[7,3,"De'Aaron Fox","Kabir"],[7,4,"Alperen Şengün","Ben"],[7,5,"Keldon Johnson","Chris"],[7,6,"Ben Simmons","Abada"],[7,7,"John Collins","Tyler"],[7,8,"Jabari Smith Jr.","David"],[7,9,"Jalen Green","Anush"],[7,10,"Devin Vassell","Sean"],[8,1,"Paolo Banchero","Sean"],[8,2,"Tyler Herro","Anush"],[8,3,"Wendell Carter Jr.","David"],[8,4,"Tobias Harris","Tyler"],[8,5,"Franz Wagner","Abada"],[8,6,"Christian Wood","Chris"],[8,7,"Keegan Murray","Ben"],[8,8,"Michael Porter Jr.","Kabir"],[8,9,"Jordan Poole","Rajat"],[8,10,"RJ Barrett","Gonzo"],[9,1,"Buddy Hield","Gonzo"],[9,2,"Kyle Kuzma","Rajat"],[9,3,"Russell Westbrook","Kabir"],[9,4,"Clint Capela","Ben"],[9,5,"Jusuf Nurkić","Chris"],[9,6,"Lauri Markkanen","Abada"],[9,7,"D'Angelo Russell","Tyler"],[9,8,"Jalen Smith","David"],[9,9,"Draymond Green","Anush"],[9,10,"Gordon Hayward","Sean"],[10,1,"Al Horford","Sean"],[10,2,"Herbert Jones","Anush"],[10,3,"Saddiq Bey","David"],[10,4,"Marcus Smart","Tyler"],[10,5,"Robert Williams III","Abada"],[10,6,"Collin Sexton","Chris"],[10,7,"P.J. Washington","Ben"],[10,8,"Kyle Lowry","Kabir"],[10,9,"Anfernee Simons","Rajat"],[10,10,"Andrew Wiggins","Gonzo"],[11,1,"Jaren Jackson Jr.","Gonzo"],[11,2,"Mitchell Robinson","Rajat"],[11,3,"Gary Trent Jr.","Kabir"],[11,4,"Kevin Porter Jr.","Ben"],[11,5,"Tre Jones","Chris"],[11,6,"Isaiah Jackson","Abada"],[11,7,"John Wall","Tyler"],[11,8,"Monté Morris","David"],[11,9,"Rui Hachimura","Anush"],[11,10,"Mike Conley","Sean"],[12,1,"Brook Lopez","Sean"],[12,2,"Cole Anthony","Anush"],[12,3,"Malcolm Brogdon","David"],[12,4,"Dillon Brooks","Tyler"],[12,5,"Isaiah Hartenstein","Abada"],[12,6,"Harrison Barnes","Chris"],[12,7,"Cameron Johnson","Ben"],[12,8,"Jalen Suggs","Kabir"],[12,9,"Josh Hart","Rajat"],[12,10,"Bones Hyland","Gonzo"]]},"2023":{"league":"League For Kids That Read Good","yid":"30276","teams":[["A Sage Mind","Tyler",6,2],["Carmelo Ball","David",66,1],["everybody loves draymond","Anush",36,0],["Fun to Stay at the Y.S.G.A.","Chris",17,0],["Ja Wick 5","Sean",59,1],["Jacque Vaughn Wrecked My Orgy!","Ben",51,0],["Kermit The Frog","Rajat",22,0],["Orange Julius Randle","Gonzo",8,1],["Regular Season Lebron","Kabir",20,0],["Walker Kessler Ranger","Abada",55,3]],"standings":[[1,"Regular Season Lebron","Kabir","13-6-0",".684"],[2,"Carmelo Ball","David","9-10-0",".474"],[3,"Ja Wick 5","Sean","9-9-1",".500"],[4,"Kermit The Frog","Rajat","8-11-0",".421"],[5,"Jacque Vaughn Wrecked My Orgy!","Ben","8-11-0",".421"],[6,"Orange Julius Randle","Gonzo","12-7-0",".632"],[7,"everybody loves draymond","Anush","10-9-0",".526"],[8,"Fun to Stay at the Y.S.G.A.","Chris","11-7-1",".605"],[9,"Walker Kessler Ranger","Abada","8-11-0",".421"],[10,"A Sage Mind","Tyler","6-13-0",".316"]],"draft":null},"2024":{"league":"League For Kids That Read Good","yid":"11700","teams":[["AD's Block Party","Anush",32,3],["Ayton o White Dick","Abada",66,1],["Burnin’ Bridges","Tyler",25,0],["Carmelo Ball","David",51,1],["Franz’s Balkan Warriors","Gonzo",16,1],["Fun to Stay at the Y.S.G.A.","Chris",22,0],["Mid-Range Buckets","Rajat",18,0],["Mor-Anta-tetokounmpo to Randle","Sean",54,1],["Patellar Teamdinopathy","Ben",54,0],["Regular Season P","Kabir",30,3]],"standings":[[1,"Patellar Teamdinopathy","Ben","10-8-0",".556"],[2,"Carmelo Ball","David","7-9-2",".444"],[3,"Ayton o White Dick","Abada","6-12-0",".333"],[4,"Regular Season P","Kabir","8-10-0",".444"],[5,"AD's Block Party","Anush","11-6-1",".639"],[6,"Fun to Stay at the Y.S.G.A.","Chris","14-4-0",".778"],[7,"Franz’s Balkan Warriors","Gonzo","9-8-1",".528"],[8,"Burnin’ Bridges","Tyler","11-5-2",".667"],[9,"Mid-Range Buckets","Rajat","5-11-2",".333"],[10,"Mor-Anta-tetokounmpo to Randle","Sean","5-13-0",".278"]],"draft":null}};
+
+/* ---------- season archive ---------- */
+(function(){
+  /* 2025–26 comes from the live data already on the site */
+  var st25=T.map(function(t){var s=ST[t.id];return [s.fin,t.name,t.short,s.rec,s.pct];}).sort(function(a,b){return a[0]-b[0];});
+  ARCHIVE[2025]={league:"League For Kids That Read Good",yid:"33689",
+    teams:T.map(function(t){return [t.name,t.short,ST[t.id].moves,0];}),
+    standings:st25, draft:D25.map(function(d){var t=byId(d[3]);return [d[0],d[1],d[2],t?t.short:d[3],d[4]];})};
+  var years=Object.keys(ARCHIVE).map(Number).sort(function(a,b){return b-a;});
+  var wrap=document.getElementById("seasons"), out=document.getElementById("season");
+  function label(y){ return y+"–"+String(y+1).slice(-2); }
+  function show(y){
+    var a=ARCHIVE[y], teamOf={}; a.teams.forEach(function(t){teamOf[t[1]]=t[0];});
+    Array.prototype.forEach.call(wrap.children,function(b){ b.setAttribute("aria-pressed", +b.dataset.y===y ? "true":"false"); });
+    var podium=a.standings.slice(0,3), lbl=["Champion","Runner-up","Third"];
+    var html='<div class="podium">'+podium.map(function(r,i){
+      return '<div><dt>'+lbl[i]+'</dt><dd>'+esc(r[2])+'<small>'+esc(r[1])+' · '+esc(r[3])+'</small></dd></div>';
+    }).join("")+'<div><dt>League</dt><dd style="font-size:15px">'+esc(a.league)+'<small>Yahoo ID '+esc(a.yid)+' · '+label(y)+'</small></dd></div></div>';
+    html+='<div class="tablewrap" style="margin-top:18px"><table><thead><tr><th class="num">Finish</th><th>Team</th><th>Manager</th><th class="num">Record</th><th class="num">Pct</th></tr></thead><tbody>'+
+      a.standings.map(function(r){
+        return '<tr'+(r[0]<=3?' style="background:var(--amber-glow)"':'')+'><td class="num name" style="font-size:16px">'+r[0]+'</td><td>'+esc(r[1])+'</td><td class="mgr">'+esc(r[2])+'</td><td class="num">'+esc(r[3])+'</td><td class="num sub">'+esc(r[4])+'</td></tr>';
+      }).join("")+'</tbody></table></div>';
+    if(a.draft){
+      var rounds={}, maxPick=0;
+      a.draft.forEach(function(p){ (rounds[p[0]]=rounds[p[0]]||[]).push(p); if(p[1]>maxPick) maxPick=p[1]; });
+      var rlist=Object.keys(rounds).map(Number).sort(function(x,y){return x-y;});
+      var head='<tr><th class="rnd">RD</th>'; for(var s=1;s<=maxPick;s++) head+='<th>Pick '+s+'</th>'; head+='</tr>';
+      var body="", notes=[];
+      rlist.forEach(function(r){
+        var row=rounds[r].slice().sort(function(x,y){return x[1]-y[1];});
+        var cnt={}; row.forEach(function(p){cnt[p[3]]=(cnt[p[3]]||0)+1;});
+        var doubles=Object.keys(cnt).filter(function(k){return cnt[k]>1;});
+        var absent=a.teams.map(function(t){return t[1];}).filter(function(m){return !cnt[m];});
+        if(doubles.length) notes.push("Round "+r+": "+doubles.join(", ")+" picked twice"+(absent.length?" — "+absent.join(", ")+" had no pick":"")+".");
+        body+='<tr><th class="rnd">'+r+'</th>';
+        for(var i=1;i<=maxPick;i++){
+          var p=row.filter(function(x){return x[1]===i;})[0];
+          if(!p){ body+='<td class="cell"><span class="ov">—</span></td>'; continue; }
+          var dbl=cnt[p[3]]>1;
+          body+='<td class="cell'+(p[4]?" taken":"")+(dbl?" traded":"")+'" title="'+esc(teamOf[p[3]]||p[3])+'"><span class="tm">'+esc(p[3])+'</span><span class="kp">'+esc(p[2])+'</span>'+(dbl?'<span class="via">traded pick</span>':'')+(p[4]?'<span class="via">keeper</span>':'')+'</td>';
+        }
+        body+='</tr>';
+      });
+      html+='<div class="sec-head" style="margin-top:26px"><h2 style="font-size:20px">'+y+' Draft</h2><span class="eyebrow cool">'+a.draft.length+' picks · '+rlist.length+' rounds</span></div>'+
+        '<div class="panel" style="overflow:hidden"><div style="overflow:auto;max-height:70vh"><table class="board"><thead>'+head+'</thead><tbody>'+body+'</tbody></table></div></div>'+
+        (notes.length?'<div class="notice warn" style="margin-top:14px">'+notes.map(esc).join("<br>")+'</div>':'<p class="lede" style="margin-top:12px">Every team made exactly one pick in every round — no picks changed hands.</p>');
+    } else {
+      html+='<div class="empty" style="margin-top:22px">The '+y+' draft board isn\'t on file yet.</div>';
+    }
+    out.innerHTML=html;
+  }
+  wrap.innerHTML=years.map(function(y){return '<button type="button" data-y="'+y+'" aria-pressed="false">'+label(y)+'</button>';}).join("");
+  wrap.addEventListener("click",function(e){ var b=e.target.closest("[data-y]"); if(b) show(+b.dataset.y); });
+  show(years[0]);
+})();
 
 /* ---------- accounts + polls ---------- */
 /* Supabase project URL + anon (public) key. Leave both empty for preview mode. */
@@ -2047,8 +2197,6 @@ var Polls=(function(){
       document.head.appendChild(s);
     } else {
       store=PreviewStore();
-      setNotice("<b>Preview mode.</b> Sign-in is instant, the league code is <b>KIDS26</b>, and everything is saved only in this browser. Real email links and league-wide polls switch on once the database is connected.","warn");
-      baseNotice=$("polls-notice").innerHTML;
       start();
     }
   }
