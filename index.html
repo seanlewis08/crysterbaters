@@ -801,8 +801,9 @@ footer p + p{margin-top:11px}
 <div class="ticker">
   <div class="ticker-in">
     <span><span class="livedot"></span>Yahoo <b>not connected</b> — API pending</span>
+    <span>Draft <b>Sat Oct 18 · 3pm EST</b></span>
+    <span>Keepers due <b>Oct 11</b></span>
     <span>Season opens <b>Oct 20</b></span>
-    <span>Draft <b>offline · 12 rounds</b></span>
     <span>Keepers flagged <b id="tkr-k">10</b></span>
   </div>
 </div>
@@ -814,9 +815,9 @@ footer p + p{margin-top:11px}
     <div id="home-notice"></div>
 
     <div class="onnow">
-      <div><dt>Keeper deadline</dt><dd class="hot">Oct 19<small id="cd-keep">—</small></dd></div>
+      <div><dt>Keepers due</dt><dd class="hot">Oct 11<small id="cd-keep">—</small></dd></div>
+      <div><dt>Draft</dt><dd>Sat Oct 18<small id="cd-draft">—</small></dd></div>
       <div><dt>Season opens</dt><dd>Oct 20<small id="cd-season">—</small></dd></div>
-      <div><dt>Draft</dt><dd>Offline<small>12 rounds · snake</small></dd></div>
       <div><dt>Yahoo</dt><dd>Pending<small>API access under review</small></dd></div>
     </div>
 
@@ -1710,7 +1711,8 @@ document.getElementById("watch").innerHTML=K.map(function(k){
     var n=Math.ceil((target-new Date(t.getFullYear(),t.getMonth(),t.getDate()))/86400000);
     return n>1 ? n+" days away" : (n===1 ? "tomorrow" : (n===0 ? "today" : "passed"));
   }
-  document.getElementById("cd-keep").textContent=daysTo(2026,10,19);
+  document.getElementById("cd-keep").textContent=daysTo(2026,10,11)+" · a week before the draft";
+  document.getElementById("cd-draft").textContent=daysTo(2026,10,18)+" · 12pm PST / 3pm EST · offline, 12 rounds";
   document.getElementById("cd-season").textContent=daysTo(2026,10,20);
 })();
 
