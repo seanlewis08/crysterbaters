@@ -163,10 +163,10 @@ nav{display:flex;margin-left:auto;overflow-x:auto;scrollbar-width:none}
 nav::-webkit-scrollbar{display:none}
 nav button{
   background:none;border:0;cursor:pointer;position:relative;
-  font-family:var(--disp);font-weight:600;font-size:15px;text-transform:uppercase;letter-spacing:.075em;
-  padding:0 15px;color:var(--muted);white-space:nowrap;
+  font-family:var(--disp);font-weight:600;font-size:13.5px;text-transform:uppercase;letter-spacing:.05em;
+  padding:0 9px;color:var(--muted);white-space:nowrap;
 }
-nav button::after{content:"";position:absolute;left:12px;right:12px;bottom:0;height:2px;background:transparent}
+nav button::after{content:"";position:absolute;left:7px;right:7px;bottom:0;height:2px;background:transparent}
 nav button:hover{color:var(--ink)}
 nav button[aria-current="page"]{color:var(--amber)}
 nav button[aria-current="page"]::after{background:var(--amber)}
@@ -557,6 +557,50 @@ td input.capin:focus-visible{outline:1px solid var(--amber);border-color:var(--a
 .opt .cnt{position:relative;font-family:var(--mono);font-size:12px;font-weight:600;color:var(--muted);min-width:72px;text-align:right;letter-spacing:.04em}
 .opt.win .cnt{color:var(--amber)}
 
+/* players */
+.capstrip{display:flex;flex-wrap:wrap;gap:0;margin-bottom:18px;background:var(--surface);border:1px solid var(--line);border-radius:4px;box-shadow:var(--shadow);overflow:hidden}
+.capstrip .tile{flex:1 1 150px;padding:13px 16px;border-right:1px solid var(--line)}
+.capstrip .tile:last-child{border-right:0}
+.capstrip small{display:block;font-family:var(--mono);font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:var(--dim);margin-bottom:5px}
+.capstrip b{font-family:var(--disp);font-weight:800;font-size:26px;line-height:.9;color:var(--ink)}
+.capstrip .tile.main b{color:var(--amber)}
+.capstrip span{display:block;font-size:12px;color:var(--muted);margin-top:5px}
+.pltools{display:flex;flex-wrap:wrap;gap:12px 18px;align-items:flex-end;margin-bottom:14px}
+.pltools .field{min-width:0;flex:0 1 150px}
+.pltools .field.grow{flex:1 1 220px}
+.pltools .field input,.pltools .field select{padding:8px 10px;font-size:14px}
+.pltable{max-height:76vh;overflow:auto;position:relative}
+.pltable table{table-layout:fixed;width:max-content;min-width:100%;border-collapse:separate;border-spacing:0}
+.pltable td{overflow:hidden;text-overflow:ellipsis}
+
+.pltable thead th{position:sticky;top:0;z-index:3;background:var(--surface-2);cursor:pointer;user-select:none;white-space:nowrap;padding:9px 10px;border-bottom:1px solid var(--line-2)}
+.pltable thead th:hover{color:var(--ink)}
+.pltable thead th.on{color:var(--amber)}
+.pltable thead th.on::after{content:" ▾";font-size:9px}
+.pltable thead th.on.asc::after{content:" ▴"}
+.pltable td{padding:0 10px;height:40px;white-space:nowrap;font-size:13.5px;box-sizing:border-box}
+.pltable tr.sp td{height:auto;padding:0;border:0;background:transparent!important}
+.pltable td.num,.pltable th.num{text-align:right}
+.pltable th.num{text-align:right}
+.pltable .pl-name,.pltable th:first-child{position:sticky;left:0;z-index:2;background:var(--surface)}
+.pltable thead th:first-child{z-index:4;background:var(--surface-2)}
+.pltable tbody tr:nth-child(even) .pl-name{background:#F8F3E8}
+.pltable tbody tr:hover td{background:var(--amber-glow)}
+.pltable .pl-name{display:flex;align-items:center;gap:9px;min-width:210px;border-right:1px solid var(--line)}
+.pltable .pl-name img{width:30px;height:22px;object-fit:cover;object-position:top;border-radius:3px;background:var(--surface-2);flex-shrink:0}
+.pltable .pl-name .nm{display:flex;flex-direction:column;line-height:1.05}
+.pltable .pl-name .nm b{font-family:var(--body);font-weight:600;font-size:14px}
+.pltable .pl-name .nm small{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin-top:3px}
+.pltable td.rk{color:var(--dim);font-size:11.5px}
+.pltable td.val b{color:var(--amber)}
+.pltable td.neg{color:var(--red)}
+.pltable .own{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.pltable .own .k{display:inline-block;margin-left:6px;padding:1px 5px;border:1px solid var(--amber-dim);border-radius:2px;color:var(--amber);font-size:9px;font-weight:700}
+.plfoot{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:12px;font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.plfoot .spacer{flex:1}
+.plfoot .sub{text-transform:none;letter-spacing:0;font-family:var(--body)}
+.pl-empty{padding:40px 20px;text-align:center;color:var(--muted)}
+
 /* dues */
 .duestrip{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:18px}
 .duestrip .tile{background:var(--surface);border:1px solid var(--line);border-radius:4px;padding:14px 16px;box-shadow:var(--shadow)}
@@ -705,6 +749,7 @@ footer p + p{margin-top:11px}
     <nav id="nav">
       <button data-go="home">Home</button>
       <button data-go="teams">Teams</button>
+      <button data-go="players">Players</button>
       <button data-go="draft">Draft</button>
       <button data-go="cap">Games Cap</button>
       <button data-go="keepers">Keepers</button>
@@ -1125,6 +1170,39 @@ footer p + p{margin-top:11px}
     </section>
   </div>
 
+  <!-- ================= PLAYERS ================= -->
+  <div class="view" id="v-players">
+    <section>
+      <div class="sec-head"><h2>Players</h2><span class="eyebrow cool" id="pl-eyebrow">Loading…</span></div>
+      <div class="rulebar"></div>
+      <div id="pl-notice"></div>
+      <div class="capstrip" id="pl-cap"></div>
+
+      <div class="pltools">
+        <div class="field grow"><label for="pl-q">Search</label><input id="pl-q" type="search" placeholder="Player name" autocomplete="off" spellcheck="false"></div>
+        <div class="field"><label for="pl-team">NBA team</label><select id="pl-team"><option value="">All teams</option></select></div>
+        <div class="field"><label for="pl-pos">Position</label><select id="pl-pos"><option value="">Any</option><option value="G">Guards</option><option value="F">Forwards</option><option value="C">Centers</option></select></div>
+        <div class="field"><label for="pl-owner">In our league</label><select id="pl-owner"><option value="">Everyone</option><option value="fa">Not on a roster</option><option value="owned">On a roster</option><option value="keeper">Flagged keepers</option></select></div>
+        <div class="field"><label for="pl-mode">Stats</label><select id="pl-mode"><option value="pg">Per game</option><option value="tot">Totals</option></select></div>
+        <div class="field"><label for="pl-season">Season</label><select id="pl-season"></select></div>
+        <div class="field" style="flex:0 0 auto;justify-content:flex-end"><button class="btn quiet sm" id="pl-clear">Clear</button></div>
+      </div>
+
+      <div class="tablewrap pltable" id="pl-wrap">
+        <table id="pl-table">
+          <thead><tr id="pl-head"></tr></thead>
+          <tbody id="pl-rows"></tbody>
+        </table>
+      </div>
+      <div class="plfoot">
+        <span id="pl-count"></span>
+        <span class="spacer"></span>
+        <span class="sub" id="pl-src"></span>
+      </div>
+      <p class="sub" style="margin-top:10px"><b>Value</b> is the sum of z-scores across our eleven categories (FG%, FT%, 3PTM, 3PT%, PTS, REB, AST, ST, BLK, A/T, DD), per game, measured against the top 200 players by minutes — the Basketball Monster way. A player needs ten games (a fifth of the season early on) to be ranked. <b>FPTS</b> is Yahoo's default points formula (PTS 1, REB 1.2, AST 1.5, STL 3, BLK 3, TO −1). <b>Owner</b> is whoever had him when rosters locked; K marks a flagged keeper. Salaries are this season's figure from Basketball-Reference (ESPN where they lack one); stats are ESPN's.</p>
+    </section>
+  </div>
+
   <!-- ================= DUES ================= -->
   <div class="view" id="v-dues">
     <section>
@@ -1517,6 +1595,7 @@ document.getElementById("watch").innerHTML=K.map(function(k){
   var kCount=K.length;
   var cards=[
     {go:"teams",   n:"10",       lbl:"Managers", h:"Teams",      p:"Every roster as it locked before the playoffs, with each player's keeper cost, plus last season's final standings."},
+    {go:"players", n:"—",        lbl:"Players",  h:"Players",    p:"Every NBA player: season stats, value in our eleven categories, who owns him here, and what he makes against the cap.", id:"hc-players"},
     {go:"draft",   n:"12",       lbl:"Rounds",   h:"Draft Board",p:"Set the order, see which picks keepers have already taken, and get the list to type into Yahoo. Last year's full board too."},
     {go:"cap",     n:"30",       lbl:"Per week", h:"Games Cap",  p:"Work out the adjusted cap for short weeks without doing the arithmetic by hand."},
     {go:"keepers", n:String(kCount), lbl:"Declared", h:"Keepers", p:"The calculator that settles arguments, and the ladder every declared keeper has left."},
@@ -2677,12 +2756,287 @@ var Polls=(function(){
 })();
 window.Polls=Polls;
 
+/* ---------- players: stats, value, salary ---------- */
+var Players=(function(){
+  var CAPS={
+    2027:{label:"2026-27",cap:164961000,tax:200428000,apron1:209015000,apron2:221686000,floor:148465000},
+    2026:{label:"2025-26",cap:154647000,tax:187895000,apron1:195945000,apron2:207824000,floor:139182000}
+  };
+  var STATS_URL="https://site.web.api.espn.com/apis/common/v3/sports/basketball/nba/statistics/byathlete?region=us&lang=en&contentorigin=espn&isqualified=false&limit=1000&seasontype=2";
+  var KEY="cb-players-v1", TTL=6*3600000;
+  var C={id:0,name:1,team:2,pos:3,age:4,gp:5,min:6,pts:7,reb:8,ast:9,stl:10,blk:11,tpm:12,tpa:13,fgm:14,fga:15,ftm:16,fta:17,to:18,dd:19,td:20,salary:21,yrs:22,gtd:23,src:24};
+  var snap=null, live={}, season=null, opened=false, userSeason=false, capSeason=2027, rows=[], view=[], sortKey="val", sortAsc=false, booted=false, started=false;
+  var f={q:"",team:"",pos:"",owner:"",mode:"pg"}, qual=10;
+  var $=function(id){return document.getElementById(id);};
+
+  /* ----- owners from the locked rosters ----- */
+  function norm(n){ return n.normalize("NFKD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[.'’]/g,"").replace(/[^a-z ]/g,"").split(" ").filter(function(w){return w&&["jr","sr","ii","iii","iv"].indexOf(w)<0;}).join(" "); }
+  var OWN={};
+  T.forEach(function(t){ (t.roster||[]).forEach(function(r){ OWN[norm(r[1])]={t:t.short,id:t.id,k:!!r[3],cost:(t.costs||{})[r[1]]||0}; }); });
+
+  /* ----- columns ----- */
+  var COLS=[
+    {k:"name",h:"Player",w:236,get:function(r){return r.name;},asc:true},
+    {k:"age",h:"Age",num:true,get:function(r){return r.age;},fmt:function(v){return v||"—";}},
+    {k:"gp",h:"GP",num:true,get:function(r){return r.gp;},fmt:function(v){return v;}},
+    {k:"min",h:"MIN",num:true,get:stat("min"),fmt:d1},
+    {k:"pts",h:"PTS",num:true,get:stat("pts"),fmt:d1},
+    {k:"reb",h:"REB",num:true,get:stat("reb"),fmt:d1},
+    {k:"ast",h:"AST",num:true,get:stat("ast"),fmt:d1},
+    {k:"stl",h:"STL",num:true,get:stat("stl"),fmt:d1},
+    {k:"blk",h:"BLK",num:true,get:stat("blk"),fmt:d1},
+    {k:"tpm",h:"3PM",num:true,get:stat("tpm"),fmt:d1},
+    {k:"tpp",h:"3P%",num:true,get:function(r){return r.tpp;},fmt:pct},
+    {k:"fgp",h:"FG%",num:true,get:function(r){return r.fgp;},fmt:pct},
+    {k:"ftp",h:"FT%",num:true,get:function(r){return r.ftp;},fmt:pct},
+    {k:"to",h:"TO",num:true,get:stat("to"),fmt:d1,asc:true},
+    {k:"at",h:"A/T",num:true,get:function(r){return r.at;},fmt:function(v){return v?v.toFixed(2):"—";}},
+    {k:"dd",h:"DD",num:true,get:function(r){return f.mode==="pg"?r.ddpg:r.dd;},fmt:function(v){return f.mode==="pg"?(v?v.toFixed(2):"0"):v;}},
+    {k:"val",h:"Value",num:true,cls:"val",get:function(r){return r.val;},fmt:function(v){ v=v<-500?v+1000:v; return "<b>"+(v>0?"+":"")+v.toFixed(1)+"</b>"; }},
+    {k:"fpts",h:"FPTS",num:true,get:function(r){return f.mode==="pg"?r.fpts:r.fpts*r.gp;},fmt:d1},
+    {k:"salary",h:"Salary",w:82,num:true,get:function(r){return r.salary;},fmt:money},
+    {k:"cappct",h:"% Cap",w:70,num:true,get:function(r){return r.salary/CAPS[capSeason].cap;},fmt:function(v){return v?(v*100).toFixed(1)+"%":"—";}},
+    {k:"yrs",h:"Yrs",num:true,get:function(r){return r.yrs;},fmt:function(v){return v||"—";}},
+    {k:"owner",h:"Owner",w:150,get:function(r){return r.own?r.own.t:"";},asc:true}
+  ];
+  function stat(k){ return function(r){ return f.mode==="pg"?r[k]:r[k]*r.gp; }; }
+  function d1(v){ return f.mode==="pg"?(+v).toFixed(1):String(Math.round(v)); }
+  function pct(v){ return v>0?(Math.round(v*1000)/1000).toFixed(3).replace(/^0/,""):"—"; }
+  function money(v){ return v?"$"+(v>=1e6?(v/1e6).toFixed(1)+"M":Math.round(v/1e3)+"K"):"—"; }
+
+  /* ----- data ----- */
+  function load(){
+    var cached=null;
+    try{ cached=JSON.parse(localStorage.getItem(KEY)||"null"); }catch(e){}
+    if(cached&&cached.snap){ snap=cached.snap; live=cached.live||{}; }
+    var fresh=fetch("players.json",{cache:"no-cache"}).then(function(r){ if(!r.ok) throw new Error("no snapshot"); return r.json(); });
+    var p=snap?Promise.resolve(snap):fresh.then(function(j){ snap=j; return j; });
+    return p.then(function(){
+      capSeason=snap.salarySeason&&CAPS[snap.salarySeason]?snap.salarySeason:2027;
+      if(!season) season=liveSeasons()[0]||snap.statsSeason;
+      build(); render();
+      if(opened) refreshLive();
+      /* a newer snapshot (salaries refreshed) replaces the cached one quietly */
+      fresh.then(function(j){ if(j&&j.built!==snap.built){ snap=j; capSeason=CAPS[snap.salarySeason]?snap.salarySeason:capSeason; save(); build(); render(); } }).catch(function(){});
+    }).catch(function(e){
+      if(!snap){ setNotice("Player stats load on crysterbaters.com — this preview can't reach them.","warn"); $("pl-eyebrow").textContent="Unavailable here"; }
+    });
+  }
+  function liveSeasons(){ return Object.keys(live).map(Number).filter(function(y){ return live[y]&&live[y].rows.length; }).sort(function(a,b){return b-a;}); }
+  function refreshLive(){
+    var fresh=true, now=Date.now();
+    Object.keys(live).forEach(function(y){ if(now-(live[y].ts||0)>TTL) fresh=false; });
+    if(fresh&&liveSeasons().length) return;
+    /* try the current ESPN season; if it has no games yet, keep last season live too */
+    fetchStats("").then(function(cur){
+      var y=cur.year, tasks=[];
+      if(cur.rows.length&&cur.rows.some(function(r){return r[C.gp]>0;})) live[y]={ts:now,rows:cur.rows,label:cur.label};
+      if(!live[y-1]||now-(live[y-1].ts||0)>TTL) tasks.push(fetchStats(y-1).then(function(prev){ live[prev.year]={ts:now,rows:prev.rows,label:prev.label}; }));
+      return Promise.all(tasks);
+    }).then(function(){
+      save(); var ls=liveSeasons(); if(ls.length&&!userSeason&&(!live[season]||season<ls[0])) season=ls[0];
+      build(); render();
+    }).catch(function(){ /* offline or ESPN changed: the snapshot stands */ if(!rows.length){ build(); render(); } });
+  }
+  function fetchStats(year){
+    return fetch(STATS_URL+(year?"&season="+year:"")).then(function(r){ return r.json(); }).then(function(d){
+      var cats={}; (d.categories||[]).forEach(function(c){ cats[c.name]=c.names; });
+      var out=(d.athletes||[]).map(function(a){
+        var at=a.athlete, by={}; a.categories.forEach(function(c){ by[c.name]=c.values; });
+        function v(cat,key){ var i=cats[cat].indexOf(key); return i<0?0:(by[cat][i]||0); }
+        return [+at.id,at.displayName,at.teamShortName||"FA",(at.position||{}).abbreviation||"",at.age||0,
+          v("general","gamesPlayed"),v("general","avgMinutes"),v("offensive","avgPoints"),v("general","avgRebounds"),v("offensive","avgAssists"),
+          v("defensive","avgSteals"),v("defensive","avgBlocks"),v("offensive","avgThreePointFieldGoalsMade"),v("offensive","avgThreePointFieldGoalsAttempted"),
+          v("offensive","avgFieldGoalsMade"),v("offensive","avgFieldGoalsAttempted"),v("offensive","avgFreeThrowsMade"),v("offensive","avgFreeThrowsAttempted"),
+          v("offensive","avgTurnovers"),v("general","doubleDouble"),v("general","tripleDouble")];
+      });
+      var rs=d.requestedSeason||d.currentSeason||{};
+      return {year:rs.year||year,label:rs.displayName||String(year),rows:out};
+    });
+  }
+  function save(){ try{ localStorage.setItem(KEY,JSON.stringify({snap:snap,live:live})); }catch(e){} }
+
+  /* ----- assemble rows for the chosen season ----- */
+  function build(){
+    var sal={}, salByName={};
+    snap.players.forEach(function(r){ var s={salary:r[C.salary],yrs:r[C.yrs],gtd:r[C.gtd]}; if(r[C.id]) sal[r[C.id]]=s; salByName[norm(r[C.name])]=s; });
+    var src = live[season] ? live[season].rows : snap.players;
+    var seenId={}, seenName={}, list=[];
+    src.forEach(function(r){ list.push(r); if(r[C.id]) seenId[r[C.id]]=1; seenName[norm(r[C.name])]=1; });
+    /* players under contract with no line this season (rookies, injured) ride along without stats */
+    snap.players.forEach(function(r){
+      if((r[C.id]&&seenId[r[C.id]])||seenName[norm(r[C.name])]) return;
+      list.push(r.slice(0,21).map(function(v,i){return i<5?v:0;}));
+    });
+    rows=list.map(function(r){
+      var s=(r[C.id]&&sal[r[C.id]])||salByName[norm(r[C.name])]||{salary:0,yrs:0,gtd:0};
+      var gp=r[C.gp]||0;
+      var o={id:r[C.id],name:r[C.name],team:r[C.team],pos:r[C.pos],age:r[C.age],gp:gp,min:r[C.min],pts:r[C.pts],reb:r[C.reb],ast:r[C.ast],stl:r[C.stl],blk:r[C.blk],
+        tpm:r[C.tpm],tpa:r[C.tpa],fgm:r[C.fgm],fga:r[C.fga],ftm:r[C.ftm],fta:r[C.fta],to:r[C.to],dd:r[C.dd],td:r[C.td],
+        salary:s.salary,yrs:s.yrs,gtd:s.gtd,own:OWN[norm(r[C.name])]||null,key:norm(r[C.name])};
+      o.fgp=o.fga?o.fgm/o.fga:0; o.ftp=o.fta?o.ftm/o.fta:0; o.tpp=o.tpa?o.tpm/o.tpa:0;
+      o.at=o.to?o.ast/o.to:(o.ast?9.99:0); o.ddpg=gp?o.dd/gp:0;
+      o.fpts=o.pts+1.2*o.reb+1.5*o.ast+3*o.stl+3*o.blk-o.to;
+      o.posg=/G/.test(o.pos)?"G":/C/.test(o.pos)?"C":/F/.test(o.pos)?"F":"";
+      return o;
+    });
+    value();
+    var teams={}; rows.forEach(function(r){ if(r.team&&r.team!=="FA") teams[r.team]=1; });
+    var sel=$("pl-team"), cur=sel.value;
+    sel.innerHTML='<option value="">All teams</option>'+Object.keys(teams).sort().map(function(t){return '<option value="'+t+'">'+t+'</option>';}).join("");
+    sel.value=cur;
+    var ss=$("pl-season"), opts=[]; var years={}; years[snap.statsSeason]=1; liveSeasons().forEach(function(y){years[y]=1;});
+    Object.keys(years).map(Number).sort(function(a,b){return b-a;}).forEach(function(y){ opts.push('<option value="'+y+'">'+((live[y]&&live[y].label)||(y-1)+"-"+String(y).slice(2))+'</option>'); });
+    ss.innerHTML=opts.join(""); ss.value=String(season);
+    var hc=document.querySelector("#hc-players .hc-n"); if(hc) hc.textContent=String(rows.length);
+  }
+
+  /* z-scores across the league's eleven categories, per game, population = top 200 by minutes */
+  function value(){
+    var pool=rows.filter(function(r){return r.gp>=5;}).sort(function(a,b){return b.min*b.gp-a.min*a.gp;}).slice(0,200);
+    if(pool.length<20) pool=rows.filter(function(r){return r.gp>0;});
+    if(!pool.length){ rows.forEach(function(r){ r.val=0; r.rank=0; }); return; }
+    function sum(k){ return pool.reduce(function(a,r){return a+r[k];},0); }
+    var lgFG=sum("fgm")/(sum("fga")||1), lgFT=sum("ftm")/(sum("fta")||1), lg3=sum("tpm")/(sum("tpa")||1), lgAT=sum("ast")/(sum("to")||1);
+    var cats={
+      pts:function(r){return r.pts;}, reb:function(r){return r.reb;}, ast:function(r){return r.ast;}, stl:function(r){return r.stl;}, blk:function(r){return r.blk;}, tpm:function(r){return r.tpm;},
+      fgp:function(r){return r.fgm-r.fga*lgFG;}, ftp:function(r){return r.ftm-r.fta*lgFT;}, tpp:function(r){return r.tpm-r.tpa*lg3;},
+      at:function(r){return r.ast-r.to*lgAT;}, dd:function(r){return r.ddpg;}
+    };
+    var stats={};
+    Object.keys(cats).forEach(function(k){
+      var m=0; pool.forEach(function(r){ m+=cats[k](r); }); m/=pool.length;
+      var v=0; pool.forEach(function(r){ var d=cats[k](r)-m; v+=d*d; }); var sd=Math.sqrt(v/pool.length)||1;
+      stats[k]={m:m,sd:sd};
+    });
+    /* a rank needs a real sample: 10 games, or a fifth of the season so far */
+    var maxGp=0; rows.forEach(function(r){ if(r.gp>maxGp) maxGp=r.gp; });
+    qual=Math.max(1,Math.min(10,Math.round(maxGp*0.2)));
+    rows.forEach(function(r){
+      var z=0;
+      if(r.gp>0) Object.keys(cats).forEach(function(k){ z+=(cats[k](r)-stats[k].m)/stats[k].sd; });
+      r.z=r.gp>0?z:-99; r.q=r.gp>=qual;
+      r.val=r.q?r.z:r.z-1000;   /* unqualified sort below everyone with a real sample */
+    });
+    var i=0; rows.slice().sort(function(a,b){return b.val-a.val;}).forEach(function(r){ r.rank=r.q?++i:0; });
+  }
+
+  /* ----- filtering, sorting, rendering ----- */
+  function apply(){
+    var q=norm(f.q||"");
+    view=rows.filter(function(r){
+      if(q&&r.key.indexOf(q)<0) return false;
+      if(f.team&&r.team!==f.team) return false;
+      if(f.pos&&r.posg!==f.pos) return false;
+      if(f.owner==="fa"&&r.own) return false;
+      if(f.owner==="owned"&&!r.own) return false;
+      if(f.owner==="keeper"&&!(r.own&&r.own.k)) return false;
+      if(f.owner&&["fa","owned","keeper"].indexOf(f.owner)<0&&!(r.own&&r.own.id===f.owner)) return false;
+      return true;
+    });
+    var col=COLS.filter(function(c){return c.k===sortKey;})[0]||COLS[17], get=col.get, dir=sortAsc?1:-1;
+    view.sort(function(a,b){
+      var x=get(a), y=get(b);
+      if(typeof x==="string"||typeof y==="string"){ x=String(x); y=String(y); return x<y?-dir:x>y?dir:0; }
+      if(x===y) return b.val-a.val;
+      return (x<y?-1:1)*dir;
+    });
+  }
+  function render(){
+    if(!rows.length) return;
+    apply();
+    var head=COLS.map(function(c){
+      return '<th class="'+(c.num?"num ":"")+(c.k===sortKey?"on"+(sortAsc?" asc":""):"")+'" data-sort="'+c.k+'">'+c.h+'</th>';
+    }).join("");
+    $("pl-head").innerHTML=head;
+    if(!$("pl-cols")){ var cg=document.createElement("colgroup"); cg.id="pl-cols"; var narrow=window.innerWidth<600; cg.innerHTML=COLS.map(function(c){return '<col style="width:'+(c.k==="name"&&narrow?168:(c.w||60))+'px">';}).join(""); $("pl-table").insertBefore(cg,$("pl-table").firstChild); }
+    $("pl-wrap").scrollTop=0;
+    renderBody(true);
+    var lv=live[season], when=lv?new Date(lv.ts):null;
+    $("pl-eyebrow").textContent=(lv?lv.label:(season-1)+"-"+String(season).slice(2))+" stats · "+CAPS[capSeason].label+" salaries";
+    $("pl-src").textContent=(lv?"Stats from ESPN, refreshed "+when.toLocaleTimeString(undefined,{hour:"numeric",minute:"2-digit"}):"Stats from the last snapshot")+" · salaries as of "+new Date(snap.built).toLocaleDateString(undefined,{month:"short",day:"numeric"});
+    renderCap();
+  }
+  /* only the rows in (and just around) the viewport exist in the DOM; spacer rows hold the scroll height */
+  var ROW_H=40, lastStart=-1, lastEnd=-1, ticking=false;
+  function renderBody(force){
+    var wrap=$("pl-wrap"), top=wrap.scrollTop, h=wrap.clientHeight||600;
+    var start=Math.max(0,Math.floor(top/ROW_H)-6), end=Math.min(view.length,start+Math.ceil(h/ROW_H)+12);
+    if(!force&&start===lastStart&&end===lastEnd) return;
+    lastStart=start; lastEnd=end;
+    var out=[];
+    if(start>0) out.push('<tr class="sp" style="height:'+(start*ROW_H)+'px"><td colspan="'+COLS.length+'"></td></tr>');
+    for(var i=start;i<end;i++){
+      var r=view[i], cells=[];
+      for(var j=0;j<COLS.length;j++){
+        var c=COLS[j];
+        if(c.k==="name"){
+          cells.push('<td class="pl-name">'+(r.id?'<img loading="lazy" alt="" src="https://a.espncdn.com/i/headshots/nba/players/full/'+r.id+'.png" onerror="this.style.visibility=\'hidden\'">':'<span style="width:30px;flex-shrink:0"></span>')+
+            '<span class="nm"><b>'+esc(r.name)+'</b><small>'+(r.rank?"#"+r.rank+" · ":"")+esc(r.team)+(r.pos?" · "+esc(r.pos):"")+(r.gp?(r.q?"":" · "+r.gp+" GP, unranked"):" · no games")+'</small></span></td>');
+        } else if(c.k==="owner"){
+          cells.push('<td class="own">'+(r.own?esc(r.own.t)+(r.own.k?'<span class="k">K'+(r.own.cost?" RD "+r.own.cost:"")+'</span>':''):'<span style="color:var(--line-2)">—</span>')+'</td>');
+        } else {
+          var v=c.get(r), txt=(c.k==="val"&&r.gp===0)?'<span style="color:var(--line-2)">—</span>':c.fmt(v);
+          cells.push('<td class="num'+(c.cls?" "+c.cls:"")+(c.k==="val"&&r.z<0&&r.gp?" neg":"")+'">'+txt+'</td>');
+        }
+      }
+      out.push('<tr>'+cells.join("")+'</tr>');
+    }
+    if(end<view.length) out.push('<tr class="sp" style="height:'+((view.length-end)*ROW_H)+'px"><td colspan="'+COLS.length+'"></td></tr>');
+    $("pl-rows").innerHTML=out.join("")||'<tr><td colspan="'+COLS.length+'" class="pl-empty">Nobody matches that. Try fewer filters.</td></tr>';
+    $("pl-count").textContent=view.length===rows.length?rows.length+" players":view.length+" of "+rows.length+" players";
+  }
+  function renderCap(){
+    var c=CAPS[capSeason];
+    function m(v){ return "$"+(v/1e6).toFixed(3).replace(/0+$/,"").replace(/\.$/,"")+"M"; }
+    var payroll={}; rows.forEach(function(r){ if(r.own&&r.salary) payroll[r.own.t]=(payroll[r.own.t]||0)+r.salary; });
+    $("pl-cap").innerHTML=
+      '<div class="tile main"><small>'+c.label+' salary cap</small><b>'+m(c.cap)+'</b><span>% Cap column is against this</span></div>'+
+      '<div class="tile"><small>Luxury tax</small><b>'+m(c.tax)+'</b><span>teams above it pay the tax</span></div>'+
+      '<div class="tile"><small>First apron</small><b>'+m(c.apron1)+'</b><span>trade and exception limits kick in</span></div>'+
+      '<div class="tile"><small>Second apron</small><b>'+m(c.apron2)+'</b><span>the hard one</span></div>'+
+      '<div class="tile"><small>Salary floor</small><b>'+m(c.floor)+'</b><span>90% of the cap</span></div>';
+  }
+  function setNotice(html,cls){ $("pl-notice").innerHTML=html?'<div class="notice '+(cls||"")+'">'+html+'</div>':""; }
+
+  /* ----- events ----- */
+  var timer=null;
+  function bind(){
+    $("pl-q").addEventListener("input",function(){ f.q=this.value; clearTimeout(timer); timer=setTimeout(function(){ render(); },40); });
+    ["team","pos","owner","mode"].forEach(function(k){ $("pl-"+k).addEventListener("change",function(){ f[k]=this.value; render(); }); });
+    $("pl-season").addEventListener("change",function(){ season=+this.value; userSeason=true; build(); render(); });
+    $("pl-clear").addEventListener("click",function(){ f={q:"",team:"",pos:"",owner:"",mode:f.mode}; $("pl-q").value=""; $("pl-team").value=""; $("pl-pos").value=""; $("pl-owner").value=""; sortKey="val"; sortAsc=false; render(); $("pl-q").focus(); });
+    $("pl-wrap").addEventListener("scroll",function(){ if(ticking) return; ticking=true; requestAnimationFrame(function(){ ticking=false; renderBody(); }); },{passive:true});
+    window.addEventListener("resize",function(){ if(view.length) renderBody(true); });
+    $("pl-head").addEventListener("click",function(e){
+      var th=e.target.closest("[data-sort]"); if(!th) return;
+      var col=COLS.filter(function(c){return c.k===th.dataset.sort;})[0];
+      if(sortKey===col.k) sortAsc=!sortAsc; else { sortKey=col.k; sortAsc=!!col.asc; }
+      render();
+    });
+    /* league teams in the owner filter */
+    var os=$("pl-owner"); T.forEach(function(t){ var o=document.createElement("option"); o.value=t.id; o.textContent=t.short+" — "+t.name; os.appendChild(o); });
+  }
+  function onView(v){
+    if(v!=="players") return;
+    var first=!opened; opened=true;
+    if(!started){ started=true; bind(); load(); }
+    else if(first&&snap) refreshLive();
+  }
+  /* warm the snapshot in the background so the first open is instant */
+  function warm(){ if(!started){ started=true; bind(); load(); } }
+  if("requestIdleCallback" in window) requestIdleCallback(warm,{timeout:4000}); else setTimeout(warm,2500);
+  return {onView:onView};
+})();
+window.Players=Players;
+
 /* ---------- routing ---------- */
-var views={home:"v-home",teams:"v-teams",team:"v-team",draft:"v-draft",cap:"v-cap",keepers:"v-keepers",polls:"v-polls",pollhist:"v-pollhist",dues:"v-dues",signup:"v-signup",manager:"v-manager",history:"v-history",rules:"v-rules"};
+var views={home:"v-home",teams:"v-teams",team:"v-team",players:"v-players",draft:"v-draft",cap:"v-cap",keepers:"v-keepers",polls:"v-polls",pollhist:"v-pollhist",dues:"v-dues",signup:"v-signup",manager:"v-manager",history:"v-history",rules:"v-rules"};
 function go(v){
   Object.keys(views).forEach(function(k){document.getElementById(views[k]).classList.toggle("on",k===v);});
   var navKey=(v==="team")?"teams":(v==="pollhist"?"polls":v);
   if(window.Polls) Polls.onView(v);
+  if(window.Players) Players.onView(v);
   Array.prototype.forEach.call(document.querySelectorAll("#nav button"),function(b){
     if(b.dataset.go===navKey){b.setAttribute("aria-current","page");}else{b.removeAttribute("aria-current");}
   });

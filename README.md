@@ -6,9 +6,9 @@ Yahoo league ID `33689`. Site is currently a single static page; it becomes a fu
 
 ## What's here
 
-`index.html` — the whole site. No build step, no dependencies. Vercel serves it as-is.
+`index.html` — the whole site. No build step, no dependencies. Vercel serves it as-is. `players.json` is the one data file beside it (see Players below); `tools/players_snapshot.py` rebuilds it.
 
-Pages: standings, teams and their locked rosters, the pre-draft board (with pick trades), the weekly games-cap calculator, the keeper calculator, league history with a season archive (Yahoo standings and full draft boards since 2019), polls, league dues, and the rules.
+Pages: standings, teams and their locked rosters, a searchable player table (stats, fantasy value, salaries against the cap), the pre-draft board (with pick trades), the weekly games-cap calculator, the keeper calculator, league history with a season archive (Yahoo standings and full draft boards since 2019), polls, league dues, and the rules.
 
 ## Deploying
 
@@ -21,6 +21,12 @@ Vercel is connected to this repository. Pushing to `main` deploys automatically.
 **The roster lock.** Rosters lock before the playoffs, and that frozen roster decides keeper eligibility. A playoff team dropping a player afterwards does not lose him as a keeper. Yahoo does not preserve this snapshot, which is why it has historically lived as screenshots in a spreadsheet.
 
 **Weekly games cap.** Thirty player-games a week, scaled down when the NBA plays a short week: `cap = 29.76 × (that week's league-wide games ÷ 50)`, rounded sensibly. Yahoo has no setting for this and cannot count it.
+
+## Players
+
+The Players page is every NBA player in one sortable table: age, games, minutes, the box-score line, our eleven categories, a **Value** column (sum of per-game z-scores across FG%, FT%, 3PTM, 3PT%, PTS, REB, AST, ST, BLK, A/T and DD, measured against the top 200 players by minutes — a player needs ten games to be ranked), Yahoo's default-formula fantasy points, who in the league had him when rosters locked (K for a flagged keeper), and his salary, share of the cap and years left. The cap, tax line, aprons and floor for the season sit above the table. Search is instant; filters cover NBA team, position, league ownership, per-game or totals, and season. Only the rows in view are in the DOM, so sorting 650 players is a few milliseconds.
+
+Data: stats are fetched straight from ESPN's public feed in the browser (cached six hours, current season once it has games, otherwise last season). Salaries come from `players.json`, built by `python3 tools/players_snapshot.py` from Basketball-Reference's contracts page (one request; ESPN's contract feed fills gaps). Re-run it after free agency or big trades and commit the file; the page picks up the new snapshot on the next visit. Both sources are unofficial; if either changes, the page keeps showing the last snapshot.
 
 ## Logins and polls
 
