@@ -1257,6 +1257,8 @@ footer p + p{margin-top:11px}
         <div class="field"><label for="pl-team">NBA team</label><select id="pl-team"><option value="">All teams</option></select></div>
         <div class="field"><label for="pl-pos">Position</label><select id="pl-pos"><option value="">Any</option><option value="G">Guards</option><option value="F">Forwards</option><option value="C">Centers</option></select></div>
         <div class="field"><label for="pl-owner">In our league</label><select id="pl-owner"><option value="">Everyone</option><option value="fa">Not on a roster</option><option value="owned">On a roster</option><option value="keeper">Flagged keepers</option></select></div>
+        <div class="field" style="flex:0 1 96px"><label for="pl-mingp">Min GP</label><input id="pl-mingp" type="number" min="0" step="1" inputmode="numeric" placeholder="0"></div>
+        <div class="field" style="flex:0 1 96px"><label for="pl-minmin">Min MPG</label><input id="pl-minmin" type="number" min="0" step="1" inputmode="numeric" placeholder="0"></div>
         <div class="field"><label for="pl-mode">Stats</label><select id="pl-mode"><option value="pg">Per game</option><option value="tot">Totals</option><option value="z">Z-scores</option></select></div>
         <div class="field"><label for="pl-season">Season</label><select id="pl-season"></select></div>
         <div class="field" style="flex:0 0 auto;justify-content:flex-end"><button class="btn quiet sm" id="pl-clear">Clear</button></div>
@@ -3012,7 +3014,7 @@ var Players=(function(){
   var KEY="cb-players-v1", TTL=6*3600000;
   var C={id:0,name:1,team:2,pos:3,age:4,gp:5,min:6,pts:7,reb:8,ast:9,stl:10,blk:11,tpm:12,tpa:13,fgm:14,fga:15,ftm:16,fta:17,to:18,dd:19,td:20,salary:21,yrs:22,gtd:23,src:24};
   var snap=null, live={}, season=null, opened=false, userSeason=false, capSeason=2027, rows=[], view=[], sortKey="val", sortAsc=false, booted=false, started=false;
-  var f={q:"",team:"",pos:"",owner:"",mode:"pg"}, qual=10;
+  var f={q:"",team:"",pos:"",owner:"",mode:"pg",mingp:0,minmin:0}, qual=10;
   var $=function(id){return document.getElementById(id);};
 
   /* ----- owners from the locked rosters ----- */
@@ -3188,6 +3190,8 @@ var Players=(function(){
       if(f.owner==="owned"&&!r.own) return false;
       if(f.owner==="keeper"&&!(r.own&&r.own.k)) return false;
       if(f.owner&&["fa","owned","keeper"].indexOf(f.owner)<0&&!(r.own&&r.own.id===f.owner)) return false;
+      if(f.mingp>0&&r.gp<f.mingp) return false;
+      if(f.minmin>0&&r.min<f.minmin) return false;
       return true;
     });
     if(f.mode==="z"){
@@ -3267,8 +3271,9 @@ var Players=(function(){
   function bind(){
     $("pl-q").addEventListener("input",function(){ f.q=this.value; clearTimeout(timer); timer=setTimeout(function(){ render(); },40); });
     ["team","pos","owner","mode"].forEach(function(k){ $("pl-"+k).addEventListener("change",function(){ f[k]=this.value; render(); }); });
+    ["mingp","minmin"].forEach(function(k){ var el=$("pl-"+k); function upd(){ var v=Math.max(0,parseFloat(el.value)||0); if(v===f[k]) return; f[k]=v; render(); } el.addEventListener("input",function(){ clearTimeout(timer); timer=setTimeout(upd,120); }); el.addEventListener("change",upd); });
     $("pl-season").addEventListener("change",function(){ season=+this.value; userSeason=true; build(); render(); });
-    $("pl-clear").addEventListener("click",function(){ f={q:"",team:"",pos:"",owner:"",mode:f.mode}; $("pl-q").value=""; $("pl-team").value=""; $("pl-pos").value=""; $("pl-owner").value=""; sortKey="val"; sortAsc=false; render(); $("pl-q").focus(); });
+    $("pl-clear").addEventListener("click",function(){ f={q:"",team:"",pos:"",owner:"",mode:f.mode,mingp:0,minmin:0}; $("pl-q").value=""; $("pl-team").value=""; $("pl-pos").value=""; $("pl-owner").value=""; $("pl-mingp").value=""; $("pl-minmin").value=""; sortKey="val"; sortAsc=false; render(); $("pl-q").focus(); });
     $("pl-wrap").addEventListener("scroll",function(){ if(ticking) return; ticking=true; requestAnimationFrame(function(){ ticking=false; renderBody(); }); },{passive:true});
     window.addEventListener("resize",function(){ if(view.length) renderBody(true); });
     $("pl-head").addEventListener("click",function(e){
