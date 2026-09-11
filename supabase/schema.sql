@@ -24,6 +24,21 @@ insert into public.league_settings (id, invite_code, commissioner_email)
   values (1, 'KIDS26', 'seanlewis08@gmail.com')
 on conflict (id) do nothing;   -- keeps whatever code Sean has set since
 
+-- Site switches the commissioner flips from the page (e.g. hide the Draft Day
+-- tab once the season starts). Readable by everyone through the site_flags
+-- view below; only the commissioner can change them.
+alter table public.league_settings add column if not exists show_draft_day boolean not null default true;
+create or replace view public.site_flags
+with (security_invoker = false) as
+  select show_draft_day from public.league_settings where id = 1;
+
+create or replace function public.set_show_draft_day(p_on boolean)
+returns void language plpgsql security definer set search_path = public as $$
+begin
+  if not public.is_commissioner() then raise exception 'Commissioner only.'; end if;
+  update public.league_settings set show_draft_day = coalesce(p_on, true) where id = 1;
+end $$;
+
 -- ----------------------------------------------------------------------
 -- 2. Profiles: one signed-in user ↔ one team.
 -- ----------------------------------------------------------------------
@@ -509,6 +524,8 @@ create policy dues_payments_read on public.dues_payments
 grant usage on schema public to authenticated;
 grant select on public.league_settings, public.profiles, public.claimed_teams, public.poll_tallies to authenticated;
 grant select on public.claimed_teams to anon;   -- team ids only, so the sign-up page can grey out taken teams
+grant select on public.site_flags to anon, authenticated;   -- one boolean, no secrets
+grant execute on function public.set_show_draft_day(boolean) to authenticated;
 grant select, insert, update, delete on public.polls to authenticated;
 grant select, insert, update on public.votes to authenticated;
 grant select, insert, update, delete on public.agenda to authenticated;

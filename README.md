@@ -45,3 +45,7 @@ The backend is a free Supabase project: `supabase/schema.sql` creates the tables
 ## Still to come
 
 Live standings and matchups, the automatic games-played counter, one-button roster lock, and eventually a chat. Those wait on Yahoo API access.
+
+
+### Draft Day tab and clocks
+Draft Day has its own nav tab. The commissioner can hide it once the season starts (checkbox on the Draft Day admin card → `league_settings.show_draft_day`, exposed to everyone through the `site_flags` view); the page still opens at `#sched`. The grid shows each viewer's own clock by default, with a Pacific / Eastern toggle so everyone can compare the same slots.

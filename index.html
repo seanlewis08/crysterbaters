@@ -153,20 +153,20 @@ a:hover{text-decoration:underline}
 
 /* ---------- top bar ---------- */
 .topbar{position:sticky;top:0;z-index:60;background:rgba(253,250,244,.93);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
-.topbar-in{max-width:1200px;margin:0 auto;padding-inline:20px;display:flex;align-items:stretch;gap:20px;min-height:62px}
+.topbar-in{max-width:1200px;margin:0 auto;padding:10px 20px 0;display:flex;flex-wrap:wrap;align-items:center;gap:0 20px}
 .brand{display:flex;align-items:center;gap:11px;background:none;border:0;padding:0;cursor:pointer;text-align:left;flex-shrink:0}
 .mark{width:28px;height:28px;flex-shrink:0}
 .brand-txt{display:flex;flex-direction:column;line-height:1}
 .brand-txt b{font-family:var(--disp);font-weight:800;font-size:17px;text-transform:uppercase;letter-spacing:.045em}
 .brand-txt span{font-family:var(--mono);font-size:8.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--dim);margin-top:4px}
-nav{display:flex;margin-left:auto;overflow-x:auto;scrollbar-width:none}
+nav{display:flex;width:100%;order:3;margin-top:9px;margin-left:-8px;border-top:1px solid var(--line);overflow-x:auto;scrollbar-width:none}
 nav::-webkit-scrollbar{display:none}
 nav button{
   background:none;border:0;cursor:pointer;position:relative;
   font-family:var(--disp);font-weight:600;font-size:13.5px;text-transform:uppercase;letter-spacing:.05em;
-  padding:0 9px;color:var(--muted);white-space:nowrap;
+  padding:11px 10px 12px;color:var(--muted);white-space:nowrap;
 }
-nav button::after{content:"";position:absolute;left:7px;right:7px;bottom:0;height:2px;background:transparent}
+nav button::after{content:"";position:absolute;left:9px;right:9px;bottom:0;height:2px;background:transparent}
 nav button:hover{color:var(--ink)}
 nav button[aria-current="page"]{color:var(--amber)}
 nav button[aria-current="page"]::after{background:var(--amber)}
@@ -356,6 +356,7 @@ tr.keeprow td{background:var(--amber-glow)!important;border-bottom-color:var(--a
 /* ---------- detail ---------- */
 .back{background:none;border:0;cursor:pointer;font-family:var(--mono);font-size:10.5px;letter-spacing:.15em;text-transform:uppercase;color:var(--dim);padding:8px 0;margin-top:26px}
 .back:hover{color:var(--amber)}
+.hubcard[hidden],.back[hidden],nav button[hidden]{display:none}
 .detail-head{display:flex;gap:18px;align-items:center;flex-wrap:wrap;margin-top:8px;padding-bottom:22px;border-bottom:1px solid var(--amber-dim)}
 .detail-head .avatar{width:56px;height:56px;font-size:20px}
 .detail-head h2{font-size:clamp(28px,5vw,44px);font-weight:800;text-transform:uppercase;letter-spacing:.015em}
@@ -503,7 +504,7 @@ td input.capin:focus-visible{outline:1px solid var(--amber);border-color:var(--a
 .btn:disabled{opacity:.45;cursor:default;filter:none}
 .btn:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
 
-.acct{display:flex;align-items:center;gap:12px;flex-shrink:0;margin-left:6px}
+.acct{display:flex;align-items:center;gap:12px;flex-shrink:0;margin-left:auto}
 .acct .who{display:flex;flex-direction:column;line-height:1;text-align:right}
 .acct .who b{font-family:var(--disp);font-weight:700;font-size:14px;text-transform:uppercase;letter-spacing:.04em;max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .acct .who span{font-family:var(--mono);font-size:8.5px;letter-spacing:.15em;text-transform:uppercase;color:var(--dim);margin-top:4px}
@@ -667,10 +668,9 @@ footer p + p{margin-top:11px}
 @media (max-width:860px){.hero{grid-template-columns:1fr}}
 @media (max-width:760px){.newpoll .calc-in{grid-template-columns:1fr}}
 @media (max-width:600px){
-  .topbar-in{flex-wrap:wrap;padding-block:11px;gap:11px;min-height:0}
-  nav{margin-left:0;width:100%;order:3}
-  nav button{padding:8px 13px 10px}
-  .acct{margin-left:auto}
+  .topbar-in{padding-top:11px}
+  nav{margin-left:-12px}
+  nav button{padding:9px 12px 11px}
   .acct .who b{font-size:12.5px}
   .champ{padding:24px 20px}
   .scoreline div{border-right:0;padding-right:0;margin-right:22px}
@@ -779,6 +779,7 @@ footer p + p{margin-top:11px}
       <button data-go="teams">Teams</button>
       <button data-go="players">Players</button>
       <button data-go="draft">Draft</button>
+      <button data-go="sched" id="nav-sched">Draft Day</button>
       <button data-go="cap">Games Cap</button>
       <button data-go="keepers">Keepers</button>
       <button data-go="polls">Polls</button>
@@ -834,7 +835,7 @@ footer p + p{margin-top:11px}
     <div id="home-notice"></div>
 
     <div class="onnow">
-      <div><dt>Draft</dt><dd class="hot" id="tile-draft">Picking a day<small id="cd-draft">Oct 11–19 · mark when you're free</small></dd><button class="back" data-go="sched" style="margin:6px 0 0;padding:0;font-size:11px;color:var(--amber)">Draft Day page →</button></div>
+      <div><dt>Draft</dt><dd class="hot" id="tile-draft">Picking a day<small id="cd-draft">Oct 11–19 · mark when you're free</small></dd><button class="back" data-go="sched" id="tile-sched-link" style="margin:6px 0 0;padding:0;font-size:11px;color:var(--amber)">Draft Day page →</button></div>
       <div><dt>Keepers due</dt><dd id="tile-keep">Week before<small id="cd-keep">the draft, once it's set</small></dd></div>
       <div><dt>Season opens</dt><dd>Oct 20<small id="cd-season">—</small></dd></div>
       <div><dt>Yahoo</dt><dd>Pending<small>API access under review</small></dd></div>
@@ -1168,6 +1169,7 @@ footer p + p{margin-top:11px}
           <div id="sc-chosen"></div>
           <div class="ptools">
             <div class="seg" id="sc-seg"><button class="on" data-scview="me">My availability</button><button data-scview="all">Everyone</button></div>
+            <div class="seg" id="sc-tzseg" title="Which clock to show the grid in"><button class="on" data-sctz="">My time</button><button data-sctz="America/Los_Angeles">Pacific</button><button data-sctz="America/New_York">Eastern</button></div>
             <span id="sc-save" class="sub"></span>
             <span class="spacer"></span>
             <span class="eyebrow cool" id="sc-count"></span>
@@ -1198,6 +1200,7 @@ footer p + p{margin-top:11px}
               <button class="btn quiet" id="se-reopen" hidden>Reopen the poll</button>
               <span id="se-msg" style="font-size:13.5px;color:var(--muted)"></span>
             </div>
+            <label style="display:flex;gap:10px;align-items:center;margin-top:16px;font-size:13.5px;cursor:pointer"><input type="checkbox" id="se-show" checked> <span><b>Show the Draft Day tab</b> — untick once the season starts to hide it from the nav and the home page (this page still opens from the Manager page or at <code>#sched</code>).</span></label>
           </div>
         </div>
       </div>
@@ -2422,6 +2425,8 @@ var Polls=(function(){
       releaseTeam:function(team_id){ db.profiles=db.profiles.filter(function(p){return p.team_id!==team_id;}); save(); return Promise.resolve(); },
       getCode:function(){ return Promise.resolve(db.code); },
       setCode:function(c){ db.code=c; save(); return Promise.resolve(); },
+      flags:function(){ return Promise.resolve({show_draft_day:db.showSched!==false}); },
+      setShowSched:function(on){ if(!commish()) return Promise.reject(new Error("Commissioner only.")); db.showSched=!!on; save(); return Promise.resolve(); },
       load:function(){
         var u=db.me&&db.me.id;
         var vis=db.votes.filter(function(v){
@@ -2551,6 +2556,8 @@ var Polls=(function(){
       releaseTeam:function(team_id){ return client.rpc("release_team",{p_team_id:team_id}).then(chk); },
       getCode:function(){ return client.from("league_settings").select("invite_code").eq("id",1).maybeSingle().then(function(r){ chk(r); return r.data?r.data.invite_code:""; }); },
       setCode:function(c){ return client.rpc("set_invite_code",{p_code:c}).then(chk); },
+      flags:function(){ return client.from("site_flags").select("show_draft_day").maybeSingle().then(function(r){ chk(r); return {show_draft_day:!r.data||r.data.show_draft_day!==false}; }); },
+      setShowSched:function(on){ return client.rpc("set_show_draft_day",{p_on:!!on}).then(chk); },
       load:function(){
         return Promise.all([
           client.from("polls").select("*").order("created_at",{ascending:false}),
@@ -2755,8 +2762,14 @@ var Polls=(function(){
   function wallToInstant(dateStr,hour,tz){ var p=dateStr.split("-"), guess=Date.UTC(+p[0],+p[1]-1,+p[2],hour); return guess-tzOffsetMs(guess,tz); }
   function slotKey(ms){ return new Date(ms).toISOString(); }
   function localTz(){ try{ return Intl.DateTimeFormat().resolvedOptions().timeZone||""; }catch(e){ return ""; } }
-  function tzShort(){ try{ var p=new Intl.DateTimeFormat([], {timeZoneName:"short"}).formatToParts(new Date()); return (p.filter(function(x){return x.type==="timeZoneName";})[0]||{}).value||""; }catch(e){ return ""; } }
-  function fmtSlot(key){ var d=new Date(key); return d.toLocaleDateString([], {weekday:"short",month:"short",day:"numeric"})+" · "+d.toLocaleTimeString([], {hour:"numeric"}); }
+  /* which clock the grid is shown in: "" = the viewer's own, else an IANA zone (Pacific / Eastern toggle) */
+  var dispTz=""; try{ dispTz=localStorage.getItem("cb-sched-tz")||""; }catch(e){}
+  function tzOpt(extra){ var o=extra||{}; if(dispTz) o.timeZone=dispTz; return o; }
+  function tzShort(){ try{ var p=new Intl.DateTimeFormat([], tzOpt({timeZoneName:"short"})).formatToParts(new Date()); return (p.filter(function(x){return x.type==="timeZoneName";})[0]||{}).value||""; }catch(e){ return ""; } }
+  function fmtDay(d,o){ return d.toLocaleDateString([], tzOpt(o||{weekday:"short",month:"short",day:"numeric"})); }
+  function fmtHour(d){ return d.toLocaleTimeString([], tzOpt({hour:"numeric"})); }
+  function fmtSlot(key){ var d=new Date(key); return fmtDay(d)+" · "+fmtHour(d); }
+  function dayKey(d){ return d.toLocaleDateString("en-CA", tzOpt({year:"numeric",month:"2-digit",day:"2-digit"})); }
   function scGridModel(ev){
     var hours=[]; for(var h=ev.start_hour;h<ev.end_hour;h++) hours.push(h);
     var cols=ev.dates.map(function(d){ return {date:d,keys:hours.map(function(h){ return slotKey(wallToInstant(d,h,ev.tz)); })}; });
@@ -2765,7 +2778,7 @@ var Polls=(function(){
   function schedRefresh(force){
     var signed=!!me, member=signed&&!!profile;
     $("sc-locked").hidden=signed; $("sc-noteam").hidden=!(signed&&!profile); $("sc-body").hidden=!member;
-    $("sc-eyebrow").textContent=member?"Signed in as "+nameFor(me.id,me.email)+" · times in "+tzShort():"Members only";
+    $("sc-eyebrow").textContent=member?"Signed in as "+nameFor(me.id,me.email)+" · times in "+tzShort()+(dispTz?"":" (your clock)"):"Members only";
     var hc=document.querySelector("#hc-sched .hc-n");
     if(!member){ sched={event:null,marks:[]}; schedLoaded=false; if(hc) hc.textContent="—"; return; }
     if(schedLoaded&&!force&&!$("v-sched").classList.contains("on")) return;
@@ -2800,6 +2813,8 @@ var Polls=(function(){
     $("sc-hint").hidden=closed;
     var showAll=scView==="all"||closed;
     $("sc-seg").querySelectorAll("button").forEach(function(b){ b.classList.toggle("on",b.dataset.scview===(showAll?"all":"me")); });
+    $("sc-tzseg").querySelectorAll("button").forEach(function(b){ b.classList.toggle("on",(b.dataset.sctz||"")===dispTz); });
+    (function(){ var save=dispTz; dispTz=""; var mine=tzShort(); dispTz=save; $("sc-tzseg").querySelector("[data-sctz='']").textContent="My time"+(mine?" · "+mine:""); })();
     /* best slots */
     var all=[]; model.cols.forEach(function(col){ col.keys.forEach(function(key){ all.push({key:key,n:k.c[key]||0}); }); });
     var ranked=all.filter(function(x){return x.n>0;}).sort(function(a,b){ return b.n-a.n||(a.key<b.key?-1:1); });
@@ -2811,9 +2826,10 @@ var Polls=(function(){
       return '<tr'+(x.key===ev.chosen?' class="keeprow"':'')+'><td class="name" style="font-size:15px">'+esc(fmtSlot(x.key))+'</td><td class="num">'+x.n+' / '+T.length+'</td><td class="sub">'+(missing.length?esc(missing.join(", ")):"everyone's free")+'</td><td class="num">'+(isCommish&&!ev.chosen?'<button class="btn sm" data-scchoose="'+esc(x.key)+'">Set the draft</button>':'')+'</td></tr>';
     }).join(""):'<tr><td colspan="4" class="empty">Nobody has marked anything yet — be first.</td></tr>';
     /* grid */
-    var head='<tr><th>'+esc(tzShort())+'</th>'+model.cols.map(function(col){ var d0=new Date(col.keys[0]); return '<th>'+esc(d0.toLocaleDateString([], {weekday:"short"}))+'<br>'+esc(d0.toLocaleDateString([], {month:"short",day:"numeric"}))+'</th>'; }).join("")+'</tr>';
+    var head='<tr><th>'+esc(tzShort())+'</th>'+model.cols.map(function(col){ var d0=new Date(col.keys[0]); return '<th>'+esc(fmtDay(d0,{weekday:"short"}))+'<br>'+esc(fmtDay(d0,{month:"short",day:"numeric"}))+'</th>'; }).join("")+'</tr>';
+    var day0=dayKey(new Date(model.cols[0].keys[0]));
     var rows=model.hours.map(function(h,i){
-      var label=new Date(model.cols[0].keys[i]).toLocaleTimeString([], {hour:"numeric"});
+      var d=new Date(model.cols[0].keys[i]), label=fmtHour(d)+(dayKey(d)!==day0?" ⁺¹":"");
       return '<tr><td>'+esc(label)+'</td>'+model.cols.map(function(col){
         var key=col.keys[i], n=k.c[key]||0, cls="av";
         if(showAll){ cls+=" heat"; if(bestKeys[key]&&bestN>0) cls+=" best"; }
@@ -2872,6 +2888,16 @@ var Polls=(function(){
       $("se-save").disabled=true; say("se-msg","Saving…",true);
       store.schedCreate({title:title,dates:dates.sort(),start_hour:st,end_hour:en,tz:$("se-tz").value}).then(function(){ $("se-save").disabled=false; say("se-msg","Open. Tell the group.",true); mySlots={}; scView="me"; schedRefresh(true); })
         .catch(function(e){ $("se-save").disabled=false; say("se-msg",msgOf(e)); });
+    });
+    $("sc-tzseg").addEventListener("click",function(e){
+      var b=e.target.closest("[data-sctz]"); if(!b) return;
+      dispTz=b.dataset.sctz||""; try{ if(dispTz) localStorage.setItem("cb-sched-tz",dispTz); else localStorage.removeItem("cb-sched-tz"); }catch(x){}
+      $("sc-eyebrow").textContent="Signed in as "+nameFor(me.id,me.email)+" · times in "+tzShort()+(dispTz?"":" (your clock)");
+      renderSched();
+    });
+    $("se-show").addEventListener("change",function(){
+      var on=this.checked;
+      store.setShowSched(on).then(function(){ applyFlags({show_draft_day:on}); say("se-msg",on?"Draft Day is back in the nav.":"Draft Day tab hidden.",true); }).catch(function(e){ $("se-show").checked=!on; say("se-msg",msgOf(e)); });
     });
     $("se-reopen").addEventListener("click",function(){ store.schedChoose(sched.event.id,null).then(function(){ schedRefresh(true); }).catch(function(e){ say("se-msg",msgOf(e)); }); });
   })();
@@ -3218,8 +3244,16 @@ var Polls=(function(){
   }
 
   /* ----- boot ----- */
+  var showSched=true;
+  function applyFlags(f){
+    showSched=!f||f.show_draft_day!==false;
+    ["nav-sched","hc-sched","tile-sched-link"].forEach(function(id){ var el=$(id); if(el) el.hidden=!showSched; });
+    var cb=$("se-show"); if(cb) cb.checked=showSched;
+  }
+  function loadFlags(){ store.flags().then(applyFlags).catch(function(){}); }
   function start(){
     var recovery=/type=recovery/.test(location.hash);
+    loadFlags();
     store.init().then(function(u){
       setMe(u);
       if(store.onChange) store.onChange(function(u2,ev){
@@ -3549,7 +3583,7 @@ function go(v,silent){
   if(!views[v]) v="home";
   Object.keys(views).forEach(function(k){document.getElementById(views[k]).classList.toggle("on",k===v);});
   if(!silent){ var r="#"+routeFor(v); if(location.hash!==r){ try{ history.pushState(null,"",r); }catch(e){ location.hash=r; } } }
-  var navKey=(v==="team")?"teams":((v==="pollhist"||v==="agenda")?"polls":(v==="sched"?"draft":v));
+  var navKey=(v==="team")?"teams":((v==="pollhist"||v==="agenda")?"polls":v);
   if(window.Polls) Polls.onView(v);
   if(window.Players) Players.onView(v);
   Array.prototype.forEach.call(document.querySelectorAll("#nav button"),function(b){
