@@ -556,6 +556,21 @@ td input.capin:focus-visible{outline:1px solid var(--amber);border-color:var(--a
 .opt.mine .box{border-color:var(--amber);background:var(--amber);box-shadow:inset 0 0 0 3px var(--surface)}
 .opt .cnt{position:relative;font-family:var(--mono);font-size:12px;font-weight:600;color:var(--muted);min-width:72px;text-align:right;letter-spacing:.04em}
 .opt.win .cnt{color:var(--amber)}
+
+/* dues */
+.duestrip{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:18px}
+.duestrip .tile{background:var(--surface);border:1px solid var(--line);border-radius:4px;padding:14px 16px;box-shadow:var(--shadow)}
+.duestrip .tile small{display:block;font-family:var(--mono);font-size:9.5px;letter-spacing:.15em;text-transform:uppercase;color:var(--dim);margin-bottom:6px}
+.duestrip .tile b{font-family:var(--disp);font-weight:800;font-size:30px;line-height:.9;color:var(--ink);letter-spacing:.01em}
+.duestrip .tile b.hot{color:var(--amber)}
+.duestrip .tile span{display:block;font-size:13px;color:var(--muted);margin-top:6px}
+.du-status{font-size:15.5px;font-weight:500;color:var(--ink)}
+.du-status .pill{margin-right:8px;vertical-align:1px}
+.du-how{padding:12px 14px;border:1px dashed var(--line-2);border-radius:4px;background:var(--surface);display:flex;gap:12px;align-items:center;flex-wrap:wrap;font-size:14.5px}
+.du-how code{font-family:var(--mono);font-size:14px;font-weight:600;color:var(--ink);background:var(--surface-2);padding:3px 8px;border-radius:3px;border:1px solid var(--line)}
+.du-how .spacer{flex:1}
+.duesme.locked .calc-in{opacity:.6}
+td .chk{width:17px;height:17px;accent-color:var(--green);vertical-align:middle;cursor:pointer}
 .opt .voters{position:relative;width:100%;padding-left:28px;font-size:12.5px;color:var(--dim);line-height:1.4}
 .poll-foot{padding:10px 18px;background:var(--surface-2);border-top:1px solid var(--line);display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:13px;color:var(--muted)}
 .poll-foot .spacer{flex:1}
@@ -694,6 +709,7 @@ footer p + p{margin-top:11px}
       <button data-go="cap">Games Cap</button>
       <button data-go="keepers">Keepers</button>
       <button data-go="polls">Polls</button>
+      <button data-go="dues">Dues</button>
       <button data-go="history">History</button>
       <button data-go="rules">Rules</button>
     </nav>
@@ -1109,6 +1125,98 @@ footer p + p{margin-top:11px}
     </section>
   </div>
 
+  <!-- ================= DUES ================= -->
+  <div class="view" id="v-dues">
+    <section>
+      <div class="sec-head"><h2>League Dues</h2><span class="eyebrow cool" id="dues-eyebrow">Members only</span></div>
+      <div class="rulebar"></div>
+      <div id="dues-notice"></div>
+
+      <div id="dues-locked" class="calc signin" style="margin-top:18px">
+        <p style="padding:18px 20px 6px;font-size:15px;color:var(--muted)">Dues are between the ten managers and the commissioner. Sign in to see the amount, pick how you're paying, and mark it sent.</p>
+        <div class="calc-out" style="display:flex;gap:10px;flex-wrap:wrap;padding-top:8px">
+          <button class="btn" data-signin>Sign in</button>
+          <button class="btn quiet" data-go="signup">Claim your team</button>
+        </div>
+      </div>
+      <div id="dues-noteam" hidden><div class="notice warn" style="margin-top:18px;display:flex;gap:14px;align-items:center;flex-wrap:wrap"><span style="flex:1">You're signed in but haven't claimed a team yet.</span><button class="btn sm" data-go="signup">Claim your team</button></div></div>
+
+      <div id="dues-body" hidden>
+        <div id="dues-none" class="empty" hidden>Sean hasn't set this season's dues yet. Check back soon.</div>
+        <div id="dues-main" hidden>
+          <div class="duestrip" id="dues-strip"></div>
+
+          <!-- the manager's own row -->
+          <div class="calc newpoll duesme" id="dues-me">
+            <div class="calc-in">
+              <div class="field wide" style="gap:4px"><label>Your dues</label><div id="du-status" class="du-status"></div></div>
+              <div class="field"><label for="du-method">How you're paying</label>
+                <select id="du-method">
+                  <option value="">Pick one…</option>
+                  <option value="venmo">Venmo</option>
+                  <option value="zelle">Zelle</option>
+                  <option value="cashapp">Cash App</option>
+                  <option value="cash">Cash / other</option>
+                </select></div>
+              <div class="field"><label for="du-note">Note for Sean (optional)</label><input id="du-note" maxlength="120" placeholder="sent from my wife's account, etc."></div>
+              <div class="field wide" id="du-how" hidden></div>
+              <div class="field wide" style="flex-direction:row;align-items:center;gap:10px">
+                <input type="checkbox" id="du-paid" style="width:18px;height:18px;accent-color:var(--amber)"><label for="du-paid" style="font-family:var(--body);font-size:15px;letter-spacing:0;text-transform:none;color:var(--ink);cursor:pointer">I've sent my dues</label>
+              </div>
+            </div>
+            <div class="calc-out">
+              <button class="btn" id="du-save">Save</button>
+              <span id="du-msg" style="font-size:13.5px;color:var(--muted)"></span>
+            </div>
+          </div>
+
+          <!-- everyone -->
+          <div class="tablewrap" style="margin-top:22px">
+            <table>
+              <thead><tr><th>Team</th><th>Manager</th><th>Method</th><th>Status</th><th class="num" id="dues-th-confirm"></th></tr></thead>
+              <tbody id="dues-rows"></tbody>
+            </table>
+          </div>
+          <p class="sub" style="margin-top:10px">"Sent" means the manager marked it on this page. "Received" means Sean confirmed the money landed — that's the one that counts.</p>
+        </div>
+
+        <!-- commissioner -->
+        <div id="dues-admin" hidden>
+          <div class="sec-head" style="margin-top:34px"><h2 style="font-size:24px">Set the dues</h2><span class="eyebrow cool">Commissioner only</span></div>
+          <div class="rulebar"></div>
+          <p class="lede">Managers see the amount, the due date and whichever payment handles you fill in. Keep the season label the same to edit this season; type a new label (say, 2026-27) to start the next season — the old one stays in the history below.</p>
+          <div class="calc newpoll" style="margin-top:16px">
+            <div class="calc-in">
+              <div class="field"><label for="ds-season">Season</label><input id="ds-season" maxlength="20" placeholder="2025-26"></div>
+              <div class="field"><label for="ds-amount">Dues per team ($)</label><input id="ds-amount" type="number" min="0" step="1" inputmode="decimal" placeholder="50"></div>
+              <div class="field"><label for="ds-due">Due by</label><input id="ds-due" type="date"></div>
+              <div class="field"><label for="ds-venmo">Venmo username</label><input id="ds-venmo" placeholder="Sean-Lewis-1" autocapitalize="off"></div>
+              <div class="field"><label for="ds-zelle">Zelle (email or phone)</label><input id="ds-zelle" placeholder="you@example.com" autocapitalize="off"></div>
+              <div class="field"><label for="ds-cashapp">Cash App $cashtag</label><input id="ds-cashapp" placeholder="$seanlewis" autocapitalize="off"></div>
+              <div class="field wide"><label for="ds-note">Note to the league (optional)</label><input id="ds-note" maxlength="200" placeholder="Winner takes $350, second $100, third gets their money back."></div>
+            </div>
+            <div class="calc-out">
+              <button class="btn" id="ds-save">Save dues</button>
+              <span id="ds-msg" style="font-size:13.5px;color:var(--muted)"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- past seasons -->
+        <div id="dues-past" hidden>
+          <div class="sec-head" style="margin-top:34px"><h2 style="font-size:24px">Past seasons</h2><span class="eyebrow cool">Dues history</span></div>
+          <div class="rulebar"></div>
+          <div class="tablewrap">
+            <table>
+              <thead><tr><th>Season</th><th class="num">Dues</th><th class="num">Paid</th><th>Still owed</th></tr></thead>
+              <tbody id="dues-past-rows"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
   <!-- ================= RULES ================= -->
   <div class="view" id="v-rules">
     <section>
@@ -1412,7 +1520,8 @@ document.getElementById("watch").innerHTML=K.map(function(k){
     {go:"draft",   n:"12",       lbl:"Rounds",   h:"Draft Board",p:"Set the order, see which picks keepers have already taken, and get the list to type into Yahoo. Last year's full board too."},
     {go:"cap",     n:"30",       lbl:"Per week", h:"Games Cap",  p:"Work out the adjusted cap for short weeks without doing the arithmetic by hand."},
     {go:"keepers", n:String(kCount), lbl:"Declared", h:"Keepers", p:"The calculator that settles arguments, and the ladder every declared keeper has left."},
-    {go:"polls",   n:"—",        lbl:"Open",     h:"Polls",      p:"Put a question to the league and vote on everyone else's. Sign in with your email — no password.", id:"hc-polls"},
+    {go:"polls",   n:"—",        lbl:"Open",     h:"Polls",      p:"Put a question to the league and vote on everyone else's. Managers only — sign in first.", id:"hc-polls"},
+    {go:"dues",    n:"—",        lbl:"Paid",     h:"Dues",       p:"What the buy-in is, where to send it, and who has settled up. Pick Venmo, Zelle or Cash App and mark yours sent.", id:"hc-dues"},
     {go:"history", n:"14",       lbl:"Seasons",  h:"History",    p:"Every champion since 2012. Four managers tied at two titles, two still hunting their first."},
     {go:"rules",   n:"11",       lbl:"Categories",h:"Rules",     p:"How keepers work, why rosters lock before the playoffs, and the league settings as Yahoo has them."}
   ];
@@ -2000,6 +2109,7 @@ var Polls=(function(){
     var KEY="cb-polls-preview-v3", db=null;
     try{ db=JSON.parse(localStorage.getItem(KEY)||"null"); }catch(e){}
     if(!db) db={polls:[],votes:[],profiles:[],users:[],me:null,code:"KIDS26"};
+    if(!db.dues) db.dues={seasons:[],payments:[]};
     function save(){ try{ localStorage.setItem(KEY,JSON.stringify(db)); }catch(e){} }
     function findPoll(id){ return db.polls.filter(function(p){return p.id===id;})[0]; }
     function myProf(){ return db.me ? db.profiles.filter(function(p){return p.user_id===db.me.id;})[0]||null : null; }
@@ -2059,6 +2169,33 @@ var Polls=(function(){
       deletePoll:function(pid){
         db.polls=db.polls.filter(function(p){return p.id!==pid;});
         db.votes=db.votes.filter(function(v){return v.poll_id!==pid;}); save(); return Promise.resolve();
+      },
+      /* dues */
+      duesLoad:function(){ return Promise.resolve({seasons:db.dues.seasons.slice().reverse(),payments:db.dues.payments.slice()}); },
+      duesSetSeason:function(o){
+        if(!commish()) return Promise.reject(new Error("Commissioner only."));
+        var ex=db.dues.seasons.filter(function(x){return x.season===o.season;})[0], now=new Date().toISOString();
+        db.dues.seasons.forEach(function(x){ x.active=false; });
+        if(ex){ ex.amount=o.amount; ex.due_date=o.due_date; ex.venmo=o.venmo; ex.zelle=o.zelle; ex.cashapp=o.cashapp; ex.note=o.note; ex.active=true; ex.updated_at=now; }
+        else db.dues.seasons.push({season:o.season,amount:o.amount,due_date:o.due_date,venmo:o.venmo,zelle:o.zelle,cashapp:o.cashapp,note:o.note,active:true,created_at:now,updated_at:now});
+        save(); return Promise.resolve();
+      },
+      duesMark:function(season,method,paid,note){
+        var pr=myProf(); if(!pr) return Promise.reject(new Error("Claim your team first."));
+        var row=db.dues.payments.filter(function(x){return x.season===season&&x.team_id===pr.team_id;})[0], now=new Date().toISOString();
+        if(row&&row.confirmed) return Promise.reject(new Error("Sean already confirmed this payment — talk to him if something's off."));
+        if(!row){ row={season:season,team_id:pr.team_id,confirmed:false,confirmed_at:null}; db.dues.payments.push(row); }
+        row.user_id=pr.user_id; row.method=method; row.paid=!!paid; row.paid_at=paid?(row.paid_at||now):null; row.note=note||null; row.updated_at=now;
+        save(); return Promise.resolve();
+      },
+      duesConfirm:function(season,team_id,confirmed,method){
+        if(!commish()) return Promise.reject(new Error("Commissioner only."));
+        var row=db.dues.payments.filter(function(x){return x.season===season&&x.team_id===team_id;})[0], now=new Date().toISOString();
+        if(!row){ row={season:season,team_id:team_id,method:null,paid:false,paid_at:null,note:null}; db.dues.payments.push(row); }
+        if(method&&!row.method) row.method=method;
+        if(confirmed){ row.paid=true; row.paid_at=row.paid_at||now; }
+        row.confirmed=!!confirmed; row.confirmed_at=confirmed?now:null; row.updated_at=now;
+        save(); return Promise.resolve();
       }
     };
   }
@@ -2127,7 +2264,19 @@ var Polls=(function(){
       createPoll:function(p){ return client.from("polls").insert({question:p.question,options:p.options,visibility:p.visibility,closes_at:p.closes_at}).then(chk); },
       vote:function(pid,idx,u){ return client.from("votes").upsert({poll_id:pid,user_id:u,option_index:idx},{onConflict:"poll_id,user_id"}).then(chk); },
       closePoll:function(pid){ return client.from("polls").update({closed:true}).eq("id",pid).then(chk); },
-      deletePoll:function(pid){ return client.from("polls").delete().eq("id",pid).then(chk); }
+      deletePoll:function(pid){ return client.from("polls").delete().eq("id",pid).then(chk); },
+      /* dues */
+      duesLoad:function(){
+        return Promise.all([
+          client.from("dues_seasons").select("*").order("created_at",{ascending:false}),
+          client.from("dues_payments").select("*")
+        ]).then(function(rs){ chk(rs[0]); chk(rs[1]); return {seasons:rs[0].data||[],payments:rs[1].data||[]}; });
+      },
+      duesSetSeason:function(o){
+        return client.rpc("dues_set_season",{p_season:o.season,p_amount:o.amount,p_due_date:o.due_date,p_venmo:o.venmo,p_zelle:o.zelle,p_cashapp:o.cashapp,p_note:o.note}).then(chk);
+      },
+      duesMark:function(season,method,paid,note){ return client.rpc("dues_mark",{p_season:season,p_method:method,p_paid:paid,p_note:note}).then(chk); },
+      duesConfirm:function(season,team_id,confirmed,method){ return client.rpc("dues_confirm",{p_season:season,p_team_id:team_id,p_confirmed:confirmed,p_method:method||null}).then(chk); }
     };
   }
 
@@ -2177,6 +2326,7 @@ var Polls=(function(){
       ? '<div class="notice warn" style="margin:26px 0 -8px;display:flex;gap:14px;align-items:center;flex-wrap:wrap"><span style="flex:1"><b>You\'re signed in.</b> One more step — tell us which team is yours and you\'ll be able to vote.</span><button class="btn sm" data-go="signup">Claim your team</button></div>'
       : "";
     renderSignup();
+    duesRefresh();
     if(isCommish) renderCommish();
     if(!member){ renderList(); return; }
     if(loading) return;
@@ -2262,6 +2412,143 @@ var Polls=(function(){
     html+='</div></article>';
     return html;
   }
+
+  /* ----- dues ----- */
+  var dues={seasons:[],payments:[]}, duesLoaded=false, duesBusy=false;
+  var METHOD={venmo:"Venmo",zelle:"Zelle",cashapp:"Cash App",cash:"Cash / other",other:"Other"};
+  function duesNotice(html,cls){ $("dues-notice").innerHTML = html ? '<div class="notice '+(cls||"")+'">'+html+'</div>' : ""; }
+  function duesFail(e){ duesNotice(esc(msgOf(e)||"Something went wrong."),"bad"); }
+  function activeSeason(){ return dues.seasons.filter(function(x){return x.active;})[0]||null; }
+  function payRow(season,team){ return dues.payments.filter(function(x){return x.season===season&&x.team_id===team;})[0]||null; }
+  function money(n){ n=+n||0; return "$"+(n%1?n.toFixed(2):String(Math.round(n))); }
+  function dueText(d){ if(!d) return null; var p=d.split("-"); return new Date(+p[0],+p[1]-1,+p[2]).toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"}); }
+  function isPastDue(d){ if(!d) return false; var p=d.split("-"); return new Date(+p[0],+p[1]-1,+p[2],23,59)<new Date(); }
+  function statusOf(pay,season){
+    if(pay&&pay.confirmed) return {cls:"ok",txt:"Received"};
+    if(pay&&pay.paid) return {cls:"warn",txt:"Sent"};
+    if(isPastDue(season.due_date)) return {cls:"gone",txt:"Overdue"};
+    return {cls:"q",txt:"Unpaid"};
+  }
+  function duesRefresh(force){
+    var signed=!!me, member=signed&&!!profile;
+    $("dues-locked").hidden=signed;
+    $("dues-noteam").hidden=!(signed&&!profile);
+    $("dues-body").hidden=!member;
+    $("dues-eyebrow").textContent= member ? "Signed in as "+nameFor(me.id,me.email) : "Members only";
+    var hc=document.querySelector("#hc-dues .hc-n");
+    if(!member){ dues={seasons:[],payments:[]}; duesLoaded=false; if(hc) hc.textContent="—"; return; }
+    if(duesLoaded&&!force&&!$("v-dues").classList.contains("on")) return;
+    store.duesLoad().then(function(d){ dues=d; duesLoaded=true; renderDues(); }).catch(duesFail);
+  }
+  function renderDues(){
+    var cur=activeSeason();
+    $("dues-admin").hidden=!isCommish;
+    $("dues-none").hidden=!!cur;
+    $("dues-main").hidden=!cur;
+    $("dues-th-confirm").textContent=isCommish?"Received?":"";
+    if(isCommish) fillDuesAdmin(cur);
+    renderDuesPast();
+    var hc=document.querySelector("#hc-dues .hc-n");
+    if(!cur){ if(hc) hc.textContent="—"; return; }
+    var rows=T.map(function(t){ return {t:t,pay:payRow(cur.season,t.id)}; });
+    var received=rows.filter(function(r){return r.pay&&r.pay.confirmed;}).length;
+    var sent=rows.filter(function(r){return r.pay&&r.pay.paid&&!r.pay.confirmed;}).length;
+    if(hc) hc.textContent=String(received);
+    var due=dueText(cur.due_date);
+    $("dues-strip").innerHTML=
+      '<div class="tile"><small>'+esc(cur.season)+' dues</small><b>'+money(cur.amount)+'</b><span>per team · '+money(cur.amount*T.length)+' pot</span></div>'+
+      '<div class="tile"><small>Due by</small><b'+(isPastDue(cur.due_date)&&received<T.length?' class="hot"':'')+'>'+(due?esc(due):"—")+'</b><span>'+(due?(isPastDue(cur.due_date)?"deadline has passed":"get it in early"):"no deadline set")+'</span></div>'+
+      '<div class="tile"><small>Received</small><b class="'+(received===T.length?"":"hot")+'">'+received+'<span style="display:inline;font-size:18px;color:var(--dim)"> / '+T.length+'</span></b><span>'+(sent?sent+" more marked sent":(received===T.length?"everyone's in":"confirmed by Sean"))+'</span></div>'+
+      (cur.note?'<div class="tile" style="grid-column:1/-1"><small>From the commissioner</small><span style="margin-top:0;font-size:14.5px;color:var(--ink)">'+esc(cur.note)+'</span></div>':'');
+    /* my row */
+    var mine=payRow(cur.season,profile.team_id), st=statusOf(mine,cur), locked=!!(mine&&mine.confirmed);
+    $("du-status").innerHTML='<span class="pill '+st.cls+'">'+st.txt+'</span>'+
+      (locked?'Sean confirmed your '+money(cur.amount)+(mine.method?' by '+esc(METHOD[mine.method]||mine.method):'')+'. You\'re all set.'
+       : mine&&mine.paid?'Marked sent'+(mine.paid_at?' '+fmtDate(mine.paid_at):'')+' — Sean will confirm once it lands.'
+       : 'You owe '+money(cur.amount)+(due?' by '+esc(due):'')+'. Pick a method, send it, and check the box.');
+    if(document.activeElement!==$("du-method")) $("du-method").value=(mine&&mine.method)||"";
+    if(document.activeElement!==$("du-note")) $("du-note").value=(mine&&mine.note)||"";
+    $("du-paid").checked=!!(mine&&mine.paid);
+    ["du-method","du-note","du-paid","du-save"].forEach(function(id){ $(id).disabled=locked; });
+    $("dues-me").classList.toggle("locked",locked);
+    renderHow(cur);
+    /* everyone */
+    $("dues-rows").innerHTML=rows.map(function(r){
+      var s2=statusOf(r.pay,cur), mineRow=r.t.id===profile.team_id;
+      return '<tr'+(mineRow?' class="keeprow"':'')+'><td><b>'+esc(r.t.name)+'</b></td><td class="mgr">'+esc(r.t.mgr)+'</td>'+
+        '<td class="sub">'+(r.pay&&r.pay.method?esc(METHOD[r.pay.method]||r.pay.method):'—')+(r.pay&&r.pay.note&&isCommish?'<br><span style="font-size:12px;color:var(--dim)">'+esc(r.pay.note)+'</span>':'')+'</td>'+
+        '<td><span class="pill '+s2.cls+'">'+s2.txt+'</span>'+(r.pay&&r.pay.paid&&r.pay.paid_at?' <span class="sub" style="font-size:12px">'+fmtDate(r.pay.paid_at)+'</span>':'')+'</td>'+
+        '<td class="num">'+(isCommish?'<input type="checkbox" class="chk" data-confirm="'+r.t.id+'"'+(r.pay&&r.pay.confirmed?' checked':'')+' title="Money received">':'')+'</td></tr>';
+    }).join("");
+  }
+  function renderHow(cur){
+    var m=$("du-method").value, box=$("du-how"), html="";
+    var note=encodeURIComponent("League dues "+cur.season), amt=+cur.amount||0;
+    if(m==="venmo"){
+      if(cur.venmo){ var vu=cur.venmo.replace(/^@/,""); html='<div class="du-how">Venmo <code>@'+esc(vu)+'</code><span class="spacer"></span><a class="btn sm" target="_blank" rel="noopener" href="https://venmo.com/'+encodeURIComponent(vu)+'?txn=pay&amount='+amt+'&note='+note+'">Open Venmo · '+money(amt)+'</a></div>'; }
+      else html='<div class="du-how">Sean hasn\'t listed a Venmo handle yet — ask him.</div>';
+    } else if(m==="cashapp"){
+      if(cur.cashapp){ var ct=cur.cashapp.replace(/^\$/,""); html='<div class="du-how">Cash App <code>$'+esc(ct)+'</code><span class="spacer"></span><a class="btn sm" target="_blank" rel="noopener" href="https://cash.app/$'+encodeURIComponent(ct)+'/'+amt+'">Open Cash App · '+money(amt)+'</a></div>'; }
+      else html='<div class="du-how">Sean hasn\'t listed a Cash App tag yet — ask him.</div>';
+    } else if(m==="zelle"){
+      if(cur.zelle) html='<div class="du-how">Zelle it to <code>'+esc(cur.zelle)+'</code><span class="spacer"></span><button type="button" class="btn quiet sm" data-copy="'+esc(cur.zelle)+'">Copy</button></div>';
+      else html='<div class="du-how">Sean hasn\'t listed a Zelle contact yet — ask him.</div>';
+    } else if(m==="cash"){
+      html='<div class="du-how">Hand it to Sean and check the box below so he knows to look for it.</div>';
+    }
+    box.innerHTML=html; box.hidden=!html;
+  }
+  function fillDuesAdmin(cur){
+    var ids={"ds-season":"season","ds-amount":"amount","ds-due":"due_date","ds-venmo":"venmo","ds-zelle":"zelle","ds-cashapp":"cashapp","ds-note":"note"};
+    Object.keys(ids).forEach(function(id){
+      var el=$(id); if(document.activeElement===el) return;
+      var v=cur?cur[ids[id]]:null;
+      el.value = v==null ? "" : (id==="ds-due" ? String(v).slice(0,10) : String(v));
+    });
+  }
+  function renderDuesPast(){
+    var past=dues.seasons.filter(function(x){return !x.active;});
+    $("dues-past").hidden=!past.length;
+    $("dues-past-rows").innerHTML=past.map(function(sn){
+      var got=T.filter(function(t){ var p=payRow(sn.season,t.id); return p&&p.confirmed; });
+      var owe=T.filter(function(t){ var p=payRow(sn.season,t.id); return !(p&&p.confirmed); }).map(function(t){return t.mgr;});
+      return '<tr><td><b>'+esc(sn.season)+'</b></td><td class="num">'+money(sn.amount)+'</td><td class="num">'+got.length+' / '+T.length+'</td><td class="sub">'+(owe.length?esc(owe.join(", ")):'Everyone paid')+'</td></tr>';
+    }).join("");
+  }
+  $("du-method").addEventListener("change",function(){ var cur=activeSeason(); if(cur) renderHow(cur); });
+  $("du-save").addEventListener("click",function(){
+    var cur=activeSeason(); if(!cur||duesBusy) return;
+    var method=$("du-method").value||null, paid=$("du-paid").checked, note=$("du-note").value.trim();
+    if(paid&&!method){ say("du-msg","Tell Sean how you paid."); return; }
+    duesBusy=true; $("du-save").disabled=true; say("du-msg","Saving…",true);
+    store.duesMark(cur.season,method,paid,note).then(function(){
+      duesBusy=false; $("du-save").disabled=false; say("du-msg",paid?"Saved — Sean will confirm it.":"Saved.",true); duesRefresh(true);
+    }).catch(function(e){ duesBusy=false; $("du-save").disabled=false; say("du-msg",msgOf(e)); });
+  });
+  $("ds-save").addEventListener("click",function(){
+    var o={season:$("ds-season").value.trim(), amount:parseFloat($("ds-amount").value), due_date:$("ds-due").value||null,
+           venmo:$("ds-venmo").value.trim().replace(/^@/,"")||null, zelle:$("ds-zelle").value.trim()||null,
+           cashapp:$("ds-cashapp").value.trim().replace(/^\$/,"")||null, note:$("ds-note").value.trim()||null};
+    if(o.season.length<2){ say("ds-msg","Give the season a name, like 2025-26."); return; }
+    if(!(o.amount>=0)){ say("ds-msg","Enter the dues amount."); return; }
+    $("ds-save").disabled=true; say("ds-msg","Saving…",true);
+    store.duesSetSeason(o).then(function(){ $("ds-save").disabled=false; say("ds-msg","Saved. The league sees it now.",true); duesRefresh(true); })
+      .catch(function(e){ $("ds-save").disabled=false; say("ds-msg",msgOf(e)); });
+  });
+  document.addEventListener("change",function(e){
+    var c=e.target.closest("[data-confirm]"); if(!c) return;
+    var cur=activeSeason(); if(!cur) return;
+    c.disabled=true;
+    store.duesConfirm(cur.season,c.dataset.confirm,c.checked,null).then(function(){ duesNotice(""); duesRefresh(true); })
+      .catch(function(err){ c.checked=!c.checked; c.disabled=false; duesFail(err); });
+  });
+  document.addEventListener("click",function(e){
+    var cp=e.target.closest("[data-copy]"); if(!cp) return;
+    var txt=cp.dataset.copy;
+    function done(){ cp.textContent="Copied"; setTimeout(function(){ cp.textContent="Copy"; },1500); }
+    if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(done,function(){ window.prompt("Copy this:",txt); });
+    else window.prompt("Copy this:",txt);
+  });
 
   /* ----- interactions ----- */
   function act(pr){ pr.then(function(){ setNotice(""); refresh(); }).catch(fail); }
@@ -2355,6 +2642,7 @@ var Polls=(function(){
 
   function onView(v){
     if(v==="polls"||v==="pollhist") refresh();
+    if(v==="dues"){ say("du-msg",""); say("ds-msg",""); duesRefresh(true); }
     if(v==="signup") renderSignup();
     if(v==="manager"){ if(!isCommish){ go("home"); return; } renderCommish(); }
   }
@@ -2390,7 +2678,7 @@ var Polls=(function(){
 window.Polls=Polls;
 
 /* ---------- routing ---------- */
-var views={home:"v-home",teams:"v-teams",team:"v-team",draft:"v-draft",cap:"v-cap",keepers:"v-keepers",polls:"v-polls",pollhist:"v-pollhist",signup:"v-signup",manager:"v-manager",history:"v-history",rules:"v-rules"};
+var views={home:"v-home",teams:"v-teams",team:"v-team",draft:"v-draft",cap:"v-cap",keepers:"v-keepers",polls:"v-polls",pollhist:"v-pollhist",dues:"v-dues",signup:"v-signup",manager:"v-manager",history:"v-history",rules:"v-rules"};
 function go(v){
   Object.keys(views).forEach(function(k){document.getElementById(views[k]).classList.toggle("on",k===v);});
   var navKey=(v==="team")?"teams":(v==="pollhist"?"polls":v);

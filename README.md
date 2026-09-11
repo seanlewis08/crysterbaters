@@ -8,7 +8,7 @@ Yahoo league ID `33689`. Site is currently a single static page; it becomes a fu
 
 `index.html` — the whole site. No build step, no dependencies. Vercel serves it as-is.
 
-Pages: standings, teams and their locked rosters, the pre-draft board (with pick trades), the weekly games-cap calculator, the keeper calculator, league history with a season archive (Yahoo standings and full draft boards since 2019), polls, and the rules.
+Pages: standings, teams and their locked rosters, the pre-draft board (with pick trades), the weekly games-cap calculator, the keeper calculator, league history with a season archive (Yahoo standings and full draft boards since 2019), polls, league dues, and the rules.
 
 ## Deploying
 
@@ -25,6 +25,8 @@ Vercel is connected to this repository. Pushing to `main` deploys automatically.
 ## Logins and polls
 
 Managers create an account on the site's **Claim Your Team** page: email, team, the league code the commissioner shares, a username and a password. The code is checked before the account is created and each team can be claimed once. Signing in is a small popup (email + password, with a forgot-password link). The commissioner — recognised by the email in `league_settings` — gets a **Manager** page nobody else sees, with the league code and the ten teams' claims (release a claim if someone picked wrong). Members can post polls, vote, and read the poll history; the poll's creator picks whether votes are shown with names, kept secret until the poll closes, or kept secret for good.
+
+**League dues** live on their own page. The commissioner sets the season's amount, due date and where money goes (Venmo, Zelle, Cash App); each manager picks how they're paying — the page opens Venmo or Cash App with the amount filled in — and ticks "I've sent my dues". Only the commissioner's **Received** checkbox counts, and once it's ticked the manager's row is locked. Everyone can see who has settled up. Saving a new season label starts the next season and keeps the old one as history.
 
 The backend is a free Supabase project: `supabase/schema.sql` creates the tables, the claim/release functions, and the row-level security rules (the visibility rules are enforced in the database, not just on the page). The project URL and publishable key live in `SB` near the bottom of `index.html`; off the real hostnames the Polls page runs in a browser-only preview mode. In Supabase, turn off "Confirm email" (Authentication → Sign In / Providers → Email) so sign-up needs no email.
 
