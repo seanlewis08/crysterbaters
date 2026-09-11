@@ -1716,7 +1716,7 @@ var D25=[
 [12,7,"Jalen Suggs","giannis",0],[12,8,"VJ Edgecombe","george",0],[12,9,"Herbert Jones","freaky",0],[12,10,"Yang Hansen","jalenba",0]
 ];
 
-function norm(n){return String(n).toLowerCase().replace(/[^a-z0-9]/g,"");}
+function norm(n){return String(n).normalize("NFKD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]/g,"");}
 var DRAFTED={};
 D25.forEach(function(d){ DRAFTED[norm(d[2])]={round:d[0],pick:d[1],team:d[3],keeper:d[4]}; });
 
@@ -1847,6 +1847,7 @@ document.getElementById("keeperladders").innerHTML=K.map(function(k){
 
 /* ---------- team detail ---------- */
 function renderTeam(id){
+  curTeam=id;
   var t=byId(id); if(!t) return;
   var s=ST[t.id];
   var rosterHtml='<div class="tablewrap" style="border:0;border-radius:0"><table><thead><tr><th>Pos</th><th>Player</th><th>NBA</th><th>Drafted 25</th><th class="num">Costs 26–27</th></tr></thead><tbody>'+
@@ -2630,12 +2631,14 @@ var Polls=(function(){
     me=u; profile=null; profiles=[]; claimed=[]; isCommish=false; polls=[]; votes=[]; tallies={};
     if(!me){
       $("newpoll").hidden=true; renderAcct(); refresh();
+      if(location.hash==="#manager") go("home");
       store.claimedList().then(function(c){ claimed=c; renderSignup(); }).catch(function(){});
       return;
     }
     store.session().then(function(s){
       profile=s.profile; profiles=s.profiles; claimed=s.claimed; isCommish=s.commissioner;
       renderAcct(); refresh();
+      if(location.hash==="#manager") go(isCommish?"manager":"home",!isCommish?false:true);
     }).catch(fail);
   }
 
@@ -3211,7 +3214,7 @@ var Polls=(function(){
     if(v==="agenda") agendaRefresh(true);
     if(v==="sched") schedRefresh(true);
     if(v==="signup") renderSignup();
-    if(v==="manager"){ if(!isCommish){ go("home"); return; } renderCommish(); }
+    if(v==="manager"){ if(!isCommish){ go("home",true); return; } renderCommish(); }
   }
 
   /* ----- boot ----- */
@@ -3540,8 +3543,12 @@ window.Players=Players;
 
 /* ---------- routing ---------- */
 var views={home:"v-home",teams:"v-teams",team:"v-team",players:"v-players",draft:"v-draft",cap:"v-cap",keepers:"v-keepers",polls:"v-polls",pollhist:"v-pollhist",agenda:"v-agenda",sched:"v-sched",dues:"v-dues",signup:"v-signup",manager:"v-manager",history:"v-history",rules:"v-rules"};
-function go(v){
+var curTeam=null;
+function routeFor(v){ return v==="team"&&curTeam ? "team/"+curTeam : v; }
+function go(v,silent){
+  if(!views[v]) v="home";
   Object.keys(views).forEach(function(k){document.getElementById(views[k]).classList.toggle("on",k===v);});
+  if(!silent){ var r="#"+routeFor(v); if(location.hash!==r){ try{ history.pushState(null,"",r); }catch(e){ location.hash=r; } } }
   var navKey=(v==="team")?"teams":((v==="pollhist"||v==="agenda")?"polls":(v==="sched"?"draft":v));
   if(window.Polls) Polls.onView(v);
   if(window.Players) Players.onView(v);
@@ -3554,14 +3561,26 @@ document.addEventListener("click",function(e){
   var g=e.target.closest("[data-go]"); if(g){e.preventDefault();go(g.dataset.go);return;}
   var t=e.target.closest("[data-team]"); if(t){renderTeam(t.dataset.team);go("team");}
 });
-go("home");
+/* open whatever the URL hash says (so a reload stays on the same page); auth hashes are ignored */
+function fromHash(silent){
+  var h=(location.hash||"").replace(/^#\/?/,"");
+  if(/access_token=|type=|error=/.test(h)) return false;
+  var m=/^team\/([a-z0-9]+)$/.exec(h);
+  if(m&&byId(m[1])){ renderTeam(m[1]); go("team",silent); return true; }
+  if(views[h]){ go(h,silent); return true; }
+  return false;
+}
+if(!fromHash(true)) go("home",true);
+window.addEventListener("popstate",function(){ if(!fromHash(true)) go("home",true); });
 
 /* ---------- splash ---------- */
 (function(){
   var el=document.getElementById("splash");
   if(!el) return;
   var reduced=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  if(reduced){ el.remove(); return; }
+  var seen=false; try{ seen=!!localStorage.getItem("cb-belt-seen"); }catch(e){}
+  if(reduced||seen){ el.remove(); return; }
+  try{ localStorage.setItem("cb-belt-seen","1"); }catch(e){}
   document.body.classList.add("splashing");
   var done=false;
   function finish(){
