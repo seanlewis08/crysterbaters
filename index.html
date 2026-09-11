@@ -601,6 +601,15 @@ td input.capin:focus-visible{outline:1px solid var(--amber);border-color:var(--a
 .plfoot .sub{text-transform:none;letter-spacing:0;font-family:var(--body)}
 .pl-empty{padding:40px 20px;text-align:center;color:var(--muted)}
 
+/* open items */
+.thumb{display:flex;flex-direction:column;align-items:center;gap:2px;flex-shrink:0;width:46px;padding:7px 4px;border:1px solid var(--line-2);border-radius:4px;background:var(--surface);color:var(--muted);cursor:pointer;font-family:var(--mono);line-height:1}
+.thumb b{font-size:14px;font-weight:600}
+.thumb:hover{border-color:var(--amber);color:var(--amber)}
+.thumb.on{background:var(--amber);border-color:var(--amber);color:#fff}
+.thumb:disabled{opacity:.45;cursor:default}
+.thumb:disabled:hover{border-color:var(--line-2);color:var(--muted)}
+.thumb.on:disabled{opacity:1}
+
 /* dues */
 .duestrip{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:18px}
 .duestrip .tile{background:var(--surface);border:1px solid var(--line);border-radius:4px;padding:14px 16px;box-shadow:var(--shadow)}
@@ -1083,6 +1092,7 @@ footer p + p{margin-top:11px}
         <div class="ptools">
           <button class="btn" id="newpoll-btn">+ New poll</button>
           <button class="btn quiet" data-go="pollhist">Poll history</button>
+          <button class="btn quiet" data-go="agenda">Open items</button>
           <span class="spacer"></span>
           <span class="eyebrow cool" id="polls-count"></span>
         </div>
@@ -1111,6 +1121,52 @@ footer p + p{margin-top:11px}
           </div>
         </div>
         <div class="polls" id="polls-open"></div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ================= OPEN ITEMS ================= -->
+  <div class="view" id="v-agenda">
+    <button class="back" data-go="polls">← Polls</button>
+    <section style="margin-top:14px">
+      <div class="sec-head"><h2>Open Items</h2><span class="eyebrow cool" id="ag-eyebrow">Members only</span></div>
+      <div class="rulebar"></div>
+      <div id="ag-notice"></div>
+      <p class="lede">Things the league still has to decide. Anyone can raise one; when it's ready, put it to a vote on the Polls page, and the commissioner records the outcome here.</p>
+
+      <div id="ag-locked" class="calc signin" style="margin-top:18px">
+        <p style="padding:18px 20px 6px;font-size:15px;color:var(--muted)">Sign in to see the list and add to it.</p>
+        <div class="calc-out" style="display:flex;gap:10px;flex-wrap:wrap;padding-top:8px">
+          <button class="btn" data-signin>Sign in</button>
+          <button class="btn quiet" data-go="signup">Claim your team</button>
+        </div>
+      </div>
+      <div id="ag-noteam" hidden><div class="notice warn" style="margin-top:18px;display:flex;gap:14px;align-items:center;flex-wrap:wrap"><span style="flex:1">You're signed in but haven't claimed a team yet.</span><button class="btn sm" data-go="signup">Claim your team</button></div></div>
+
+      <div id="ag-body" hidden>
+        <div class="ptools">
+          <button class="btn" id="ag-new-btn">+ Raise an item</button>
+          <span class="spacer"></span>
+          <span class="eyebrow cool" id="ag-count"></span>
+        </div>
+        <div id="ag-votes" style="margin:-6px 0 16px;font-size:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap"></div>
+        <div class="calc newpoll" id="ag-new" hidden>
+          <div class="calc-in">
+            <div class="field wide"><label for="ag-title">What needs deciding</label><input id="ag-title" maxlength="140" placeholder="Move the trade deadline to the All-Star break?"></div>
+            <div class="field wide"><label for="ag-details">Why, and what you'd propose (optional)</label><textarea id="ag-details" maxlength="1000" placeholder="A sentence or two is plenty."></textarea></div>
+          </div>
+          <div class="calc-out">
+            <button class="btn" id="ag-save">Add it</button>
+            <button class="btn quiet" id="ag-cancel">Cancel</button>
+            <span id="ag-msg" style="font-size:13.5px;color:var(--red)"></span>
+          </div>
+        </div>
+        <div class="polls" id="ag-open"></div>
+        <div id="ag-done-wrap" hidden>
+          <div class="sec-head" style="margin-top:34px"><h2 style="font-size:24px">Decided</h2><span class="eyebrow cool" id="ag-done-count"></span></div>
+          <div class="rulebar"></div>
+          <div class="polls" id="ag-done"></div>
+        </div>
       </div>
     </section>
   </div>
@@ -1201,7 +1257,7 @@ footer p + p{margin-top:11px}
         <div class="field"><label for="pl-team">NBA team</label><select id="pl-team"><option value="">All teams</option></select></div>
         <div class="field"><label for="pl-pos">Position</label><select id="pl-pos"><option value="">Any</option><option value="G">Guards</option><option value="F">Forwards</option><option value="C">Centers</option></select></div>
         <div class="field"><label for="pl-owner">In our league</label><select id="pl-owner"><option value="">Everyone</option><option value="fa">Not on a roster</option><option value="owned">On a roster</option><option value="keeper">Flagged keepers</option></select></div>
-        <div class="field"><label for="pl-mode">Stats</label><select id="pl-mode"><option value="pg">Per game</option><option value="tot">Totals</option></select></div>
+        <div class="field"><label for="pl-mode">Stats</label><select id="pl-mode"><option value="pg">Per game</option><option value="tot">Totals</option><option value="z">Z-scores</option></select></div>
         <div class="field"><label for="pl-season">Season</label><select id="pl-season"></select></div>
         <div class="field" style="flex:0 0 auto;justify-content:flex-end"><button class="btn quiet sm" id="pl-clear">Clear</button></div>
       </div>
@@ -1217,7 +1273,7 @@ footer p + p{margin-top:11px}
         <span class="spacer"></span>
         <span class="sub" id="pl-src"></span>
       </div>
-      <p class="sub" style="margin-top:10px"><b>Value</b> is the sum of z-scores across our eleven categories (FG%, FT%, 3PTM, 3PT%, PTS, REB, AST, ST, BLK, A/T, DD), per game, measured against the top 200 players by minutes — the Basketball Monster way. A player needs ten games (a fifth of the season early on) to be ranked. <b>FPTS</b> is Yahoo's default points formula (PTS 1, REB 1.2, AST 1.5, STL 3, BLK 3, TO −1). <b>Owner</b> is whoever had him when rosters locked; K marks a flagged keeper. Salaries are this season's figure from Basketball-Reference (ESPN where they lack one); stats are ESPN's.</p>
+      <p class="sub" style="margin-top:10px"><b>Value</b> is the sum of z-scores across our eleven categories (FG%, FT%, 3PTM, 3PT%, PTS, REB, AST, ST, BLK, A/T, DD), per game, measured against the top 200 players by minutes — the Basketball Monster way. A player needs ten games (a fifth of the season early on) to be ranked. Switch Stats to <b>Z-scores</b> and every category column becomes that player's z-score against whoever is currently listed — filter to free agents, or one position, and the numbers re-centre on that group. <b>FPTS</b> is Yahoo's default points formula (PTS 1, REB 1.2, AST 1.5, STL 3, BLK 3, TO −1). <b>Owner</b> is whoever had him when rosters locked; K marks a flagged keeper. Salaries are this season's figure from Basketball-Reference (ESPN where they lack one); stats are ESPN's.</p>
     </section>
   </div>
 
@@ -1289,7 +1345,7 @@ footer p + p{margin-top:11px}
               <div class="field"><label for="ds-venmo">Venmo username</label><input id="ds-venmo" placeholder="Sean-Lewis-1" autocapitalize="off"></div>
               <div class="field"><label for="ds-zelle">Zelle (email or phone)</label><input id="ds-zelle" placeholder="you@example.com" autocapitalize="off"></div>
               <div class="field"><label for="ds-cashapp">Cash App $cashtag</label><input id="ds-cashapp" placeholder="$seanlewis" autocapitalize="off"></div>
-              <div class="field wide"><label for="ds-note">Note to the league (optional)</label><input id="ds-note" maxlength="200" placeholder="Winner takes $350, second $100, third gets their money back."></div>
+              <div class="field wide"><label for="ds-note">Note to the league (optional)</label><input id="ds-note" maxlength="200" placeholder="Pay by the draft, please."></div>
             </div>
             <div class="calc-out">
               <button class="btn" id="ds-save">Save dues</button>
@@ -1337,7 +1393,9 @@ footer p + p{margin-top:11px}
         <div class="rule"><h3>When he's gone</h3><p>Once the next cost lands past a first-rounder he isn't keepable. That's why rounds&nbsp;1 and&nbsp;2 are locked the moment they're drafted.</p></div>
         <div class="rule"><h3>The number is his</h3><p>Trade him or claim him off waivers and the cost comes along. Nobody resets a keeper clock by cycling a player.</p></div>
         <div class="rule"><h3>Two per team</h3><p>Each keeper takes that round's pick, so keeping at round&nbsp;3 costs you your third-rounder.</p></div>
+        <div class="rule"><h3>Same round twice</h3><p>If both keepers would land on the same round, the second one moves one more round up: −2 and −3. Two waiver pickups come back as your 11th and 10th. <span class="sub">Voted Feb 2025, 9–0.</span></p></div>
         <div class="rule"><h3>Locked before playoffs</h3><p>The frozen roster decides eligibility. Drops during the playoffs don't cost you a keeper.</p></div>
+        <div class="rule"><h3>Due a week before the draft</h3><p>Keepers are declared to the commissioner one week before draft day so everyone can plan. Yahoo's own keeper date is only when its tool wants them typed in.</p></div>
       </div>
     </section>
 
@@ -1362,18 +1420,32 @@ footer p + p{margin-top:11px}
           <tbody>
             <tr><td class="name">Scoring</td><td class="sub">Head-to-head, one win per week</td></tr>
             <tr><td class="name">Categories</td><td class="sub">FG%, FT%, 3PTM, 3PT%, PTS, REB, AST, ST, BLK, A/T, DD — eleven</td></tr>
-            <tr><td class="name">Roster</td><td class="sub">G, G, F, F, C, Util, six bench, two IL</td></tr>
-            <tr><td class="name">Draft</td><td class="sub">Offline, twelve rounds, order reverse of last season's finish</td></tr>
+            <tr><td class="name">Roster</td><td class="sub">G, G, F, F, C, Util, six bench, one IL</td></tr>
+            <tr><td class="name">Draft</td><td class="sub">Offline, twelve rounds, order reverse of last season's finish · <b>Sat Oct 18, 2026, 12pm PST / 3pm EST</b> (voted Sep 10)</td></tr>
             <tr><td class="name">Keeper eligibility</td><td class="sub">Decided by the pre-playoff roster lock, not a date in October</td></tr>
             <tr><td class="name">Yahoo keeper deadline</td><td class="sub">Mon Oct 19, 2026 — only when Yahoo's tool wants them entered</td></tr>
             <tr><td class="name">Waivers</td><td class="sub">FAB, continual rolling tiebreak, one-day waiver time</td></tr>
             <tr><td class="name">Acquisitions</td><td class="sub">Four per week, no season maximum</td></tr>
             <tr><td class="name">Trade deadline</td><td class="sub">March 4, 2027 · no trade review</td></tr>
             <tr><td class="name">Playoffs</td><td class="sub">Eight teams, weeks 19–21, ends Sunday Mar 28</td></tr>
-            <tr><td class="name">Weekly games cap</td><td class="sub"><span style="color:var(--amber)">30 — a league rule, not a Yahoo setting.</span> Yahoo will not count or enforce it.</td></tr>
-            <tr><td class="name">Dues</td><td class="sub">$50 a team, $500 in the pot</td></tr>
+            <tr><td class="name">Weekly games cap</td><td class="sub"><span style="color:var(--amber)">30 — a league rule, not a Yahoo setting.</span> Yahoo will not count or enforce it. Short weeks get their own number (see Games Cap).</td></tr>
+            <tr><td class="name">Dues</td><td class="sub">Voted each preseason: $69 in 2024-25, $80 in 2025-26. This season's number and who has paid are on the <button class="back" data-go="dues" style="margin:0;padding:0;font-size:inherit;color:var(--amber)">Dues page</button>.</td></tr>
+            <tr><td class="name">Payout</td><td class="sub"><b>50% champion · 40% runner-up · 10% regular-season winner.</b> Set by vote in 2023, paid that way in 2025 and 2026.</td></tr>
           </tbody>
         </table>
+      </div>
+    </section>
+
+    <section>
+      <div class="sec-head"><h2>League Policies</h2><span class="eyebrow cool">Decided in the group chat, recorded here</span></div>
+      <div class="rulebar"></div>
+      <div class="rules" style="margin-top:16px">
+        <div class="rule"><h3>Over the games cap</h3><p>Caught the same day, the extra player comes out — your opponent picks which, or the commissioner pulls the best one. Not caught in time and it's an automatic loss; only Yahoo support can change the record after the fact.</p></div>
+        <div class="rule"><h3>Short weeks</h3><p>The cap moves with the NBA schedule. NBA Cup weeks, election week and All-Star week get their own number, set by the commissioner and put to a vote when it's close.</p></div>
+        <div class="rule"><h3>Last place</h3><p>Makes 100 free throws inside an hour, on one continuous video for the group. <span class="sub">Voted Oct 2025.</span></p></div>
+        <div class="rule"><h3>The belt</h3><p>The champion holds the championship belt for the year — first awarded for 2024-25 — and passes it on by mail or in person at the next draft.</p></div>
+        <div class="rule"><h3>Playoff churn</h3><p>Playoff teams can add and drop freely; keeper eligibility was frozen at the roster lock, so nothing you do in the playoffs costs you a keeper.</p></div>
+        <div class="rule"><h3>Changing a rule</h3><p>Rules change by a league vote before the season, not mid-year. Anything else waits for the offseason — put it on the <button class="back" data-go="agenda" style="margin:0;padding:0;font-size:inherit;color:var(--amber)">Open Items</button> list.</p></div>
       </div>
     </section>
 
@@ -1386,7 +1458,7 @@ footer p + p{margin-top:11px}
         <div class="next-item"><h3>Matchups</h3><p>All eleven categories, who's winning each one, both rosters, who still has games tonight.</p></div>
         <div class="next-item"><h3>Roster lock</h3><p>Freeze all ten rosters at the moment you choose and keep them forever. No more screenshots.</p></div>
         <div class="next-item"><h3>League polls</h3><p>Put a rule change, a veto or a punishment to a vote. Results public, history kept.</p></div>
-        <div class="next-item"><h3>Standings and dues</h3><p>Records, FAB left, moves made, and who still owes their fifty.</p></div>
+        <div class="next-item"><h3>Standings</h3><p>Records, FAB left and moves made, live instead of copied from Yahoo at season's end.</p></div>
         <div class="next-item"><h3>League chat <span class="pill q">later</span></h3><p>Somewhere to talk trash that isn't a group text. Parked until the rest works.</p></div>
       </div>
     </section>
@@ -1618,6 +1690,7 @@ document.getElementById("watch").innerHTML=K.map(function(k){
     {go:"cap",     n:"30",       lbl:"Per week", h:"Games Cap",  p:"Work out the adjusted cap for short weeks without doing the arithmetic by hand."},
     {go:"keepers", n:String(kCount), lbl:"Declared", h:"Keepers", p:"The calculator that settles arguments, and the ladder every declared keeper has left."},
     {go:"polls",   n:"—",        lbl:"Open",     h:"Polls",      p:"Put a question to the league and vote on everyone else's. Managers only — sign in first.", id:"hc-polls"},
+    {go:"agenda",  n:"—",        lbl:"Open",     h:"Open Items", p:"What the league still has to decide. Raise one, argue about it, then put it to a vote.", id:"hc-agenda"},
     {go:"dues",    n:"—",        lbl:"Paid",     h:"Dues",       p:"What the buy-in is, where to send it, and who has settled up. Pick Venmo, Zelle or Cash App and mark yours sent.", id:"hc-dues"},
     {go:"history", n:"14",       lbl:"Seasons",  h:"History",    p:"Every champion since 2012. Four managers tied at two titles, two still hunting their first."},
     {go:"rules",   n:"11",       lbl:"Categories",h:"Rules",     p:"How keepers work, why rosters lock before the playoffs, and the league settings as Yahoo has them."}
@@ -2179,7 +2252,13 @@ var LIVE_HOSTS=/(^|\.)crysterbaters\.(vercel\.app|com)$|^localhost$/;
 /* the draft-time poll from the group chat, kept for the preview; the live site has it in the database */
 var SEED_POLL={id:"seed-drafttime",question:"Draft Time (Oct 18)",options:["10 am PST (1pm EST)","12pm PST (3pm EST)","2pm PST (5pm EST)","4pm PST (7 PM EST)","6pm PST (9 PM EST)","8pm PST (11 PM EST)"],
   visibility:"named",closed:true,imported:true,asked_on:"2026-09-10",created_at:"2026-09-10T16:23:00Z",created_by:"u-seanlewis08gmailcom",created_by_email:"seanlewis08@gmail.com",
-  results:{multi:true,source:"WhatsApp",voted:7,counts:[5,7,6,6,3,2],voters:[["Chris","David","Anush","Ben","Gonzo"],["Sean","Chris","David","Anush","Ben","Gonzo","Kabir"],["Sean","David","Anush","Ben","Gonzo","Kabir"],["Sean","David","Anush","Ben","Gonzo","Kabir"],["Anush","Ben","Gonzo"],["Anush","Ben"]]}};
+  results:{multi:true,source:"WhatsApp",asked_by:"Sean",voted:7,counts:[5,7,6,6,3,2],voters:[["Chris","David","Anush","Ben","Gonzo"],["Sean","Chris","David","Anush","Ben","Gonzo","Kabir"],["Sean","David","Anush","Ben","Gonzo","Kabir"],["Sean","David","Anush","Ben","Gonzo","Kabir"],["Anush","Ben","Gonzo"],["Anush","Ben"]]}};
+
+var SEED_POLLS=[{"id":"seed-who-u-want-to-win-2024-06-02","question":"Who u want to win","options":["Mavs","Jason Tatum"],"visibility":"named","closed":true,"imported":true,"asked_on":"2024-06-02","created_at":"2024-06-02T16:00:00Z","created_by":"u-seanlewis08gmailcom","created_by_email":"seanlewis08@gmail.com","results":{"multi":false,"source":"WhatsApp","voted":3,"counts":[3,0],"voters":[[],[]],"asked_by":"Kabir"}},{"id":"seed-why-do-dislike-the-cs-2024-06-02","question":"Why do dislike the Cs","options":["Fuck the Celtics in general","I dont like Jason Tatum","I dont like 1 or more of the other guys","Itd be funny if they lose","I root for a close competitor of theirs"],"visibility":"named","closed":true,"imported":true,"asked_on":"2024-06-02","created_at":"2024-06-02T16:00:00Z","created_by":"u-seanlewis08gmailcom","created_by_email":"seanlewis08@gmail.com","results":{"multi":true,"source":"WhatsApp","voted":8,"counts":[8,4,2,6,1],"voters":[[],[],[],[],[]],"asked_by":"Kabir"}},{"id":"seed-finals-winner-2024-06-05","question":"Finals winner","options":["Celtics in 4","Celtics in 5","Celtics in 6","Celtics in 7","Mavs in 4","Mavs in 5","Mavs in 6","Mavs in 7"],"visibility":"named","closed":true,"imported":true,"asked_on":"2024-06-05","created_at":"2024-06-05T16:00:00Z","created_by":"u-seanlewis08gmailcom","created_by_email":"seanlewis08@gmail.com","results":{"multi":false,"source":"WhatsApp","voted":7,"counts":[0,0,1,1,0,0,2,3],"voters":[[],[],[],[],[],[],[],[]],"asked_by":"Abada"}},{"id":"seed-draft-2024-08-19","question":"Draft","options":["September","October"],"visibility":"named","closed":true,"imported":true,"asked_on":"2024-08-19","created_at":"2024-08-19T16:00:00Z","created_by":"u-seanlewis08gmailcom","created_by_email":"seanlewis08@gmail.com","results":{"multi":false,"source":"WhatsApp","voted":6,"counts":[0,6],"voters":[[],[]],"asked_by":"Sean"}},{"id":"seed-draft-day-2024-08-22","question":"Draft Day","options":["Sat Oct 5","Sun Oct 6","Sat Oct 12","Sun Oct 13","Sat Oct 19","Sun Oct 20"],"visibility":"named","closed":true,"imported":true,"asked_on":"2024-08-22","created_at":"2024-08-22T16:00:00Z","created_by":"u-seanlewis08gmailcom","created_by_email":"seanlewis08@gmail.com","results":{"multi":true,"source":"WhatsApp","voted":6,"counts":[0,3,2,5,4,6],"voters":[[],[],[],[],[],[]],"asked_by":"Sean"}},{"id":"seed-oct-20-draft-day-time-2024-08-30","question":"Oct 20 Draft day time","options":["Morning (9am PST/12pm EST)","Afternoon (12pm PST/3pmEST)","Evening (5pm PST/8pmEST)","Night (7pm PST/10pm EST)","A different time PST Only","A different time EST only"],"visibility":"named","closed":true,"imported":true,"asked_on":"2024-08-30","created_at":"2024-08-30T16:00:00Z","created_by":"u-seanlewis08gmailcom","created_by_email":"seanlewis08@gmail.com","results":{"multi":true,"source":"WhatsApp","voted":5,"counts":[2,0,5,5,1,1],"voters":[[],[],[],[],[],[]],"asked_by":"Sean"}},{"id":"seed-buy-in-2-2024-09-17","question":"Buy In (2)","options":["50","75","100","69"],"visibility":"named","closed":true,"imported":true,"asked_on":"2024-09-17","created_at":"2024-09-17T16:00:00Z","created_by":"u-seanlewis08gmailcom","created_by_email":"seanlewis08@gmail.com","results":{"multi":true,"source":"WhatsApp","voted":5,"counts":[2,2,4,5],"voters":[[],[],[],[]],"asked_by":"Sean"}},{"id":"seed-ir-slots-2024-10-22","question":"IR slots","options":["1","2","Buckle my shoe"],"visibility":"named","closed":true,"imported":true,"asked_on":"2024-10-22","created_at":"2024-10-22T16:00:00Z","created_by":"u-seanlewis08gmailcom","created_by_email":"seanlewis08@gmail.com","results":{"multi":false,"source":"WhatsApp","voted":10,"counts":[5,5,0],"voters":[[],[],[]],"asked_by":"Sean"}},{"id":"seed-games-election-week-2024-11-03","question":"Games Election Week","options":["25","27","30"],"visibility":"named","closed":true,"imported":true,"asked_on":"2024-11-03","created_at":"2024-11-03T16:00:00Z","created_by":"u-seanlewis08gmailcom","created_by_email":"seanlewis08@gmail.com","results":{"multi":false,"source":"WhatsApp","voted":7,"counts":[1,5,1],"voters":[[],[],[]],"asked_by":"Sean"}},{"id":"seed-how-should-we-handle-keepers-drafted-in-the-same-position-2025-02-20","question":"How should we handle keepers drafted in the same position?","options":["1st keeper -2 rounds; 2nd keeper -3 rounds","1st keeper -2 rounds; 2nd keeper -4 rounds"],"visibility":"named","closed":true,"imported":true,"asked_on":"2025-02-20","created_at":"2025-02-20T16:00:00Z","created_by":"u-seanlewis08gmailcom","created_by_email":"seanlewis08@gmail.com","results":{"multi":false,"source":"WhatsApp","voted":9,"counts":[9,0],"voters":[[],[]],"asked_by":"Kabir"}},{"id":"seed-belt-images-2025-03-12","question":"Belt images","options":["Jrue Holiday","Cartoon picture","Duncan Jorts","D rose","AI generated"],"visibility":"named","closed":true,"imported":true,"asked_on":"2025-03-12","created_at":"2025-03-12T16:00:00Z","created_by":"u-seanlewis08gmailcom","created_by_email":"seanlewis08@gmail.com","results":{"multi":false,"source":"WhatsApp","voted":9,"counts":[0,0,5,4,0],"voters":[[],[],[],[],[]],"asked_by":"Sean"}},{"id":"seed-east-7th-vs-8th-2025-04-15","question":"East - 7th vs 8th","options":["Hawks","Magic"],"visibility":"named","closed":true,"imported":true,"asked_on":"2025-04-15","created_at":"2025-04-15T16:00:00Z","created_by":"u-seanlewis08gmailcom","created_by_email":"seanlewis08@gmail.com","results":{"multi":false,"source":"WhatsApp","voted":5,"counts":[2,3],"voters":[[],[]],"asked_by":"Anush"}},{"id":"seed-west-7th-vs-8th-2025-04-15","question":"West - 7th vs 8th","options":["Grizzlies","Warriors"],"visibility":"named","closed":true,"imported":true,"asked_on":"2025-04-15","created_at":"2025-04-15T16:00:00Z","created_by":"u-seanlewis08gmailcom","created_by_email":"seanlewis08@gmail.com","results":{"multi":false,"source":"WhatsApp","voted":5,"counts":[1,4],"voters":[[],[]],"asked_by":"Anush"}},{"id":"seed-who-2025-04-16","question":"Who?","options":["Heat","Bulls"],"visibility":"named","closed":true,"imported":true,"asked_on":"2025-04-16","created_at":"2025-04-16T16:00:00Z","created_by":"u-seanlewis08gmailcom","created_by_email":"seanlewis08@gmail.com","results":{"multi":false,"source":"WhatsApp","voted":4,"counts":[2,2],"voters":[[],[]],"asked_by":"Kabir"}},{"id":"seed-who-2025-04-16-2","question":"Who?","options":["Mavs","Kings"],"visibility":"named","closed":true,"imported":true,"asked_on":"2025-04-16","created_at":"2025-04-16T16:00:00Z","created_by":"u-seanlewis08gmailcom","created_by_email":"seanlewis08@gmail.com","results":{"multi":false,"source":"WhatsApp","voted":4,"counts":[2,2],"voters":[[],[]],"asked_by":"Kabir"}},{"id":"seed-who-wins-the-series-2025-04-19","question":"Who wins the series","options":["Bucks","Pacers"],"visibility":"named","closed":true,"imported":true,"asked_on":"2025-04-19","created_at":"2025-04-19T16:00:00Z","created_by":"u-seanlewis08gmailcom","created_by_email":"seanlewis08@gmail.com","results":{"multi":false,"source":"WhatsApp","voted":6,"counts":[4,2],"voters":[[],[]],"asked_by":"Kabir"}},{"id":"seed-who-wins-series-2025-04-19","question":"Who wins series","options":["Clippers","Nuggies"],"visibility":"named","closed":true,"imported":true,"asked_on":"2025-04-19","created_at":"2025-04-19T16:00:00Z","created_by":"u-seanlewis08gmailcom","created_by_email":"seanlewis08@gmail.com","results":{"multi":false,"source":"WhatsApp","voted":6,"counts":[2,4],"voters":[[],[]],"asked_by":"Kabir"}},{"id":"seed-who-wins-series-2025-04-19-2","question":"Who wins series","options":["Pistons","Knicks"],"visibility":"named","closed":true,"imported":true,"asked_on":"2025-04-19","created_at":"2025-04-19T16:00:00Z","created_by":"u-seanlewis08gmailcom","created_by_email":"seanlewis08@gmail.com","results":{"multi":false,"source":"WhatsApp","voted":6,"counts":[2,4],"voters":[[],[]],"asked_by":"Kabir"}},{"id":"seed-who-winz-seriez-2025-04-19","question":"Who winz seriez","options":["Wolves","Lakers"],"visibility":"named","closed":true,"imported":true,"asked_on":"2025-04-19","created_at":"2025-04-19T16:00:00Z","created_by":"u-seanlewis08gmailcom","created_by_email":"seanlewis08@gmail.com","results":{"multi":false,"source":"WhatsApp","voted":6,"counts":[2,4],"voters":[[],[]],"asked_by":"Kabir"}},{"id":"seed-who-wins-round-2-2025-05-06","question":"Who wins Round 2","options":["Nugs","Thunder"],"visibility":"named","closed":true,"imported":true,"asked_on":"2025-05-06","created_at":"2025-05-06T16:00:00Z","created_by":"u-seanlewis08gmailcom","created_by_email":"seanlewis08@gmail.com","results":{"multi":false,"source":"WhatsApp","voted":4,"counts":[2,2],"voters":[[],[]],"asked_by":"Kabir"}},{"id":"seed-who-wins-round-2-2025-05-06-2","question":"Who wins Round 2","options":["Warriors","Wolves"],"visibility":"named","closed":true,"imported":true,"asked_on":"2025-05-06","created_at":"2025-05-06T16:00:00Z","created_by":"u-seanlewis08gmailcom","created_by_email":"seanlewis08@gmail.com","results":{"multi":false,"source":"WhatsApp","voted":4,"counts":[0,4],"voters":[[],[]],"asked_by":"Kabir"}},{"id":"seed-who-wins-round-2-east-2025-05-06","question":"Who wins Round 2 East","options":["Knicks","Celtikkks"],"visibility":"named","closed":true,"imported":true,"asked_on":"2025-05-06","created_at":"2025-05-06T16:00:00Z","created_by":"u-seanlewis08gmailcom","created_by_email":"seanlewis08@gmail.com","results":{"multi":false,"source":"WhatsApp","voted":4,"counts":[4,0],"voters":[[],[]],"asked_by":"Kabir"}},{"id":"seed-who-wins-round-2-east-2025-05-06-2","question":"Who wins Round 2 East","options":["Cavs","Pacers"],"visibility":"named","closed":true,"imported":true,"asked_on":"2025-05-06","created_at":"2025-05-06T16:00:00Z","created_by":"u-seanlewis08gmailcom","created_by_email":"seanlewis08@gmail.com","results":{"multi":false,"source":"WhatsApp","voted":4,"counts":[3,1],"voters":[[],[]],"asked_by":"Kabir"}},{"id":"seed-winner-ecf-2025-05-16","question":"Winner ECF","options":["Pacers","Knicks"],"visibility":"named","closed":true,"imported":true,"asked_on":"2025-05-16","created_at":"2025-05-16T16:00:00Z","created_by":"u-seanlewis08gmailcom","created_by_email":"seanlewis08@gmail.com","results":{"multi":false,"source":"WhatsApp","voted":4,"counts":[1,3],"voters":[[],[]],"asked_by":"Kabir"}},{"id":"seed-who-wins-wcf-2025-05-18","question":"Who wins WCF","options":["Wolves","Thunder"],"visibility":"named","closed":true,"imported":true,"asked_on":"2025-05-18","created_at":"2025-05-18T16:00:00Z","created_by":"u-seanlewis08gmailcom","created_by_email":"seanlewis08@gmail.com","results":{"multi":false,"source":"WhatsApp","voted":6,"counts":[3,3],"voters":[[],[]],"asked_by":"Kabir"}},{"id":"seed-who-wins-2025-finals-2025-06-01","question":"Who wins 2025 Finals","options":["Pacers","Thunder"],"visibility":"named","closed":true,"imported":true,"asked_on":"2025-06-01","created_at":"2025-06-01T16:00:00Z","created_by":"u-seanlewis08gmailcom","created_by_email":"seanlewis08@gmail.com","results":{"multi":false,"source":"WhatsApp","voted":9,"counts":[1,8],"voters":[[],[]],"asked_by":"Kabir"}},{"id":"seed-over-under-3-5-trades-today-2025-06-25","question":"Over/under 3.5 trades today","options":["Over","Under"],"visibility":"named","closed":true,"imported":true,"asked_on":"2025-06-25","created_at":"2025-06-25T16:00:00Z","created_by":"u-seanlewis08gmailcom","created_by_email":"seanlewis08@gmail.com","results":{"multi":false,"source":"WhatsApp","voted":4,"counts":[3,1],"voters":[[],[]],"asked_by":"Abada"}},{"id":"seed-buy-in-2025-09-03","question":"Buy in","options":["70","80","90","100"],"visibility":"named","closed":true,"imported":true,"asked_on":"2025-09-03","created_at":"2025-09-03T16:00:00Z","created_by":"u-seanlewis08gmailcom","created_by_email":"seanlewis08@gmail.com","results":{"multi":false,"source":"WhatsApp","voted":6,"counts":[0,6,0,0],"voters":[[],[],[],[]],"asked_by":"Sean"}},{"id":"seed-updated-draft-day-poll-2025-09-04","question":"Updated Draft Day Poll","options":["October 4 (Saturday) [Keepers 9/27]","October 5 (Sunday) [Keepers 9/28]","October 11 (Saturday) [Keepers 10/4]","October 12 (Sunday) [Keepers 10/5]","October 18 (Saturday) [Keepers 10/11]","October 19 (Sunday) [Keepers 10/12]"],"visibility":"named","closed":true,"imported":true,"asked_on":"2025-09-04","created_at":"2025-09-04T16:00:00Z","created_by":"u-seanlewis08gmailcom","created_by_email":"seanlewis08@gmail.com","results":{"multi":true,"source":"WhatsApp","voted":8,"counts":[0,2,1,3,3,8],"voters":[[],[],[],[],[],[]],"asked_by":"Sean"}},{"id":"seed-to-or-a-to-2025-09-07","question":"TO or A/TO","options":["TO","ATO"],"visibility":"named","closed":true,"imported":true,"asked_on":"2025-09-07","created_at":"2025-09-07T16:00:00Z","created_by":"u-seanlewis08gmailcom","created_by_email":"seanlewis08@gmail.com","results":{"multi":false,"source":"WhatsApp","voted":5,"counts":[4,1],"voters":[[],[]],"asked_by":"Kabir"}},{"id":"seed-what-time-for-draft-on-sunday-10-19-2025-10-03","question":"What time for draft on Sunday 10/19","options":["2pm EST","3pm EST","4pm EST","5pm EST","6pm EST","7pm EST","8pm EST","9pm EST"],"visibility":"named","closed":true,"imported":true,"asked_on":"2025-10-03","created_at":"2025-10-03T16:00:00Z","created_by":"u-seanlewis08gmailcom","created_by_email":"seanlewis08@gmail.com","results":{"multi":true,"source":"WhatsApp","voted":7,"counts":[2,2,2,4,7,2,2,2],"voters":[[],[],[],[],[],[],[],[]],"asked_by":"Kabir"}},{"id":"seed-last-place-punishment-2025-10-15","question":"Last place punishment","options":["12 hours in a waffle house - 1 hour per waffle/pancake","Make 100 free throws in an hour","Beer Mile","Perform at an Open Mic","Join the National Guard"],"visibility":"named","closed":true,"imported":true,"asked_on":"2025-10-15","created_at":"2025-10-15T16:00:00Z","created_by":"u-seanlewis08gmailcom","created_by_email":"seanlewis08@gmail.com","results":{"multi":true,"source":"WhatsApp","voted":5,"counts":[3,5,1,3,3],"voters":[[],[],[],[],[]],"asked_by":"Kabir"}},{"id":"seed-games-played-limit-week-8-2025-12-08","question":"Games played Limit Week 8","options":["Increase to 17","Leave at 15"],"visibility":"named","closed":true,"imported":true,"asked_on":"2025-12-08","created_at":"2025-12-08T16:00:00Z","created_by":"u-seanlewis08gmailcom","created_by_email":"seanlewis08@gmail.com","results":{"multi":false,"source":"WhatsApp","voted":9,"counts":[0,9],"voters":[[],[]],"asked_by":"Sean"}},{"id":"seed-week-9-gp-limit-2025-12-13","question":"Week 9 GP Limit","options":["20","25"],"visibility":"named","closed":true,"imported":true,"asked_on":"2025-12-13","created_at":"2025-12-13T16:00:00Z","created_by":"u-seanlewis08gmailcom","created_by_email":"seanlewis08@gmail.com","results":{"multi":false,"source":"WhatsApp","voted":9,"counts":[3,6],"voters":[[],[]],"asked_by":"Sean"}},{"id":"seed-week-17-pickup-limit-2026-02-10","question":"Week 17 Pickup Limit","options":["4 (Current)","5"],"visibility":"named","closed":true,"imported":true,"asked_on":"2026-02-10","created_at":"2026-02-10T16:00:00Z","created_by":"u-seanlewis08gmailcom","created_by_email":"seanlewis08@gmail.com","results":{"multi":false,"source":"WhatsApp","voted":8,"counts":[2,6],"voters":[[],[]],"asked_by":"Sean"}}];
+var SEED_AGENDA=[
+  {id:"seed-inperson",title:"In-person draft",details:"Plan a weekend around the draft: a location vote (DC was leading), Sunday draft at a Buffalo Wild Wings, competitions the day before. Pushed to 2027.",status:"open",outcome:null,created_by:"u-seanlewis08gmailcom",created_by_email:"seanlewis08@gmail.com",created_at:"2026-03-30T01:48:00Z",decided_at:null},
+  {id:"seed-shorter",title:"Shorter season, dues pro-rated",details:"Cut the season length and reduce the buy-in in proportion. Raised at the end of 2025-26; needs a vote before it changes anything.",status:"open",outcome:null,created_by:"u-seanlewis08gmailcom",created_by_email:"seanlewis08@gmail.com",created_at:"2026-03-30T01:49:00Z",decided_at:null}
+];
 
 var Polls=(function(){
   var me=null, profile=null, profiles=[], polls=[], votes=[], tallies={}, claimed=[], store=null, loading=false, isCommish=false;
@@ -2213,6 +2292,9 @@ var Polls=(function(){
     if(!db) db={polls:[],votes:[],profiles:[],users:[],me:null,code:"KIDS26"};
     if(!db.dues) db.dues={seasons:[],payments:[]};
     if(!db.polls.some(function(p){return p.imported&&p.question===SEED_POLL.question;})) db.polls.push(SEED_POLL);
+    SEED_POLLS.forEach(function(sp){ if(!db.polls.some(function(p){return p.id===sp.id;})) db.polls.push(sp); });
+    if(!db.agenda) db.agenda=SEED_AGENDA.map(function(a){ return JSON.parse(JSON.stringify(a)); });
+    if(!db.agendaVotes) db.agendaVotes=[];
     function save(){ try{ localStorage.setItem(KEY,JSON.stringify(db)); }catch(e){} }
     function findPoll(id){ return db.polls.filter(function(p){return p.id===id;})[0]; }
     function myProf(){ return db.me ? db.profiles.filter(function(p){return p.user_id===db.me.id;})[0]||null : null; }
@@ -2273,6 +2355,22 @@ var Polls=(function(){
         db.polls=db.polls.filter(function(p){return p.id!==pid;});
         db.votes=db.votes.filter(function(v){return v.poll_id!==pid;}); save(); return Promise.resolve();
       },
+      agendaLoad:function(){ return Promise.resolve({items:db.agenda.slice(),votes:db.agendaVotes.slice()}); },
+      agendaVote:function(id,on){
+        var p=myProf(); if(!p) return Promise.reject(new Error("Claim your team first."));
+        db.agendaVotes=db.agendaVotes.filter(function(v){ return !(v.item_id===id&&v.user_id===db.me.id); });
+        if(on){
+          var it=db.agenda.filter(function(a){return a.id===id;})[0]; if(!it||it.status!=="open") return Promise.reject(new Error("That item is closed."));
+          var open={}; db.agenda.forEach(function(a){ if(a.status==="open") open[a.id]=1; });
+          var used=db.agendaVotes.filter(function(v){ return v.user_id===db.me.id&&open[v.item_id]; }).length;
+          if(used>=2) return Promise.reject(new Error("You've used both votes — take one back first."));
+          db.agendaVotes.push({item_id:id,user_id:db.me.id,voter_email:db.me.email,created_at:new Date().toISOString()});
+        }
+        save(); return Promise.resolve();
+      },
+      agendaAdd:function(a){ db.agenda.unshift({id:"a"+Date.now(),title:a.title,details:a.details||null,status:"open",outcome:null,created_by:db.me.id,created_by_email:db.me.email,created_at:new Date().toISOString(),decided_at:null}); save(); return Promise.resolve(); },
+      agendaDecide:function(id,outcome){ var a=db.agenda.filter(function(x){return x.id===id;})[0]; if(a){ a.status=outcome==null?"open":"decided"; a.outcome=outcome; a.decided_at=outcome==null?null:new Date().toISOString(); } save(); return Promise.resolve(); },
+      agendaDelete:function(id){ db.agenda=db.agenda.filter(function(x){return x.id!==id;}); db.agendaVotes=db.agendaVotes.filter(function(v){return v.item_id!==id;}); save(); return Promise.resolve(); },
       recordPoll:function(p){
         if(!commish()) return Promise.reject(new Error("Commissioner only."));
         p.id="p"+Date.now(); p.created_by=db.me.id; p.created_by_email=db.me.email; p.closed=true; p.imported=true; p.visibility="named";
@@ -2373,6 +2471,14 @@ var Polls=(function(){
       vote:function(pid,idx,u){ return client.from("votes").upsert({poll_id:pid,user_id:u,option_index:idx},{onConflict:"poll_id,user_id"}).then(chk); },
       closePoll:function(pid){ return client.from("polls").update({closed:true}).eq("id",pid).then(chk); },
       deletePoll:function(pid){ return client.from("polls").delete().eq("id",pid).then(chk); },
+      agendaLoad:function(){
+        return Promise.all([client.from("agenda").select("*").order("created_at",{ascending:false}), client.from("agenda_votes").select("*")])
+          .then(function(rs){ chk(rs[0]); chk(rs[1]); return {items:rs[0].data||[],votes:rs[1].data||[]}; });
+      },
+      agendaVote:function(id,on){ return client.rpc("agenda_vote",{p_item:id,p_on:on}).then(chk); },
+      agendaAdd:function(a){ return client.from("agenda").insert({title:a.title,details:a.details||null}).then(chk); },
+      agendaDecide:function(id,outcome){ return client.from("agenda").update(outcome==null?{status:"open",outcome:null,decided_at:null}:{status:"decided",outcome:outcome,decided_at:new Date().toISOString()}).eq("id",id).then(chk); },
+      agendaDelete:function(id){ return client.from("agenda").delete().eq("id",id).then(chk); },
       recordPoll:function(p){
         return client.from("polls").insert({question:p.question,options:p.options,visibility:"named",closed:true,imported:true,asked_on:p.asked_on,created_at:p.created_at,results:p.results}).then(chk);
       },
@@ -2438,6 +2544,7 @@ var Polls=(function(){
       : "";
     renderSignup();
     duesRefresh();
+    agendaRefresh();
     if(isCommish) renderCommish();
     if(!member){ renderList(); return; }
     if(loading) return;
@@ -2525,6 +2632,71 @@ var Polls=(function(){
     return html;
   }
 
+  /* ----- open items ----- */
+  var agenda=[], agendaVotes=[], agendaLoaded=false;
+  var THUMB='<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path fill="currentColor" d="M2 10h4v11H2zM22 11c0-1.1-.9-2-2-2h-5.3l.9-4.3v-.3c0-.4-.2-.8-.4-1.1L14.2 2 7.6 8.6C7.2 9 7 9.5 7 10v9c0 1.1.9 2 2 2h8c.8 0 1.5-.5 1.8-1.2l3-7.1c.1-.2.2-.5.2-.7v-1z"/></svg>';
+  function votesFor(id){ return agendaVotes.filter(function(v){return v.item_id===id;}); }
+  function myVotesUsed(){ var open={}; agenda.forEach(function(a){ if(a.status!=="decided") open[a.id]=1; }); return me?agendaVotes.filter(function(v){return v.user_id===me.id&&open[v.item_id];}).length:0; }
+  function agendaNotice(html,cls){ $("ag-notice").innerHTML=html?'<div class="notice '+(cls||"")+'">'+html+'</div>':""; }
+  function agendaRefresh(force){
+    var signed=!!me, member=signed&&!!profile;
+    $("ag-locked").hidden=signed; $("ag-noteam").hidden=!(signed&&!profile); $("ag-body").hidden=!member;
+    $("ag-eyebrow").textContent=member?"Signed in as "+nameFor(me.id,me.email):"Members only";
+    var hc=document.querySelector("#hc-agenda .hc-n");
+    if(!member){ agenda=[]; agendaLoaded=false; if(hc) hc.textContent="—"; return; }
+    if(agendaLoaded&&!force&&!$("v-agenda").classList.contains("on")) return;
+    store.agendaLoad().then(function(a){ agenda=a.items; agendaVotes=a.votes; agendaLoaded=true; renderAgenda(); }).catch(function(e){ agendaNotice(esc(msgOf(e)),"bad"); });
+  }
+  function agendaCard(a){
+    var mine=!!me&&a.created_by===me.id, owner=mine||isCommish, done=a.status==="decided";
+    var vs=votesFor(a.id), voted=!!me&&vs.some(function(v){return v.user_id===me.id;}), spent=myVotesUsed()>=2&&!voted;
+    var html='<article class="poll'+(done?" closed":"")+'" data-item="'+esc(a.id)+'">';
+    html+='<div class="poll-head" style="display:flex;gap:14px;align-items:flex-start">'+
+      (done?'':'<button type="button" class="thumb'+(voted?" on":"")+'" data-agvote="'+esc(a.id)+'"'+(spent?' disabled title="Both of your votes are spent — take one back first"':' title="'+(voted?"Take your vote back":"This matters — spend a vote on it")+'"')+'>'+THUMB+'<b>'+vs.length+'</b></button>')+
+      '<div style="flex:1;min-width:0"><h3>'+esc(a.title)+'</h3><div class="poll-meta"><span>Raised by '+esc(nameFor(a.created_by,a.created_by_email))+' · '+fmtDate(a.created_at)+'</span>'+
+      (done?'<span>Decided '+fmtDate(a.decided_at||a.created_at)+'</span>':(vs.length?'<span>'+esc(vs.map(function(v){return nameFor(v.user_id,v.voter_email);}).join(", "))+'</span>':''))+
+      '<span class="pill '+(done?"q":"ok")+'">'+(done?"Decided":"Open")+'</span></div></div></div>';
+    if(a.details) html+='<div style="padding:12px 18px 2px;font-size:15px;color:var(--muted);white-space:pre-wrap">'+esc(a.details)+'</div>';
+    if(done) html+='<div style="padding:12px 18px 2px;font-size:15px"><b>Outcome:</b> '+esc(a.outcome||"—")+'</div>';
+    if(!done&&isCommish) html+='<div class="calc-in" id="ag-dec-'+esc(a.id)+'" hidden style="display:none;margin:12px 18px 0;padding:12px 14px;border:1px dashed var(--line-2);border-radius:4px;background:var(--surface-2)"><div class="field wide"><label>What was decided</label><input class="ag-outcome" maxlength="300" placeholder="Voted 7–3 to keep twelve rounds."></div><div class="field" style="flex:0 0 auto;justify-content:flex-end;flex-direction:row;gap:8px"><button class="btn sm" data-decide="'+esc(a.id)+'">Record it</button><button class="btn quiet sm" data-decide-cancel="'+esc(a.id)+'">Cancel</button></div></div>';
+    html+='<div class="poll-foot"><span></span><span class="spacer"></span>';
+    if(!done) html+='<button class="btn quiet sm" data-topoll="'+esc(a.id)+'">Put it to a vote</button>';
+    if(!done&&isCommish) html+='<button class="btn sm" data-decide-open="'+esc(a.id)+'">Mark decided</button>';
+    if(done&&isCommish) html+='<button class="btn quiet sm" data-reopen="'+esc(a.id)+'">Reopen</button>';
+    if(owner) html+='<button class="btn danger sm" data-agdel="'+esc(a.id)+'">Delete</button>';
+    html+='</div></article>';
+    return html;
+  }
+  function renderAgenda(){
+    var open=agenda.filter(function(a){return a.status!=="decided";}), done=agenda.filter(function(a){return a.status==="decided";});
+    open.sort(function(a,b){ var d=votesFor(b.id).length-votesFor(a.id).length; return d||(a.created_at<b.created_at?1:-1); });
+    var used=myVotesUsed();
+    $("ag-votes").innerHTML='<span class="pill '+(used>=2?"q":"ok")+'">'+(2-used)+' of 2 votes left</span> <span class="sub">Thumbs-up the two items you most want settled. Items sort by votes; take a vote back to move it.</span>';
+    $("ag-open").innerHTML=open.length?open.map(agendaCard).join(""):'<div class="empty">Nothing waiting on a decision. Enjoy it.</div>';
+    $("ag-done-wrap").hidden=!done.length; $("ag-done").innerHTML=done.map(agendaCard).join("");
+    $("ag-count").textContent=open.length+" open · "+done.length+" decided"; $("ag-done-count").textContent=done.length+" settled";
+    var hc=document.querySelector("#hc-agenda .hc-n"); if(hc) hc.textContent=String(open.length);
+  }
+  $("ag-new-btn").addEventListener("click",function(){ var f=$("ag-new"); f.hidden=!f.hidden; if(!f.hidden) $("ag-title").focus(); });
+  $("ag-cancel").addEventListener("click",function(){ $("ag-new").hidden=true; });
+  $("ag-save").addEventListener("click",function(){
+    var t=$("ag-title").value.trim(), d=$("ag-details").value.trim();
+    if(t.length<3){ say("ag-msg","Say what needs deciding."); return; }
+    $("ag-save").disabled=true; say("ag-msg","");
+    store.agendaAdd({title:t,details:d}).then(function(){ $("ag-save").disabled=false; $("ag-title").value=""; $("ag-details").value=""; $("ag-new").hidden=true; agendaRefresh(true); })
+      .catch(function(e){ $("ag-save").disabled=false; say("ag-msg",msgOf(e)); });
+  });
+  document.addEventListener("click",function(e){
+    var b;
+    if((b=e.target.closest("[data-agvote]"))){ if(b.disabled) return; var on=!b.classList.contains("on"); b.disabled=true; store.agendaVote(b.dataset.agvote,on).then(function(){ agendaNotice(""); agendaRefresh(true); }).catch(function(err){ b.disabled=false; agendaNotice(esc(msgOf(err)),"bad"); }); return; }
+    if((b=e.target.closest("[data-decide-open]"))){ var box=$("ag-dec-"+b.dataset.decideOpen); if(box){ box.hidden=false; box.style.display="flex"; box.querySelector("input").focus(); } return; }
+    if((b=e.target.closest("[data-decide-cancel]"))){ var bx=$("ag-dec-"+b.dataset.decideCancel); if(bx){ bx.hidden=true; bx.style.display="none"; } return; }
+    if((b=e.target.closest("[data-decide]"))){ var box2=$("ag-dec-"+b.dataset.decide), out=box2?box2.querySelector("input").value.trim():""; if(!out){ box2.querySelector("input").focus(); return; } store.agendaDecide(b.dataset.decide,out).then(function(){ agendaRefresh(true); }).catch(function(err){ agendaNotice(esc(msgOf(err)),"bad"); }); return; }
+    if((b=e.target.closest("[data-reopen]"))){ store.agendaDecide(b.dataset.reopen,null).then(function(){ agendaRefresh(true); }).catch(function(err){ agendaNotice(esc(msgOf(err)),"bad"); }); return; }
+    if((b=e.target.closest("[data-agdel]"))){ if(b.dataset.armed){ store.agendaDelete(b.dataset.agdel).then(function(){ agendaRefresh(true); }).catch(function(err){ agendaNotice(esc(msgOf(err)),"bad"); }); } else { b.dataset.armed="1"; b.textContent="Really delete?"; } return; }
+    if((b=e.target.closest("[data-topoll]"))){ var it=agenda.filter(function(x){return x.id===b.dataset.topoll;})[0]; go("polls"); if(it){ $("newpoll").hidden=false; $("np-q").value=it.title.replace(/\?*$/,"")+"?"; setTimeout(function(){ $("np-opts").focus(); },50); } return; }
+  });
+
   /* ----- dues ----- */
   var dues={seasons:[],payments:[]}, duesLoaded=false, duesBusy=false;
   var METHOD={venmo:"Venmo",zelle:"Zelle",cashapp:"Cash App",cash:"Cash / other",other:"Other"};
@@ -2571,6 +2743,7 @@ var Polls=(function(){
       '<div class="tile"><small>'+esc(cur.season)+' dues</small><b>'+money(cur.amount)+'</b><span>per team · '+money(cur.amount*T.length)+' pot</span></div>'+
       '<div class="tile"><small>Due by</small><b'+(isPastDue(cur.due_date)&&received<T.length?' class="hot"':'')+'>'+(due?esc(due):"—")+'</b><span>'+(due?(isPastDue(cur.due_date)?"deadline has passed":"get it in early"):"no deadline set")+'</span></div>'+
       '<div class="tile"><small>Received</small><b class="'+(received===T.length?"":"hot")+'">'+received+'<span style="display:inline;font-size:18px;color:var(--dim)"> / '+T.length+'</span></b><span>'+(sent?sent+" more marked sent":(received===T.length?"everyone's in":"confirmed by Sean"))+'</span></div>'+
+      '<div class="tile" style="grid-column:1/-1"><small>Payout · 50 / 40 / 10</small><span style="margin-top:0;font-size:14.5px;color:var(--ink)">Champion '+money(cur.amount*T.length*0.5)+' · runner-up '+money(cur.amount*T.length*0.4)+' · regular-season winner '+money(cur.amount*T.length*0.1)+'</span></div>'+
       (cur.note?'<div class="tile" style="grid-column:1/-1"><small>From the commissioner</small><span style="margin-top:0;font-size:14.5px;color:var(--ink)">'+esc(cur.note)+'</span></div>':'');
     /* my row */
     var mine=payRow(cur.season,profile.team_id), st=statusOf(mine,cur), locked=!!(mine&&mine.confirmed);
@@ -2669,7 +2842,7 @@ var Polls=(function(){
     var when=p.asked_on?p.asked_on.split("-"):null, whenTxt=when?new Date(+when[0],+when[1]-1,+when[2]).toLocaleDateString(undefined,{month:"short",day:"numeric"}):fmtDate(p.created_at);
     var html='<article class="poll closed" data-poll="'+esc(p.id)+'">';
     html+='<div class="poll-head"><h3>'+esc(p.question)+'</h3><div class="poll-meta">'+
-      '<span>Asked on '+esc(r.source||"the group chat")+' · '+esc(whenTxt)+'</span>'+
+      '<span>Asked by '+esc(r.asked_by||nameFor(p.created_by,p.created_by_email))+' on '+esc(r.source||"the group chat")+' · '+esc(whenTxt)+'</span>'+
       '<span>'+(r.multi?"Pick one or more":"Pick one")+'</span>'+
       '<span class="pill q">Closed</span></div></div>';
     html+='<div class="opts">';
@@ -2794,6 +2967,7 @@ var Polls=(function(){
   function onView(v){
     if(v==="polls"||v==="pollhist") refresh();
     if(v==="dues"){ say("du-msg",""); say("ds-msg",""); duesRefresh(true); }
+    if(v==="agenda") agendaRefresh(true);
     if(v==="signup") renderSignup();
     if(v==="manager"){ if(!isCommish){ go("home"); return; } renderCommish(); }
   }
@@ -2852,27 +3026,31 @@ var Players=(function(){
     {k:"age",h:"Age",num:true,get:function(r){return r.age;},fmt:function(v){return v||"—";}},
     {k:"gp",h:"GP",num:true,get:function(r){return r.gp;},fmt:function(v){return v;}},
     {k:"min",h:"MIN",num:true,get:stat("min"),fmt:d1},
-    {k:"pts",h:"PTS",num:true,get:stat("pts"),fmt:d1},
-    {k:"reb",h:"REB",num:true,get:stat("reb"),fmt:d1},
-    {k:"ast",h:"AST",num:true,get:stat("ast"),fmt:d1},
-    {k:"stl",h:"STL",num:true,get:stat("stl"),fmt:d1},
-    {k:"blk",h:"BLK",num:true,get:stat("blk"),fmt:d1},
-    {k:"tpm",h:"3PM",num:true,get:stat("tpm"),fmt:d1},
-    {k:"tpp",h:"3P%",num:true,get:function(r){return r.tpp;},fmt:pct},
-    {k:"fgp",h:"FG%",num:true,get:function(r){return r.fgp;},fmt:pct},
-    {k:"ftp",h:"FT%",num:true,get:function(r){return r.ftp;},fmt:pct},
-    {k:"to",h:"TO",num:true,get:stat("to"),fmt:d1,asc:true},
-    {k:"at",h:"A/T",num:true,get:function(r){return r.at;},fmt:function(v){return v?v.toFixed(2):"—";}},
-    {k:"dd",h:"DD",num:true,get:function(r){return f.mode==="pg"?r.ddpg:r.dd;},fmt:function(v){return f.mode==="pg"?(v?v.toFixed(2):"0"):v;}},
-    {k:"val",h:"Value",num:true,cls:"val",get:function(r){return r.val;},fmt:function(v){ v=v<-500?v+1000:v; return "<b>"+(v>0?"+":"")+v.toFixed(1)+"</b>"; }},
-    {k:"fpts",h:"FPTS",num:true,get:function(r){return f.mode==="pg"?r.fpts:r.fpts*r.gp;},fmt:d1},
+    {k:"pts",h:"PTS",num:true,z:"pts",get:stat("pts"),fmt:d1},
+    {k:"reb",h:"REB",num:true,z:"reb",get:stat("reb"),fmt:d1},
+    {k:"ast",h:"AST",num:true,z:"ast",get:stat("ast"),fmt:d1},
+    {k:"stl",h:"STL",num:true,z:"stl",get:stat("stl"),fmt:d1},
+    {k:"blk",h:"BLK",num:true,z:"blk",get:stat("blk"),fmt:d1},
+    {k:"tpm",h:"3PM",num:true,z:"tpm",get:stat("tpm"),fmt:d1},
+    {k:"tpp",h:"3P%",num:true,z:"tpp",get:function(r){return r.tpp;},fmt:pct},
+    {k:"fgp",h:"FG%",num:true,z:"fgp",get:function(r){return r.fgp;},fmt:pct},
+    {k:"ftp",h:"FT%",num:true,z:"ftp",get:function(r){return r.ftp;},fmt:pct},
+    {k:"to",h:"TO",num:true,get:function(r){return f.mode==="tot"?r.to*r.gp:r.to;},fmt:function(v){return f.mode==="tot"?String(Math.round(v)):(+v).toFixed(1);},asc:true},
+    {k:"at",h:"A/T",num:true,z:"at",get:function(r){return r.at;},fmt:function(v){return v?v.toFixed(2):"—";}},
+    {k:"dd",h:"DD",num:true,z:"dd",get:function(r){return f.mode==="tot"?r.dd:r.ddpg;},fmt:function(v){return f.mode==="tot"?v:(v?v.toFixed(2):"0");}},
+    {k:"val",h:"Value",num:true,cls:"val",get:function(r){return f.mode==="z"?r.zval:r.val;},fmt:function(v){ v=v<-500?v+1000:v; return "<b>"+(v>0?"+":"")+v.toFixed(1)+"</b>"; }},
+    {k:"fpts",h:"FPTS",num:true,get:function(r){return f.mode==="tot"?r.fpts*r.gp:r.fpts;},fmt:d1},
     {k:"salary",h:"Salary",w:82,num:true,get:function(r){return r.salary;},fmt:money},
     {k:"cappct",h:"% Cap",w:70,num:true,get:function(r){return r.salary/CAPS[capSeason].cap;},fmt:function(v){return v?(v*100).toFixed(1)+"%":"—";}},
     {k:"yrs",h:"Yrs",num:true,get:function(r){return r.yrs;},fmt:function(v){return v||"—";}},
     {k:"owner",h:"Owner",w:150,get:function(r){return r.own?r.own.t:"";},asc:true}
   ];
-  function stat(k){ return function(r){ return f.mode==="pg"?r[k]:r[k]*r.gp; }; }
-  function d1(v){ return f.mode==="pg"?(+v).toFixed(1):String(Math.round(v)); }
+  function stat(k){ return function(r){ return f.mode==="tot"?r[k]*r.gp:r[k]; }; }
+  function d1(v){ return f.mode==="tot"?String(Math.round(v)):(+v).toFixed(1); }
+  function fz(v){ return (v>0?"+":"")+(+v).toFixed(2); }
+  /* in z-score mode every category column reads the player's z against the filtered list */
+  function colGet(c){ return (f.mode==="z"&&c.z) ? function(r){ return r.zc?r.zc[c.z]:-99; } : c.get; }
+  function colFmt(c,v,r){ if(f.mode==="z"&&c.z){ return r.gp?fz(v):'<span style="color:var(--line-2)">—</span>'; } return c.fmt(v); }
   function pct(v){ return v>0?(Math.round(v*1000)/1000).toFixed(3).replace(/^0/,""):"—"; }
   function money(v){ return v?"$"+(v>=1e6?(v/1e6).toFixed(1)+"M":Math.round(v/1e3)+"K"):"—"; }
 
@@ -2964,10 +3142,7 @@ var Players=(function(){
   }
 
   /* z-scores across the league's eleven categories, per game, population = top 200 by minutes */
-  function value(){
-    var pool=rows.filter(function(r){return r.gp>=5;}).sort(function(a,b){return b.min*b.gp-a.min*a.gp;}).slice(0,200);
-    if(pool.length<20) pool=rows.filter(function(r){return r.gp>0;});
-    if(!pool.length){ rows.forEach(function(r){ r.val=0; r.rank=0; }); return; }
+  function zmodel(pool){
     function sum(k){ return pool.reduce(function(a,r){return a+r[k];},0); }
     var lgFG=sum("fgm")/(sum("fga")||1), lgFT=sum("ftm")/(sum("fta")||1), lg3=sum("tpm")/(sum("tpa")||1), lgAT=sum("ast")/(sum("to")||1);
     var cats={
@@ -2981,6 +3156,15 @@ var Players=(function(){
       var v=0; pool.forEach(function(r){ var d=cats[k](r)-m; v+=d*d; }); var sd=Math.sqrt(v/pool.length)||1;
       stats[k]={m:m,sd:sd};
     });
+    return {cats:cats,stats:stats,n:pool.length};
+  }
+  function zscores(r,model){ var zc={}, z=0; Object.keys(model.cats).forEach(function(k){ var v=(model.cats[k](r)-model.stats[k].m)/model.stats[k].sd; zc[k]=v; z+=v; }); return {zc:zc,z:z}; }
+  var zN=0;
+  function value(){
+    var pool=rows.filter(function(r){return r.gp>=5;}).sort(function(a,b){return b.min*b.gp-a.min*a.gp;}).slice(0,200);
+    if(pool.length<20) pool=rows.filter(function(r){return r.gp>0;});
+    if(!pool.length){ rows.forEach(function(r){ r.val=0; r.rank=0; r.z=-99; }); return; }
+    var model=zmodel(pool), cats=model.cats, stats=model.stats;
     /* a rank needs a real sample: 10 games, or a fifth of the season so far */
     var maxGp=0; rows.forEach(function(r){ if(r.gp>maxGp) maxGp=r.gp; });
     qual=Math.max(1,Math.min(10,Math.round(maxGp*0.2)));
@@ -3006,11 +3190,17 @@ var Players=(function(){
       if(f.owner&&["fa","owned","keeper"].indexOf(f.owner)<0&&!(r.own&&r.own.id===f.owner)) return false;
       return true;
     });
-    var col=COLS.filter(function(c){return c.k===sortKey;})[0]||COLS[17], get=col.get, dir=sortAsc?1:-1;
+    if(f.mode==="z"){
+      var pool=view.filter(function(r){return r.gp>=qual;}); if(pool.length<3) pool=view.filter(function(r){return r.gp>0;});
+      zN=pool.length;
+      if(pool.length){ var model=zmodel(pool); view.forEach(function(r){ if(r.gp>0){ var zz=zscores(r,model); r.zc=zz.zc; r.zval=r.gp>=qual?zz.z:zz.z-1000; } else { r.zc=null; r.zval=-1099; } }); }
+      else view.forEach(function(r){ r.zc=null; r.zval=-1099; });
+    }
+    var col=COLS.filter(function(c){return c.k===sortKey;})[0]||COLS[17], get=colGet(col), dir=sortAsc?1:-1;
     view.sort(function(a,b){
       var x=get(a), y=get(b);
       if(typeof x==="string"||typeof y==="string"){ x=String(x); y=String(y); return x<y?-dir:x>y?dir:0; }
-      if(x===y) return b.val-a.val;
+      if(x===y) return (f.mode==="z"?b.zval-a.zval:b.val-a.val);
       return (x<y?-1:1)*dir;
     });
   }
@@ -3025,7 +3215,7 @@ var Players=(function(){
     $("pl-wrap").scrollTop=0;
     renderBody(true);
     var lv=live[season], when=lv?new Date(lv.ts):null;
-    $("pl-eyebrow").textContent=(lv?lv.label:(season-1)+"-"+String(season).slice(2))+" stats · "+CAPS[capSeason].label+" salaries";
+    $("pl-eyebrow").textContent=(lv?lv.label:(season-1)+"-"+String(season).slice(2))+(f.mode==="z"?" z-scores vs "+zN+" listed players":" stats")+" · "+CAPS[capSeason].label+" salaries";
     $("pl-src").textContent=(lv?"Stats from ESPN, refreshed "+when.toLocaleTimeString(undefined,{hour:"numeric",minute:"2-digit"}):"Stats from the last snapshot")+" · salaries as of "+new Date(snap.built).toLocaleDateString(undefined,{month:"short",day:"numeric"});
     renderCap();
   }
@@ -3048,8 +3238,9 @@ var Players=(function(){
         } else if(c.k==="owner"){
           cells.push('<td class="own">'+(r.own?esc(r.own.t)+(r.own.k?'<span class="k">K'+(r.own.cost?" RD "+r.own.cost:"")+'</span>':''):'<span style="color:var(--line-2)">—</span>')+'</td>');
         } else {
-          var v=c.get(r), txt=(c.k==="val"&&r.gp===0)?'<span style="color:var(--line-2)">—</span>':c.fmt(v);
-          cells.push('<td class="num'+(c.cls?" "+c.cls:"")+(c.k==="val"&&r.z<0&&r.gp?" neg":"")+'">'+txt+'</td>');
+          var v=colGet(c)(r), txt=(c.k==="val"&&r.gp===0)?'<span style="color:var(--line-2)">—</span>':colFmt(c,v,r);
+          var neg=(c.k==="val"&&r.gp&&(f.mode==="z"?r.zval:r.z)<0)||(f.mode==="z"&&c.z&&r.gp&&v<0);
+          cells.push('<td class="num'+(c.cls?" "+c.cls:"")+(neg?" neg":"")+'">'+txt+'</td>');
         }
       }
       out.push('<tr>'+cells.join("")+'</tr>');
@@ -3103,10 +3294,10 @@ var Players=(function(){
 window.Players=Players;
 
 /* ---------- routing ---------- */
-var views={home:"v-home",teams:"v-teams",team:"v-team",players:"v-players",draft:"v-draft",cap:"v-cap",keepers:"v-keepers",polls:"v-polls",pollhist:"v-pollhist",dues:"v-dues",signup:"v-signup",manager:"v-manager",history:"v-history",rules:"v-rules"};
+var views={home:"v-home",teams:"v-teams",team:"v-team",players:"v-players",draft:"v-draft",cap:"v-cap",keepers:"v-keepers",polls:"v-polls",pollhist:"v-pollhist",agenda:"v-agenda",dues:"v-dues",signup:"v-signup",manager:"v-manager",history:"v-history",rules:"v-rules"};
 function go(v){
   Object.keys(views).forEach(function(k){document.getElementById(views[k]).classList.toggle("on",k===v);});
-  var navKey=(v==="team")?"teams":(v==="pollhist"?"polls":v);
+  var navKey=(v==="team")?"teams":((v==="pollhist"||v==="agenda")?"polls":v);
   if(window.Polls) Polls.onView(v);
   if(window.Players) Players.onView(v);
   Array.prototype.forEach.call(document.querySelectorAll("#nav button"),function(b){

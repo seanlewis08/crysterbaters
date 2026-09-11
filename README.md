@@ -20,6 +20,8 @@ Vercel is connected to this repository. Pushing to `main` deploys automatically.
 
 **The roster lock.** Rosters lock before the playoffs, and that frozen roster decides keeper eligibility. A playoff team dropping a player afterwards does not lose him as a keeper. Yahoo does not preserve this snapshot, which is why it has historically lived as screenshots in a spreadsheet.
 
+**Payout.** 50% to the champion, 40% to the runner-up, 10% to the regular-season winner (voted 2023). Dues are voted each preseason ($69 in 2024-25, $80 in 2025-26). Two keepers landing on the same round: the second moves one more round up (−2 and −3). Last place shoots 100 free throws in an hour on video. The champion holds the belt. All of this is on the Rules page under League Policies.
+
 **Weekly games cap.** Thirty player-games a week, scaled down when the NBA plays a short week: `cap = 29.76 × (that week's league-wide games ÷ 50)`, rounded sensibly. Yahoo has no setting for this and cannot count it.
 
 ## Players
@@ -31,6 +33,8 @@ Data: stats are fetched straight from ESPN's public feed in the browser (cached 
 ## Logins and polls
 
 Managers create an account on the site's **Claim Your Team** page: email, team, the league code the commissioner shares, a username and a password. The code is checked before the account is created and each team can be claimed once. Signing in is a small popup (email + password, with a forgot-password link). The commissioner — recognised by the email in `league_settings` — gets a **Manager** page nobody else sees, with the league code and the ten teams' claims (release a claim if someone picked wrong). Members can post polls, vote, and read the poll history; the poll's creator picks whether votes are shown with names, kept secret until the poll closes, or kept secret for good. Polls that happened in the group chat can be recorded into the history from the Manager page (choice, count and names per line); the September 2026 draft-time poll is seeded by the schema.
+
+**Open Items** is the league's agenda: anyone signed in can raise something that needs deciding, everyone gets two thumbs-up to spend across the open list (take one back to move it), items sort by votes, "Put it to a vote" drops the item into a new poll, and the commissioner records the outcome. Two items are seeded by the schema (the in-person draft; a shorter season with dues pro-rated).
 
 **League dues** live on their own page. The commissioner sets the season's amount, due date and where money goes (Venmo, Zelle, Cash App); each manager picks how they're paying — the page opens Venmo or Cash App with the amount filled in — and ticks "I've sent my dues". Only the commissioner's **Received** checkbox counts, and once it's ticked the manager's row is locked. Everyone can see who has settled up. Saving a new season label starts the next season and keeps the old one as history.
 
