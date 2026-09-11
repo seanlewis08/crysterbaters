@@ -601,6 +601,25 @@ td input.capin:focus-visible{outline:1px solid var(--amber);border-color:var(--a
 .plfoot .sub{text-transform:none;letter-spacing:0;font-family:var(--body)}
 .pl-empty{padding:40px 20px;text-align:center;color:var(--muted)}
 
+/* scheduling */
+.seg{display:inline-flex;border:1px solid var(--line-2);border-radius:4px;overflow:hidden}
+.seg button{background:var(--surface);border:0;padding:8px 14px;font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);cursor:pointer}
+.seg button.on{background:var(--amber);color:#fff}
+.avwrap{max-height:70vh;overflow:auto;user-select:none;-webkit-user-select:none}
+.avgrid{border-collapse:separate;border-spacing:0;width:auto;min-width:0;table-layout:fixed}
+.avgrid th{position:sticky;top:0;z-index:2;background:var(--surface-2);font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:8px 6px;text-align:center;white-space:nowrap;border-bottom:1px solid var(--line-2)}
+.avgrid th:first-child,.avgrid td:first-child{position:sticky;left:0;z-index:1;background:var(--surface);text-align:right;padding:0 10px;font-family:var(--mono);font-size:11px;color:var(--muted);white-space:nowrap;border-right:1px solid var(--line)}
+.avgrid th:first-child{z-index:3;background:var(--surface-2)}
+.avgrid td{padding:0;height:26px;border-bottom:1px solid var(--line)}
+.avgrid td.av{width:84px;min-width:84px;cursor:pointer;background:var(--surface);border-right:1px solid var(--line);text-align:center;font-family:var(--mono);font-size:11px;color:var(--muted);transition:background .08s}
+.avgrid td.av:hover{outline:2px solid var(--amber);outline-offset:-2px}
+.avgrid td.av.on{background:var(--amber);color:#fff}
+.avgrid td.av.heat{color:var(--ink)}
+.avgrid td.av.best{outline:2px solid var(--cyan);outline-offset:-2px}
+.avgrid td.av.chosen{box-shadow:inset 0 0 0 3px var(--cyan)}
+.avgrid tr.hr td:first-child{border-top:1px solid var(--line-2)}
+@media (max-width:600px){.avgrid td.av{width:64px;min-width:64px}}
+
 /* open items */
 .thumb{display:flex;flex-direction:column;align-items:center;gap:2px;flex-shrink:0;width:46px;padding:7px 4px;border:1px solid var(--line-2);border-radius:4px;background:var(--surface);color:var(--muted);cursor:pointer;font-family:var(--mono);line-height:1}
 .thumb b{font-size:14px;font-weight:600}
@@ -801,8 +820,8 @@ footer p + p{margin-top:11px}
 <div class="ticker">
   <div class="ticker-in">
     <span><span class="livedot"></span>Yahoo <b>not connected</b> — API pending</span>
-    <span>Draft <b>Sat Oct 18 · 3pm EST</b></span>
-    <span>Keepers due <b>Oct 11</b></span>
+    <span>Draft <b id="tkr-draft">day vote open</b></span>
+    <span>Keepers due <b id="tkr-keep">week before the draft</b></span>
     <span>Season opens <b>Oct 20</b></span>
     <span>Keepers flagged <b id="tkr-k">10</b></span>
   </div>
@@ -815,8 +834,8 @@ footer p + p{margin-top:11px}
     <div id="home-notice"></div>
 
     <div class="onnow">
-      <div><dt>Keepers due</dt><dd class="hot">Oct 11<small id="cd-keep">—</small></dd></div>
-      <div><dt>Draft</dt><dd>Sat Oct 18<small id="cd-draft">—</small></dd></div>
+      <div><dt>Draft</dt><dd class="hot" id="tile-draft">Picking a day<small id="cd-draft">Oct 11–19 · mark when you're free</small></dd><button class="back" data-go="sched" style="margin:6px 0 0;padding:0;font-size:11px;color:var(--amber)">Draft Day page →</button></div>
+      <div><dt>Keepers due</dt><dd id="tile-keep">Week before<small id="cd-keep">the draft, once it's set</small></dd></div>
       <div><dt>Season opens</dt><dd>Oct 20<small id="cd-season">—</small></dd></div>
       <div><dt>Yahoo</dt><dd>Pending<small>API access under review</small></dd></div>
     </div>
@@ -1126,6 +1145,65 @@ footer p + p{margin-top:11px}
     </section>
   </div>
 
+  <!-- ================= SCHEDULING ================= -->
+  <div class="view" id="v-sched">
+    <section>
+      <div class="sec-head"><h2 id="sc-title">Draft Day</h2><span class="eyebrow cool" id="sc-eyebrow">Members only</span></div>
+      <div class="rulebar"></div>
+      <div id="sc-notice"></div>
+      <p class="lede" id="sc-lede">Paint the hours you could draft. Everyone's marks stack up into the grid below, and the best slots rise to the top. Times are shown in your own time zone.</p>
+
+      <div id="sc-locked" class="calc signin" style="margin-top:18px">
+        <p style="padding:18px 20px 6px;font-size:15px;color:var(--muted)">Sign in to mark when you're free.</p>
+        <div class="calc-out" style="display:flex;gap:10px;flex-wrap:wrap;padding-top:8px">
+          <button class="btn" data-signin>Sign in</button>
+          <button class="btn quiet" data-go="signup">Claim your team</button>
+        </div>
+      </div>
+      <div id="sc-noteam" hidden><div class="notice warn" style="margin-top:18px;display:flex;gap:14px;align-items:center;flex-wrap:wrap"><span style="flex:1">You're signed in but haven't claimed a team yet.</span><button class="btn sm" data-go="signup">Claim your team</button></div></div>
+
+      <div id="sc-body" hidden>
+        <div id="sc-none" class="empty" hidden>Nothing to schedule right now.</div>
+        <div id="sc-main" hidden>
+          <div id="sc-chosen"></div>
+          <div class="ptools">
+            <div class="seg" id="sc-seg"><button class="on" data-scview="me">My availability</button><button data-scview="all">Everyone</button></div>
+            <span id="sc-save" class="sub"></span>
+            <span class="spacer"></span>
+            <span class="eyebrow cool" id="sc-count"></span>
+          </div>
+          <div class="tablewrap avwrap"><table class="avgrid" id="sc-grid"></table></div>
+          <p class="sub" style="margin-top:10px" id="sc-hint">Click or drag across the hours you're free; it saves on its own. On a phone, tap each hour.</p>
+          <div id="sc-best-wrap" style="margin-top:22px">
+            <div class="sec-head"><h2 style="font-size:24px">Best slots</h2><span class="eyebrow cool" id="sc-best-eyebrow"></span></div>
+            <div class="rulebar"></div>
+            <div class="tablewrap"><table><thead><tr><th>When</th><th class="num">Free</th><th>Missing</th><th></th></tr></thead><tbody id="sc-best"></tbody></table></div>
+          </div>
+        </div>
+
+        <div id="sc-admin" hidden>
+          <div class="sec-head" style="margin-top:34px"><h2 style="font-size:24px">Set up the poll</h2><span class="eyebrow cool">Commissioner only</span></div>
+          <div class="rulebar"></div>
+          <p class="lede">Pick the candidate dates and the hours to offer, in your time zone. Starting a new poll closes the current one and clears everyone's marks for it.</p>
+          <div class="calc newpoll" style="margin-top:16px">
+            <div class="calc-in">
+              <div class="field"><label for="se-title">What for</label><input id="se-title" maxlength="80" placeholder="2026 Draft"></div>
+              <div class="field"><label for="se-tz">Your time zone</label><select id="se-tz"><option value="America/Los_Angeles">Pacific</option><option value="America/Denver">Mountain</option><option value="America/Chicago">Central</option><option value="America/New_York">Eastern</option></select></div>
+              <div class="field wide"><label for="se-dates">Candidate dates — one per line (YYYY-MM-DD)</label><textarea id="se-dates" placeholder="2026-10-17&#10;2026-10-18"></textarea></div>
+              <div class="field"><label for="se-start">Earliest hour</label><select id="se-start"></select></div>
+              <div class="field"><label for="se-end">Latest hour</label><select id="se-end"></select></div>
+            </div>
+            <div class="calc-out">
+              <button class="btn" id="se-save">Start a new poll</button>
+              <button class="btn quiet" id="se-reopen" hidden>Reopen the poll</button>
+              <span id="se-msg" style="font-size:13.5px;color:var(--muted)"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
   <!-- ================= OPEN ITEMS ================= -->
   <div class="view" id="v-agenda">
     <button class="back" data-go="polls">← Polls</button>
@@ -1424,7 +1502,7 @@ footer p + p{margin-top:11px}
             <tr><td class="name">Scoring</td><td class="sub">Head-to-head, one win per week</td></tr>
             <tr><td class="name">Categories</td><td class="sub">FG%, FT%, 3PTM, 3PT%, PTS, REB, AST, ST, BLK, A/T, DD — eleven</td></tr>
             <tr><td class="name">Roster</td><td class="sub">G, G, F, F, C, Util, six bench, one IL</td></tr>
-            <tr><td class="name">Draft</td><td class="sub">Offline, twelve rounds, order reverse of last season's finish · <b>Sat Oct 18, 2026, 12pm PST / 3pm EST</b> (voted Sep 10)</td></tr>
+            <tr><td class="name">Draft</td><td class="sub">Offline, twelve rounds, order reverse of last season's finish · day and time picked on the <button class="back" data-go="sched" style="margin:0;padding:0;font-size:inherit;color:var(--amber)">Draft Day page</button></td></tr>
             <tr><td class="name">Keeper eligibility</td><td class="sub">Decided by the pre-playoff roster lock, not a date in October</td></tr>
             <tr><td class="name">Yahoo keeper deadline</td><td class="sub">Mon Oct 19, 2026 — only when Yahoo's tool wants them entered</td></tr>
             <tr><td class="name">Waivers</td><td class="sub">FAB, continual rolling tiebreak, one-day waiver time</td></tr>
@@ -1693,6 +1771,7 @@ document.getElementById("watch").innerHTML=K.map(function(k){
     {go:"cap",     n:"30",       lbl:"Per week", h:"Games Cap",  p:"Work out the adjusted cap for short weeks without doing the arithmetic by hand."},
     {go:"keepers", n:String(kCount), lbl:"Declared", h:"Keepers", p:"The calculator that settles arguments, and the ladder every declared keeper has left."},
     {go:"polls",   n:"—",        lbl:"Open",     h:"Polls",      p:"Put a question to the league and vote on everyone else's. Managers only — sign in first.", id:"hc-polls"},
+    {go:"sched",   n:"—",        lbl:"Free",     h:"Draft Day",  p:"Mark the hours you could draft and watch the best slot rise out of everyone's calendars.", id:"hc-sched"},
     {go:"agenda",  n:"—",        lbl:"Open",     h:"Open Items", p:"What the league still has to decide. Raise one, argue about it, then put it to a vote.", id:"hc-agenda"},
     {go:"dues",    n:"—",        lbl:"Paid",     h:"Dues",       p:"What the buy-in is, where to send it, and who has settled up. Pick Venmo, Zelle or Cash App and mark yours sent.", id:"hc-dues"},
     {go:"history", n:"14",       lbl:"Seasons",  h:"History",    p:"Every champion since 2012. Four managers tied at two titles, two still hunting their first."},
@@ -1711,9 +1790,16 @@ document.getElementById("watch").innerHTML=K.map(function(k){
     var n=Math.ceil((target-new Date(t.getFullYear(),t.getMonth(),t.getDate()))/86400000);
     return n>1 ? n+" days away" : (n===1 ? "tomorrow" : (n===0 ? "today" : "passed"));
   }
-  document.getElementById("cd-keep").textContent=daysTo(2026,10,11)+" · a week before the draft";
-  document.getElementById("cd-draft").textContent=daysTo(2026,10,18)+" · 12pm PST / 3pm EST · offline, 12 rounds";
   document.getElementById("cd-season").textContent=daysTo(2026,10,20);
+  window.setDraftTiles=function(iso){
+    var td=document.getElementById("tile-draft"), tk=document.getElementById("tile-keep");
+    if(!iso){ td.className="hot"; td.innerHTML='Picking a day<small id="cd-draft">Oct 11–19 · mark when you\'re free</small>'; tk.innerHTML='Week before<small id="cd-keep">the draft, once it\'s set</small>'; document.getElementById("tkr-draft").textContent="day vote open"; document.getElementById("tkr-keep").textContent="week before the draft"; return; }
+    var d=new Date(iso), k=new Date(d.getTime()-7*86400000);
+    var day=function(x){ return x.toLocaleDateString([], {weekday:"short",month:"short",day:"numeric"}); }, tm=d.toLocaleTimeString([], {hour:"numeric"});
+    td.className=""; td.innerHTML=esc(day(d))+'<small id="cd-draft">'+esc(daysTo(d.getFullYear(),d.getMonth()+1,d.getDate()))+' · '+esc(tm)+' · offline, 12 rounds</small>';
+    tk.className="hot"; tk.innerHTML=esc(day(k))+'<small id="cd-keep">'+esc(daysTo(k.getFullYear(),k.getMonth()+1,k.getDate()))+' · a week before the draft</small>';
+    document.getElementById("tkr-draft").textContent=day(d)+" · "+tm; document.getElementById("tkr-keep").textContent=day(k);
+  };
 })();
 
 /* ---------- standings ---------- */
@@ -2299,6 +2385,7 @@ var Polls=(function(){
     SEED_POLLS.forEach(function(sp){ if(!db.polls.some(function(p){return p.id===sp.id;})) db.polls.push(sp); });
     if(!db.agenda) db.agenda=SEED_AGENDA.map(function(a){ return JSON.parse(JSON.stringify(a)); });
     if(!db.agendaVotes) db.agendaVotes=[];
+    if(!db.sched) db.sched={events:[{id:"ev-2026",title:"2026 Draft",dates:["2026-10-11","2026-10-12","2026-10-13","2026-10-14","2026-10-15","2026-10-16","2026-10-17","2026-10-18","2026-10-19"],start_hour:9,end_hour:22,tz:"America/Los_Angeles",status:"open",chosen:null,created_at:"2026-09-11T00:00:00Z"}],marks:[]};
     function save(){ try{ localStorage.setItem(KEY,JSON.stringify(db)); }catch(e){} }
     function findPoll(id){ return db.polls.filter(function(p){return p.id===id;})[0]; }
     function myProf(){ return db.me ? db.profiles.filter(function(p){return p.user_id===db.me.id;})[0]||null : null; }
@@ -2360,6 +2447,10 @@ var Polls=(function(){
         db.votes=db.votes.filter(function(v){return v.poll_id!==pid;}); save(); return Promise.resolve();
       },
       agendaLoad:function(){ return Promise.resolve({items:db.agenda.slice(),votes:db.agendaVotes.slice()}); },
+      schedLoad:function(){ var ev=db.sched.events.slice().sort(function(a,b){return a.created_at<b.created_at?1:-1;})[0]||null; return Promise.resolve({event:ev,marks:ev?db.sched.marks.filter(function(m){return m.event_id===ev.id;}):[]}); },
+      schedSave:function(eid,slots){ var m=db.sched.marks.filter(function(x){return x.event_id===eid&&x.user_id===db.me.id;})[0]; if(!m){ m={event_id:eid,user_id:db.me.id,voter_email:db.me.email}; db.sched.marks.push(m); } m.slots=slots.slice(); m.updated_at=new Date().toISOString(); save(); return Promise.resolve(); },
+      schedCreate:function(e){ if(!commish()) return Promise.reject(new Error("Commissioner only.")); db.sched.events.forEach(function(x){ x.status="closed"; }); db.sched.events.push({id:"ev"+Date.now(),title:e.title,dates:e.dates,start_hour:e.start_hour,end_hour:e.end_hour,tz:e.tz,status:"open",chosen:null,created_at:new Date().toISOString()}); save(); return Promise.resolve(); },
+      schedChoose:function(eid,slot){ if(!commish()) return Promise.reject(new Error("Commissioner only.")); var ev=db.sched.events.filter(function(x){return x.id===eid;})[0]; if(ev){ ev.chosen=slot; ev.status=slot?"closed":"open"; } save(); return Promise.resolve(); },
       agendaVote:function(id,on){
         var p=myProf(); if(!p) return Promise.reject(new Error("Claim your team first."));
         db.agendaVotes=db.agendaVotes.filter(function(v){ return !(v.item_id===id&&v.user_id===db.me.id); });
@@ -2480,6 +2571,18 @@ var Polls=(function(){
           .then(function(rs){ chk(rs[0]); chk(rs[1]); return {items:rs[0].data||[],votes:rs[1].data||[]}; });
       },
       agendaVote:function(id,on){ return client.rpc("agenda_vote",{p_item:id,p_on:on}).then(chk); },
+      schedLoad:function(){
+        return client.from("avail_events").select("*").order("created_at",{ascending:false}).limit(1).then(function(r){
+          chk(r); var ev=(r.data||[])[0]||null; if(!ev) return {event:null,marks:[]};
+          return client.from("avail_marks").select("*").eq("event_id",ev.id).then(function(m){ chk(m); return {event:ev,marks:m.data||[]}; });
+        });
+      },
+      schedSave:function(eid,slots){ return client.from("avail_marks").upsert({event_id:eid,user_id:me.id,slots:slots},{onConflict:"event_id,user_id"}).then(chk); },
+      schedCreate:function(e){
+        return client.from("avail_events").update({status:"closed"}).eq("status","open").then(chk)
+          .then(function(){ return client.from("avail_events").insert({title:e.title,dates:e.dates,start_hour:e.start_hour,end_hour:e.end_hour,tz:e.tz}).then(chk); });
+      },
+      schedChoose:function(eid,slot){ return client.from("avail_events").update({chosen:slot,status:slot?"closed":"open"}).eq("id",eid).then(chk); },
       agendaAdd:function(a){ return client.from("agenda").insert({title:a.title,details:a.details||null}).then(chk); },
       agendaDecide:function(id,outcome){ return client.from("agenda").update(outcome==null?{status:"open",outcome:null,decided_at:null}:{status:"decided",outcome:outcome,decided_at:new Date().toISOString()}).eq("id",id).then(chk); },
       agendaDelete:function(id){ return client.from("agenda").delete().eq("id",id).then(chk); },
@@ -2549,6 +2652,7 @@ var Polls=(function(){
     renderSignup();
     duesRefresh();
     agendaRefresh();
+    schedRefresh();
     if(isCommish) renderCommish();
     if(!member){ renderList(); return; }
     if(loading) return;
@@ -2635,6 +2739,139 @@ var Polls=(function(){
     html+='</div></article>';
     return html;
   }
+
+  /* ----- scheduling: paint the hours you're free ----- */
+  var sched={event:null,marks:[]}, schedLoaded=false, scView="me", mySlots={}, myDirty=false, saveTimer=null, painting=null, scNames={};
+  function shortFor(uid,email){ var pr=profFor(uid); if(pr){ var t=byId(pr.team_id); if(t) return t.short; } return nameFor(uid,email); }
+  function scNotice(html,cls){ $("sc-notice").innerHTML=html?'<div class="notice '+(cls||"")+'">'+html+'</div>':""; }
+  function tzOffsetMs(ms,tz){
+    var parts=new Intl.DateTimeFormat("en-US",{timeZone:tz,hour12:false,year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"}).formatToParts(new Date(ms)), o={};
+    parts.forEach(function(p){ o[p.type]=p.value; });
+    return Date.UTC(+o.year,+o.month-1,+o.day,(+o.hour)%24,+o.minute)-ms;
+  }
+  function wallToInstant(dateStr,hour,tz){ var p=dateStr.split("-"), guess=Date.UTC(+p[0],+p[1]-1,+p[2],hour); return guess-tzOffsetMs(guess,tz); }
+  function slotKey(ms){ return new Date(ms).toISOString(); }
+  function localTz(){ try{ return Intl.DateTimeFormat().resolvedOptions().timeZone||""; }catch(e){ return ""; } }
+  function tzShort(){ try{ var p=new Intl.DateTimeFormat([], {timeZoneName:"short"}).formatToParts(new Date()); return (p.filter(function(x){return x.type==="timeZoneName";})[0]||{}).value||""; }catch(e){ return ""; } }
+  function fmtSlot(key){ var d=new Date(key); return d.toLocaleDateString([], {weekday:"short",month:"short",day:"numeric"})+" · "+d.toLocaleTimeString([], {hour:"numeric"}); }
+  function scGridModel(ev){
+    var hours=[]; for(var h=ev.start_hour;h<ev.end_hour;h++) hours.push(h);
+    var cols=ev.dates.map(function(d){ return {date:d,keys:hours.map(function(h){ return slotKey(wallToInstant(d,h,ev.tz)); })}; });
+    return {hours:hours,cols:cols};
+  }
+  function schedRefresh(force){
+    var signed=!!me, member=signed&&!!profile;
+    $("sc-locked").hidden=signed; $("sc-noteam").hidden=!(signed&&!profile); $("sc-body").hidden=!member;
+    $("sc-eyebrow").textContent=member?"Signed in as "+nameFor(me.id,me.email)+" · times in "+tzShort():"Members only";
+    var hc=document.querySelector("#hc-sched .hc-n");
+    if(!member){ sched={event:null,marks:[]}; schedLoaded=false; if(hc) hc.textContent="—"; return; }
+    if(schedLoaded&&!force&&!$("v-sched").classList.contains("on")) return;
+    if(myDirty) return;   /* don't clobber unsaved painting */
+    store.schedLoad().then(function(d){ sched=d; schedLoaded=true; var mine=d.marks.filter(function(m){return m.user_id===me.id;})[0]; mySlots={}; (mine?mine.slots:[]).forEach(function(k){ mySlots[k]=1; }); renderSched(); }).catch(function(e){ scNotice(esc(msgOf(e)),"bad"); });
+  }
+  function counts(ev){
+    var c={}, names={}, model=scGridModel(ev);
+    sched.marks.forEach(function(m){ var who=shortFor(m.user_id,m.voter_email); (m.slots||[]).forEach(function(k){ c[k]=(c[k]||0)+1; (names[k]=names[k]||[]).push(who); }); });
+    /* the current user's unsaved marks count too */
+    if(me){ var mineName=shortFor(me.id,me.email), saved=sched.marks.filter(function(m){return m.user_id===me.id;})[0], savedSet={}; (saved?saved.slots:[]).forEach(function(k){ savedSet[k]=1; });
+      Object.keys(mySlots).forEach(function(k){ if(!savedSet[k]){ c[k]=(c[k]||0)+1; (names[k]=names[k]||[]).push(mineName); } });
+      Object.keys(savedSet).forEach(function(k){ if(!mySlots[k]){ c[k]=(c[k]||0)-1; names[k]=(names[k]||[]).filter(function(n){return n!==mineName;}); } }); }
+    return {c:c,names:names,model:model};
+  }
+  function renderSched(){
+    var ev=sched.event;
+    $("sc-admin").hidden=!isCommish;
+    $("sc-none").hidden=!!ev; $("sc-main").hidden=!ev;
+    if(isCommish) fillSchedAdmin(ev);
+    var hc=document.querySelector("#hc-sched .hc-n");
+    if(!ev){ if(hc) hc.textContent="—"; return; }
+    $("sc-title").textContent=ev.title;
+    if(window.setDraftTiles&&/draft/i.test(ev.title)) setDraftTiles(ev.chosen||null);
+    var k=counts(ev), model=k.model, responded=sched.marks.filter(function(m){return (m.slots||[]).length;}).length;
+    if(me&&Object.keys(mySlots).length&&!sched.marks.some(function(m){return m.user_id===me.id&&(m.slots||[]).length;})) responded++;
+    if(hc) hc.textContent=responded+"/"+T.length;
+    $("sc-count").textContent=responded+" of "+T.length+" have answered";
+    var closed=ev.status==="closed";
+    $("sc-chosen").innerHTML= ev.chosen ? '<div class="notice" style="border-left-color:var(--cyan)"><b>Draft set: '+esc(fmtSlot(ev.chosen))+'</b> ('+esc(tzShort())+'). '+(k.c[ev.chosen]||0)+' of '+T.length+' marked free.'+(isCommish?' <button class="btn quiet sm" data-scchoose="" style="margin-left:10px">Undo</button>':'')+'</div>'
+      : (closed?'<div class="notice warn">This poll is closed.</div>':'');
+    $("sc-hint").hidden=closed;
+    var showAll=scView==="all"||closed;
+    $("sc-seg").querySelectorAll("button").forEach(function(b){ b.classList.toggle("on",b.dataset.scview===(showAll?"all":"me")); });
+    /* best slots */
+    var all=[]; model.cols.forEach(function(col){ col.keys.forEach(function(key){ all.push({key:key,n:k.c[key]||0}); }); });
+    var ranked=all.filter(function(x){return x.n>0;}).sort(function(a,b){ return b.n-a.n||(a.key<b.key?-1:1); });
+    var bestN=ranked.length?ranked[0].n:0, bestKeys={}; ranked.forEach(function(x){ if(x.n===bestN) bestKeys[x.key]=1; });
+    var top=ranked.slice(0,6), everyone=T.map(function(t){return t.short;});
+    $("sc-best-eyebrow").textContent=ranked.length?"top "+top.length:"no marks yet";
+    $("sc-best").innerHTML=top.length?top.map(function(x){
+      var have=k.names[x.key]||[], missing=everyone.filter(function(n){return have.indexOf(n)<0;});
+      return '<tr'+(x.key===ev.chosen?' class="keeprow"':'')+'><td class="name" style="font-size:15px">'+esc(fmtSlot(x.key))+'</td><td class="num">'+x.n+' / '+T.length+'</td><td class="sub">'+(missing.length?esc(missing.join(", ")):"everyone's free")+'</td><td class="num">'+(isCommish&&!ev.chosen?'<button class="btn sm" data-scchoose="'+esc(x.key)+'">Set the draft</button>':'')+'</td></tr>';
+    }).join(""):'<tr><td colspan="4" class="empty">Nobody has marked anything yet — be first.</td></tr>';
+    /* grid */
+    var head='<tr><th>'+esc(tzShort())+'</th>'+model.cols.map(function(col){ var d0=new Date(col.keys[0]); return '<th>'+esc(d0.toLocaleDateString([], {weekday:"short"}))+'<br>'+esc(d0.toLocaleDateString([], {month:"short",day:"numeric"}))+'</th>'; }).join("")+'</tr>';
+    var rows=model.hours.map(function(h,i){
+      var label=new Date(model.cols[0].keys[i]).toLocaleTimeString([], {hour:"numeric"});
+      return '<tr><td>'+esc(label)+'</td>'+model.cols.map(function(col){
+        var key=col.keys[i], n=k.c[key]||0, cls="av";
+        if(showAll){ cls+=" heat"; if(bestKeys[key]&&bestN>0) cls+=" best"; }
+        else if(mySlots[key]) cls+=" on";
+        if(key===ev.chosen) cls+=" chosen";
+        var style=showAll&&n?' style="background:rgba(193,87,26,'+(0.12+0.78*n/T.length).toFixed(2)+')'+(n/T.length>0.5?';color:#fff':'')+'"':'';
+        var title=showAll?(n?(k.names[key]||[]).join(", "):"nobody yet"):fmtSlot(key);
+        return '<td class="'+cls+'" data-slot="'+key+'"'+style+' title="'+esc(title)+'">'+(showAll&&n?n:"")+'</td>';
+      }).join("")+'</tr>';
+    }).join("");
+    $("sc-grid").innerHTML=head+rows;
+    $("sc-grid").classList.toggle("readonly",showAll);
+  }
+  function fillSchedAdmin(ev){
+    var st=$("se-start"), en=$("se-end");
+    if(!st.options.length){ for(var h=0;h<24;h++){ st.innerHTML+='<option value="'+h+'">'+hourLabel(h)+'</option>'; en.innerHTML+='<option value="'+(h+1)+'">'+hourLabel(h+1)+'</option>'; } }
+    if(document.activeElement===$("se-title")||document.activeElement===$("se-dates")) return;
+    if(ev){ $("se-title").value=ev.title; $("se-tz").value=ev.tz; $("se-dates").value=ev.dates.join("\n"); st.value=String(ev.start_hour); en.value=String(ev.end_hour); }
+    else { $("se-title").value="2026 Draft"; st.value="9"; en.value="21"; }
+    $("se-reopen").hidden=!(ev&&ev.status==="closed"&&!ev.chosen);
+  }
+  function hourLabel(h){ h=h%24; return h===0?"12 AM":h<12?h+" AM":h===12?"12 PM":(h-12)+" PM"; }
+  function scheduleSave(){
+    clearTimeout(saveTimer); myDirty=true; $("sc-save").textContent="Saving…";
+    saveTimer=setTimeout(function(){
+      var ev=sched.event; if(!ev) return;
+      store.schedSave(ev.id,Object.keys(mySlots)).then(function(){ myDirty=false; $("sc-save").textContent="Saved"; schedRefresh(true); setTimeout(function(){ if($("sc-save").textContent==="Saved") $("sc-save").textContent=""; },2000); })
+        .catch(function(e){ myDirty=false; $("sc-save").textContent=""; scNotice(esc(msgOf(e)),"bad"); });
+    },500);
+  }
+  function paintCell(td){ if(!td||painting===null) return; var key=td.dataset.slot; if(painting){ if(mySlots[key]) return; mySlots[key]=1; td.classList.add("on"); } else { if(!mySlots[key]) return; delete mySlots[key]; td.classList.remove("on"); } scheduleSave(); }
+  (function(){
+    var grid=$("sc-grid");
+    function cellAt(x,y){ var el=document.elementFromPoint(x,y); return el&&el.closest?el.closest("td.av"):null; }
+    function canPaint(){ return scView!=="all"&&sched.event&&sched.event.status!=="closed"&&!!me&&!!profile; }
+    grid.addEventListener("mousedown",function(e){ var td=e.target.closest("td.av"); if(!td||!canPaint()) return; e.preventDefault(); painting=!mySlots[td.dataset.slot]; paintCell(td); });
+    grid.addEventListener("mouseover",function(e){ if(painting===null) return; var td=e.target.closest("td.av"); if(td) paintCell(td); });
+    document.addEventListener("mouseup",function(){ painting=null; });
+    grid.addEventListener("touchstart",function(e){ var td=e.target.closest("td.av"); if(!td||!canPaint()) return; painting=!mySlots[td.dataset.slot]; paintCell(td); },{passive:true});
+    grid.addEventListener("touchmove",function(e){ if(painting===null) return; var t=e.touches[0], td=cellAt(t.clientX,t.clientY); if(td){ paintCell(td); e.preventDefault(); } },{passive:false});
+    grid.addEventListener("touchend",function(){ painting=null; });
+    $("sc-seg").addEventListener("click",function(e){ var b=e.target.closest("[data-scview]"); if(!b) return; scView=b.dataset.scview; renderSched(); });
+    document.addEventListener("click",function(e){
+      var c=e.target.closest("[data-scchoose]"); if(!c||!sched.event) return;
+      var slot=c.dataset.scchoose||null;
+      store.schedChoose(sched.event.id,slot).then(function(){ scNotice(""); schedRefresh(true); }).catch(function(err){ scNotice(esc(msgOf(err)),"bad"); });
+    });
+    $("se-save").addEventListener("click",function(){
+      var dates=$("se-dates").value.split("\n").map(function(x){return x.trim();}).filter(Boolean);
+      var bad=dates.filter(function(d){ return !/^\d{4}-\d{2}-\d{2}$/.test(d)||isNaN(Date.parse(d)); });
+      var st=+$("se-start").value, en=+$("se-end").value, title=$("se-title").value.trim();
+      if(title.length<2){ say("se-msg","Give it a name."); return; }
+      if(!dates.length||bad.length){ say("se-msg",bad.length?"Dates need to look like 2026-10-18.":"Add at least one date."); return; }
+      if(dates.length>14){ say("se-msg","Fourteen dates at most."); return; }
+      if(en<=st){ say("se-msg","The latest hour has to be after the earliest."); return; }
+      $("se-save").disabled=true; say("se-msg","Saving…",true);
+      store.schedCreate({title:title,dates:dates.sort(),start_hour:st,end_hour:en,tz:$("se-tz").value}).then(function(){ $("se-save").disabled=false; say("se-msg","Open. Tell the group.",true); mySlots={}; scView="me"; schedRefresh(true); })
+        .catch(function(e){ $("se-save").disabled=false; say("se-msg",msgOf(e)); });
+    });
+    $("se-reopen").addEventListener("click",function(){ store.schedChoose(sched.event.id,null).then(function(){ schedRefresh(true); }).catch(function(e){ say("se-msg",msgOf(e)); }); });
+  })();
 
   /* ----- open items ----- */
   var agenda=[], agendaVotes=[], agendaLoaded=false;
@@ -2972,6 +3209,7 @@ var Polls=(function(){
     if(v==="polls"||v==="pollhist") refresh();
     if(v==="dues"){ say("du-msg",""); say("ds-msg",""); duesRefresh(true); }
     if(v==="agenda") agendaRefresh(true);
+    if(v==="sched") schedRefresh(true);
     if(v==="signup") renderSignup();
     if(v==="manager"){ if(!isCommish){ go("home"); return; } renderCommish(); }
   }
@@ -3301,10 +3539,10 @@ var Players=(function(){
 window.Players=Players;
 
 /* ---------- routing ---------- */
-var views={home:"v-home",teams:"v-teams",team:"v-team",players:"v-players",draft:"v-draft",cap:"v-cap",keepers:"v-keepers",polls:"v-polls",pollhist:"v-pollhist",agenda:"v-agenda",dues:"v-dues",signup:"v-signup",manager:"v-manager",history:"v-history",rules:"v-rules"};
+var views={home:"v-home",teams:"v-teams",team:"v-team",players:"v-players",draft:"v-draft",cap:"v-cap",keepers:"v-keepers",polls:"v-polls",pollhist:"v-pollhist",agenda:"v-agenda",sched:"v-sched",dues:"v-dues",signup:"v-signup",manager:"v-manager",history:"v-history",rules:"v-rules"};
 function go(v){
   Object.keys(views).forEach(function(k){document.getElementById(views[k]).classList.toggle("on",k===v);});
-  var navKey=(v==="team")?"teams":((v==="pollhist"||v==="agenda")?"polls":v);
+  var navKey=(v==="team")?"teams":((v==="pollhist"||v==="agenda")?"polls":(v==="sched"?"draft":v));
   if(window.Polls) Polls.onView(v);
   if(window.Players) Players.onView(v);
   Array.prototype.forEach.call(document.querySelectorAll("#nav button"),function(b){

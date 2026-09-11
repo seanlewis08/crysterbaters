@@ -258,6 +258,41 @@ begin
 end $$;
 
 -- ----------------------------------------------------------------------
+-- 3c. Scheduling: when can everyone make the draft?
+-- ----------------------------------------------------------------------
+-- The commissioner opens an event with candidate dates and an hour range
+-- (in his time zone); every manager marks the hours they're free. Slots are
+-- stored as UTC instants so each person sees the grid in their own zone.
+create table if not exists public.avail_events (
+  id         uuid primary key default gen_random_uuid(),
+  title      text not null check (length(title) between 2 and 80),
+  dates      date[] not null check (array_length(dates, 1) between 1 and 14),
+  start_hour int not null default 9 check (start_hour between 0 and 23),
+  end_hour   int not null default 21 check (end_hour between 1 and 24),
+  tz         text not null default 'America/Los_Angeles',
+  status     text not null default 'open' check (status in ('open', 'closed')),
+  chosen     text,
+  created_by uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists public.avail_marks (
+  event_id    uuid not null references public.avail_events (id) on delete cascade,
+  user_id     uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  voter_email text not null default coalesce(auth.jwt() ->> 'email', ''),
+  slots       text[] not null default '{}',
+  updated_at  timestamptz not null default now(),
+  primary key (event_id, user_id)
+);
+
+-- The 2026 draft: Oct 11 through Oct 19, 9am–10pm Pacific (Sean's call).
+insert into public.avail_events (title, dates, start_hour, end_hour, tz, created_by)
+select '2026 Draft', array['2026-10-11','2026-10-12','2026-10-13','2026-10-14','2026-10-15','2026-10-16','2026-10-17','2026-10-18','2026-10-19']::date[], 9, 22, 'America/Los_Angeles', u.id
+from auth.users u
+where lower(u.email) = (select lower(commissioner_email) from public.league_settings where id = 1)
+  and not exists (select 1 from public.avail_events);
+
+-- ----------------------------------------------------------------------
 -- 4. League dues
 -- ----------------------------------------------------------------------
 -- One row per season. The commissioner sets the amount, the due date and
@@ -357,6 +392,8 @@ alter table public.polls           enable row level security;
 alter table public.votes           enable row level security;
 alter table public.agenda          enable row level security;
 alter table public.agenda_votes    enable row level security;
+alter table public.avail_events    enable row level security;
+alter table public.avail_marks     enable row level security;
 alter table public.dues_seasons    enable row level security;
 alter table public.dues_payments   enable row level security;
 
@@ -443,6 +480,23 @@ create policy agenda_delete on public.agenda for delete to authenticated
 drop policy if exists agenda_votes_read on public.agenda_votes;
 create policy agenda_votes_read on public.agenda_votes for select to authenticated using (public.is_member());
 
+-- Scheduling: members read events and everyone's marks; only the commissioner
+-- opens or closes an event; each manager writes only their own marks.
+drop policy if exists avail_events_read on public.avail_events;
+create policy avail_events_read on public.avail_events for select to authenticated using (public.is_member());
+drop policy if exists avail_events_write on public.avail_events;
+create policy avail_events_write on public.avail_events for insert to authenticated with check (public.is_commissioner() and created_by = auth.uid());
+drop policy if exists avail_events_update on public.avail_events;
+create policy avail_events_update on public.avail_events for update to authenticated using (public.is_commissioner()) with check (public.is_commissioner());
+drop policy if exists avail_events_delete on public.avail_events;
+create policy avail_events_delete on public.avail_events for delete to authenticated using (public.is_commissioner());
+drop policy if exists avail_marks_read on public.avail_marks;
+create policy avail_marks_read on public.avail_marks for select to authenticated using (public.is_member());
+drop policy if exists avail_marks_write on public.avail_marks;
+create policy avail_marks_write on public.avail_marks for insert to authenticated with check (public.is_member() and user_id = auth.uid());
+drop policy if exists avail_marks_update on public.avail_marks;
+create policy avail_marks_update on public.avail_marks for update to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
+
 -- Dues: every member can read the season settings and everyone's status;
 -- all writes go through dues_set_season / dues_mark / dues_confirm.
 drop policy if exists dues_seasons_read on public.dues_seasons;
@@ -459,6 +513,8 @@ grant select, insert, update, delete on public.polls to authenticated;
 grant select, insert, update on public.votes to authenticated;
 grant select, insert, update, delete on public.agenda to authenticated;
 grant select on public.agenda_votes to authenticated;
+grant select, insert, update, delete on public.avail_events to authenticated;
+grant select, insert, update on public.avail_marks to authenticated;
 grant select on public.dues_seasons, public.dues_payments to authenticated;
 grant execute on function public.is_member(), public.is_commissioner(), public.claim_team(text, text, text),
   public.release_team(text), public.set_invite_code(text),
@@ -466,4 +522,4 @@ grant execute on function public.is_member(), public.is_commissioner(), public.c
   public.dues_confirm(text, text, boolean, text), public.agenda_vote(uuid, boolean) to authenticated;
 grant execute on function public.check_invite_code(text) to anon, authenticated;
 revoke all on public.league_settings, public.profiles, public.polls, public.votes, public.poll_tallies,
-  public.agenda, public.agenda_votes, public.dues_seasons, public.dues_payments from anon;
+  public.agenda, public.agenda_votes, public.avail_events, public.avail_marks, public.dues_seasons, public.dues_payments from anon;
