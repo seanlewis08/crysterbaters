@@ -462,14 +462,92 @@ td input.capin{
 }
 td input.capin:focus-visible{outline:1px solid var(--amber);border-color:var(--amber)}
 
+/* ---------- account + polls ---------- */
+.btn{
+  font-family:var(--disp);font-weight:700;font-size:14px;text-transform:uppercase;letter-spacing:.08em;
+  padding:9px 15px;border-radius:3px;cursor:pointer;border:1px solid var(--amber);background:var(--amber);color:#FFF8EC;white-space:nowrap;
+}
+.btn:hover{filter:brightness(1.08)}
+.btn.ghost{background:transparent;color:var(--amber)}
+.btn.ghost:hover{background:var(--amber-glow);filter:none}
+.btn.quiet{background:transparent;border-color:var(--line-2);color:var(--muted)}
+.btn.quiet:hover{color:var(--ink);border-color:var(--ink);filter:none}
+.btn.danger{background:transparent;border-color:rgba(166,43,24,.45);color:var(--red)}
+.btn.sm{font-size:12px;padding:6px 11px}
+.btn:disabled{opacity:.45;cursor:default;filter:none}
+.btn:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+
+.acct{display:flex;align-items:center;gap:12px;flex-shrink:0;margin-left:6px}
+.acct .who{display:flex;flex-direction:column;line-height:1;text-align:right}
+.acct .who b{font-family:var(--disp);font-weight:700;font-size:14px;text-transform:uppercase;letter-spacing:.04em}
+.acct .who span{font-family:var(--mono);font-size:8.5px;letter-spacing:.15em;text-transform:uppercase;color:var(--dim);margin-top:4px}
+
+.notice{padding:12px 18px;border:1px solid var(--line-2);border-left:3px solid var(--cyan);border-radius:3px;background:var(--surface);font-size:14px;color:var(--muted);margin-bottom:18px}
+.notice b{color:var(--ink)}
+.notice.warn{border-left-color:var(--amber)}
+.notice.bad{border-left-color:var(--red);color:var(--red)}
+
+.signin{max-width:520px}
+.signin .calc-in{border-bottom:0}
+.signin p{padding:0 20px 18px;font-size:14px;color:var(--muted)}
+.signin .field input{font-family:var(--body);font-weight:500;font-size:16px;text-transform:none;letter-spacing:0}
+.signin .row{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap}
+.signin .row .field{flex:1 1 240px}
+
+.ptools{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:0 0 18px}
+.ptools .spacer{flex:1}
+.newpoll .calc-in{display:grid;grid-template-columns:1fr 1fr;gap:14px 22px}
+.newpoll .field.wide{grid-column:1/-1}
+.newpoll textarea,.newpoll .field input,.newpoll .field select{
+  font-family:var(--body);font-weight:500;font-size:15.5px;color:var(--ink);text-transform:none;letter-spacing:0;
+  background:var(--surface);border:1px solid var(--line-2);border-radius:3px;padding:9px 11px;width:100%;
+}
+.newpoll textarea{min-height:110px;resize:vertical;font:inherit;font-size:15.5px;line-height:1.45}
+.newpoll textarea:focus-visible{outline:1px solid var(--amber);border-color:var(--amber)}
+.newpoll .hint{font-size:12.5px;color:var(--dim);margin-top:-2px}
+.newpoll .calc-out{display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding:16px 20px}
+
+.polls{display:grid;gap:16px}
+.poll{background:var(--surface);border:1px solid var(--line);border-radius:4px;box-shadow:var(--shadow);overflow:hidden}
+.poll.closed{border-color:var(--line-2)}
+.poll-head{padding:16px 18px 12px;border-bottom:1px solid var(--line)}
+.poll-head h3{font-family:var(--body);font-weight:600;font-size:18px;line-height:1.3;text-transform:none;letter-spacing:0;color:var(--ink)}
+.poll-meta{display:flex;gap:6px 14px;flex-wrap:wrap;align-items:center;margin-top:9px;font-family:var(--mono);font-size:9.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--dim)}
+.poll-meta .pill{margin-left:auto}
+.opts{display:flex;flex-direction:column}
+.opt{
+  display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:11px 18px;position:relative;
+  border:0;border-bottom:1px solid var(--line);background:none;width:100%;text-align:left;cursor:default;
+}
+.opt:last-child{border-bottom:0}
+.opt.pick{cursor:pointer}
+.opt.pick:hover{background:var(--surface-2)}
+.opt.pick:focus-visible{outline:2px solid var(--amber);outline-offset:-2px}
+.opt .bar{position:absolute;left:0;top:0;bottom:0;background:var(--amber-glow);width:0;transition:width .5s ease}
+.opt.win .bar{background:rgba(193,87,26,.18)}
+.opt .lbl{position:relative;flex:1 1 220px;font-size:15.5px;font-weight:500}
+.opt .box{position:relative;width:16px;height:16px;border:1.5px solid var(--line-2);border-radius:50%;flex-shrink:0}
+.opt.mine .box{border-color:var(--amber);background:var(--amber);box-shadow:inset 0 0 0 3px var(--surface)}
+.opt .cnt{position:relative;font-family:var(--mono);font-size:12px;font-weight:600;color:var(--muted);min-width:72px;text-align:right;letter-spacing:.04em}
+.opt.win .cnt{color:var(--amber)}
+.opt .voters{position:relative;width:100%;padding-left:28px;font-size:12.5px;color:var(--dim);line-height:1.4}
+.poll-foot{padding:10px 18px;background:var(--surface-2);border-top:1px solid var(--line);display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:13px;color:var(--muted)}
+.poll-foot .spacer{flex:1}
+.empty{padding:34px 20px;text-align:center;color:var(--dim);border:1px dashed var(--line-2);border-radius:4px;font-size:14.5px}
+.previewbar{display:flex;gap:10px 16px;align-items:center;flex-wrap:wrap}
+.previewbar select{font-family:var(--disp);font-size:14px;font-weight:600;color:var(--ink);background:var(--surface);border:1px solid var(--line-2);border-radius:3px;padding:6px 9px}
+
 footer{margin-top:64px;padding-top:22px;border-top:1px solid var(--line);color:var(--dim);font-size:13.5px;max-width:76ch}
 footer p + p{margin-top:11px}
 
 @media (max-width:860px){.hero{grid-template-columns:1fr}}
+@media (max-width:760px){.newpoll .calc-in{grid-template-columns:1fr}}
 @media (max-width:600px){
   .topbar-in{flex-wrap:wrap;padding-block:11px;gap:11px;min-height:0}
-  nav{margin-left:0;width:100%}
+  nav{margin-left:0;width:100%;order:3}
   nav button{padding:8px 13px 10px}
+  .acct{margin-left:auto}
+  .acct .who b{font-size:12.5px}
   .champ{padding:24px 20px}
   .scoreline div{border-right:0;padding-right:0;margin-right:22px}
 }
@@ -578,9 +656,13 @@ footer p + p{margin-top:11px}
       <button data-go="draft">Draft</button>
       <button data-go="cap">Games Cap</button>
       <button data-go="keepers">Keepers</button>
+      <button data-go="polls">Polls</button>
       <button data-go="history">History</button>
       <button data-go="rules">Rules</button>
     </nav>
+    <div class="acct" id="acct">
+      <button class="btn ghost sm" data-go="polls">Sign in</button>
+    </div>
   </div>
 </header>
 
@@ -814,6 +896,72 @@ footer p + p{margin-top:11px}
           <tbody id="history"></tbody>
         </table>
       </div>
+    </section>
+  </div>
+
+  <!-- ================= POLLS ================= -->
+  <div class="view" id="v-polls">
+    <section>
+      <div class="sec-head"><h2>League Polls</h2><span class="eyebrow cool" id="polls-eyebrow">Members only</span></div>
+      <div class="rulebar"></div>
+      <div id="polls-notice"></div>
+
+      <div id="signin-panel">
+        <p class="lede">Any of the ten managers can put a question to the league. Sign in with the email address Yahoo has for you and we'll send a one-tap link — no password to remember.</p>
+        <div class="calc signin" style="margin-top:18px">
+          <div class="calc-in">
+            <div class="row">
+              <div class="field"><label for="signin-email">Your email</label><input id="signin-email" type="email" autocomplete="email" placeholder="you@example.com" inputmode="email"></div>
+              <button class="btn" id="signin-btn">Send sign-in link</button>
+            </div>
+          </div>
+          <p id="signin-msg"></p>
+        </div>
+      </div>
+
+      <div id="polls-body" hidden>
+        <div class="ptools">
+          <button class="btn" id="newpoll-btn">+ New poll</button>
+          <button class="btn quiet" data-go="pollhist">Poll history</button>
+          <span class="spacer"></span>
+          <span class="eyebrow cool" id="polls-count"></span>
+        </div>
+        <div class="calc newpoll" id="newpoll" hidden>
+          <div class="calc-in">
+            <div class="field wide"><label for="np-q">Question</label><input id="np-q" maxlength="300" placeholder="Should we move the draft to the Sunday before opening night?"></div>
+            <div class="field wide"><label for="np-opts">Choices — one per line</label><textarea id="np-opts" placeholder="Yes&#10;No&#10;Only if everyone can make it"></textarea><span class="hint">Two to twelve choices.</span></div>
+            <div class="field"><label for="np-vis">Who sees the votes</label>
+              <select id="np-vis">
+                <option value="named">Names shown — everyone sees who voted for what</option>
+                <option value="anon_until_close">Secret until it closes — totals now, names after</option>
+                <option value="anon">Secret ballot — totals only, names never</option>
+              </select></div>
+            <div class="field"><label for="np-close">Closes automatically</label>
+              <select id="np-close">
+                <option value="">When I close it</option>
+                <option value="24">In 24 hours</option>
+                <option value="72">In 3 days</option>
+                <option value="168">In a week</option>
+              </select></div>
+          </div>
+          <div class="calc-out">
+            <button class="btn" id="np-save">Post poll</button>
+            <button class="btn quiet" id="np-cancel">Cancel</button>
+            <span id="np-msg" style="font-size:13.5px;color:var(--red)"></span>
+          </div>
+        </div>
+        <div class="polls" id="polls-open"></div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ================= POLL HISTORY ================= -->
+  <div class="view" id="v-pollhist">
+    <button class="back" data-go="polls">← Open polls</button>
+    <section style="margin-top:14px">
+      <div class="sec-head"><h2>Poll History</h2><span class="eyebrow cool" id="hist-count">Every question the league has settled</span></div>
+      <div class="rulebar"></div>
+      <div class="polls" id="polls-closed"></div>
     </section>
   </div>
 
@@ -1120,12 +1268,13 @@ document.getElementById("watch").innerHTML=K.map(function(k){
     {go:"draft",   n:"12",       lbl:"Rounds",   h:"Draft Board",p:"Set the order, see which picks keepers have already taken, and get the list to type into Yahoo. Last year's full board too."},
     {go:"cap",     n:"30",       lbl:"Per week", h:"Games Cap",  p:"Work out the adjusted cap for short weeks without doing the arithmetic by hand."},
     {go:"keepers", n:String(kCount), lbl:"Declared", h:"Keepers", p:"The calculator that settles arguments, and the ladder every declared keeper has left."},
+    {go:"polls",   n:"—",        lbl:"Open",     h:"Polls",      p:"Put a question to the league and vote on everyone else's. Sign in with your email — no password.", id:"hc-polls"},
     {go:"history", n:"14",       lbl:"Seasons",  h:"History",    p:"Every champion since 2012. Four managers tied at two titles, two still hunting their first."},
     {go:"rules",   n:"11",       lbl:"Categories",h:"Rules",     p:"How keepers work, why rosters lock before the playoffs, and the league settings as Yahoo has them."}
   ];
   document.getElementById("hubgrid").innerHTML=cards.map(function(c){
-    return '<button class="hubcard" data-go="'+c.go+'">'+
-      '<div class="hc-top"><span class="hc-num">'+c.n+'<small>'+esc(c.lbl)+'</small></span>'+
+    return '<button class="hubcard" data-go="'+c.go+'"'+(c.id?' id="'+c.id+'"':'')+'>'+
+      '<div class="hc-top"><span class="hc-num"><span class="hc-n">'+c.n+'</span><small>'+esc(c.lbl)+'</small></span>'+
       '<h3>'+esc(c.h)+'</h3></div>'+
       '<p>'+esc(c.p)+'</p>'+
       '<span class="hc-go">Open<span>→</span></span></button>';
@@ -1439,11 +1588,286 @@ function renderCap(){
 [nEl2,bEl,gEl].forEach(function(el){el.addEventListener("input",renderCap);});
 renderCap();
 
+/* ---------- accounts + polls ---------- */
+/* Supabase project URL + anon (public) key. Leave both empty for preview mode. */
+var SB={url:"",anon:""};
+
+var Polls=(function(){
+  var me=null, polls=[], votes=[], tallies={}, members=[], store=null, loading=false;
+  var VIS={named:"Names shown",anon:"Secret ballot",anon_until_close:"Secret until it closes"};
+  function $(id){return document.getElementById(id);}
+
+  function isOpen(p){ return !p.closed && (!p.closes_at || new Date(p.closes_at) > new Date()); }
+  function memberFor(email){
+    email=(email||"").toLowerCase();
+    for(var i=0;i<members.length;i++){ if((members[i].email||"").toLowerCase()===email) return members[i]; }
+    return null;
+  }
+  function nameFor(email){
+    var m=memberFor(email);
+    if(m){ var t=byId(m.team_id); return t?t.short:m.manager; }
+    return email ? email.split("@")[0] : "Someone";
+  }
+  function fmtDate(iso){ return new Date(iso).toLocaleDateString(undefined,{month:"short",day:"numeric"}); }
+  function fmtWhen(iso){
+    var diff=(new Date(iso)-new Date())/3600000;
+    if(diff<0) return "closed "+fmtDate(iso);
+    if(diff<1) return "closes in "+Math.max(1,Math.round(diff*60))+" min";
+    if(diff<48) return "closes in "+Math.round(diff)+" h";
+    return "closes "+fmtDate(iso);
+  }
+  var baseNotice="";
+  function setNotice(html,cls){ $("polls-notice").innerHTML = html ? '<div class="notice '+(cls||"")+'">'+html+'</div>' : ""; }
+  function fail(e){ setNotice(esc((e&&e.message)||e||"Something went wrong."),"bad"); }
+
+  /* ----- preview store: this browser only, no server ----- */
+  function PreviewStore(){
+    var KEY="cb-polls-preview-v1", db=null;
+    try{ db=JSON.parse(localStorage.getItem(KEY)||"null"); }catch(e){}
+    if(!db) db={polls:[],votes:[],me:null};
+    function save(){ try{ localStorage.setItem(KEY,JSON.stringify(db)); }catch(e){} }
+    var mem=T.map(function(t){ return {email:t.id+"@preview.local",manager:t.mgr,team_id:t.id,is_commissioner:t.id==="jalenba"}; });
+    function findPoll(id){ return db.polls.filter(function(p){return p.id===id;})[0]; }
+    return {
+      preview:true,
+      init:function(){ return Promise.resolve(db.me); },
+      members:function(){ return Promise.resolve(mem); },
+      signInAs:function(team_id){
+        var m=mem.filter(function(x){return x.team_id===team_id;})[0];
+        db.me={id:"u-"+team_id,email:m.email}; save(); return Promise.resolve(db.me);
+      },
+      sendLink:function(){ return Promise.resolve({ok:false,msg:"Preview mode — pick a manager below instead. Real email links switch on once the league database is connected."}); },
+      signOut:function(){ db.me=null; save(); return Promise.resolve(); },
+      load:function(){
+        var uid=db.me&&db.me.id;
+        var vis=db.votes.filter(function(v){
+          var p=findPoll(v.poll_id); if(!p) return false;
+          return v.user_id===uid || p.visibility==="named" || (p.visibility==="anon_until_close" && !isOpen(p));
+        });
+        var tl={};
+        db.votes.forEach(function(v){ tl[v.poll_id]=tl[v.poll_id]||{}; tl[v.poll_id][v.option_index]=(tl[v.poll_id][v.option_index]||0)+1; });
+        return Promise.resolve({polls:db.polls.slice(),votes:vis,tallies:tl});
+      },
+      createPoll:function(p){
+        p.id="p"+Date.now(); p.created_by=db.me.id; p.created_by_email=db.me.email;
+        p.created_at=new Date().toISOString(); p.closed=false; db.polls.unshift(p); save(); return Promise.resolve();
+      },
+      vote:function(pid,idx,uid){
+        var ex=db.votes.filter(function(v){return v.poll_id===pid&&v.user_id===uid;})[0];
+        if(ex) ex.option_index=idx;
+        else db.votes.push({poll_id:pid,user_id:uid,voter_email:db.me.email,option_index:idx,created_at:new Date().toISOString()});
+        save(); return Promise.resolve();
+      },
+      closePoll:function(pid){ var p=findPoll(pid); if(p) p.closed=true; save(); return Promise.resolve(); },
+      deletePoll:function(pid){
+        db.polls=db.polls.filter(function(p){return p.id!==pid;});
+        db.votes=db.votes.filter(function(v){return v.poll_id!==pid;}); save(); return Promise.resolve();
+      }
+    };
+  }
+
+  /* ----- Supabase store: the real thing ----- */
+  function SupaStore(client){
+    function chk(r){ if(r.error) throw r.error; return r; }
+    function user(s){ return s ? {id:s.user.id,email:s.user.email} : null; }
+    return {
+      preview:false,
+      init:function(){ return client.auth.getSession().then(function(r){ return user(r.data.session); }); },
+      onChange:function(cb){ client.auth.onAuthStateChange(function(ev,s){ cb(user(s)); }); },
+      members:function(){ return client.from("members").select("*").then(function(r){ return r.data||[]; }); },
+      sendLink:function(email){
+        return client.auth.signInWithOtp({email:email,options:{emailRedirectTo:location.origin+location.pathname}}).then(function(r){
+          if(r.error){
+            var m=r.error.message||"";
+            if(/not a league member|Database error|Signups not allowed/i.test(m)) return {ok:false,msg:"That address isn't on the league roster. Ask Sean to add it."};
+            return {ok:false,msg:m};
+          }
+          return {ok:true,msg:"Check your inbox — the link signs you in on this device."};
+        });
+      },
+      signOut:function(){ return client.auth.signOut(); },
+      load:function(){
+        return Promise.all([
+          client.from("polls").select("*").order("created_at",{ascending:false}),
+          client.from("votes").select("*"),
+          client.from("poll_tallies").select("*")
+        ]).then(function(rs){
+          chk(rs[0]);
+          var tl={};
+          (rs[2].data||[]).forEach(function(r){ tl[r.poll_id]=tl[r.poll_id]||{}; tl[r.poll_id][r.option_index]=r.n; });
+          return {polls:rs[0].data||[],votes:rs[1].data||[],tallies:tl};
+        });
+      },
+      createPoll:function(p){ return client.from("polls").insert({question:p.question,options:p.options,visibility:p.visibility,closes_at:p.closes_at}).then(chk); },
+      vote:function(pid,idx,uid){ return client.from("votes").upsert({poll_id:pid,user_id:uid,option_index:idx},{onConflict:"poll_id,user_id"}).then(chk); },
+      closePoll:function(pid){ return client.from("polls").update({closed:true}).eq("id",pid).then(chk); },
+      deletePoll:function(pid){ return client.from("polls").delete().eq("id",pid).then(chk); }
+    };
+  }
+
+  /* ----- rendering ----- */
+  function renderAcct(){
+    var el=$("acct");
+    if(me){
+      var m=memberFor(me.email), t=m?byId(m.team_id):null;
+      el.innerHTML='<div class="who"><b>'+esc(m?m.manager:me.email)+'</b><span>'+esc(t?t.name:"League member")+'</span></div>'+
+        '<button class="btn quiet sm" id="signout-btn">Sign out</button>';
+      $("signout-btn").addEventListener("click",function(){ store.signOut().then(function(){ setMe(null); }).catch(fail); });
+    } else {
+      el.innerHTML='<button class="btn ghost sm" data-go="polls">Sign in</button>';
+    }
+  }
+
+  function setMe(u){
+    me=u;
+    if(me){ store.members().then(function(m){ members=m; renderAcct(); refresh(); }).catch(fail); }
+    else { members=[]; polls=[]; votes=[]; tallies={}; renderAcct(); refresh(); }
+  }
+
+  function refresh(){
+    if(!store) return;
+    var signed=!!me;
+    $("signin-panel").hidden=signed;
+    $("polls-body").hidden=!signed;
+    $("polls-eyebrow").textContent= signed ? "Signed in as "+nameFor(me.email) : "Members only";
+    if(!signed){ renderList(); return; }
+    if(loading) return;
+    loading=true;
+    store.load().then(function(d){ loading=false; polls=d.polls; votes=d.votes; tallies=d.tallies; renderList(); })
+      .catch(function(e){ loading=false; fail(e); });
+  }
+
+  function renderList(){
+    var open=polls.filter(isOpen), closed=polls.filter(function(p){return !isOpen(p);});
+    $("polls-open").innerHTML = open.length ? open.map(card).join("") : '<div class="empty">No open polls. Be the one who starts something.</div>';
+    $("polls-closed").innerHTML = closed.length ? closed.map(card).join("") : '<div class="empty">'+(me?"Nothing has closed yet.":"Sign in to see how past polls went.")+'</div>';
+    $("polls-count").textContent = open.length+" open · "+closed.length+" closed";
+    $("hist-count").textContent = closed.length ? closed.length+" settled" : "Every question the league has settled";
+    var hc=document.querySelector("#hc-polls .hc-n"); if(hc) hc.textContent = me ? String(open.length) : "—";
+  }
+
+  function card(p){
+    var open=isOpen(p);
+    var mine=me?votes.filter(function(v){return v.poll_id===p.id && v.user_id===me.id;})[0]:null;
+    var tl=tallies[p.id]||{}, total=0, max=0;
+    Object.keys(tl).forEach(function(k){ total+=tl[k]; if(tl[k]>max) max=tl[k]; });
+    var showResults=!!mine||!open;
+    var showNames=p.visibility==="named"||(p.visibility==="anon_until_close"&&!open);
+    var owner=!!me&&(p.created_by===me.id||!!(memberFor(me.email)||{}).is_commissioner);
+    var html='<article class="poll'+(open?"":" closed")+'" data-poll="'+esc(p.id)+'">';
+    html+='<div class="poll-head"><h3>'+esc(p.question)+'</h3><div class="poll-meta">'+
+      '<span>Asked by '+esc(nameFor(p.created_by_email))+' · '+fmtDate(p.created_at)+'</span>'+
+      '<span>'+esc(VIS[p.visibility]||p.visibility)+'</span>'+
+      (p.closes_at&&open?'<span>'+esc(fmtWhen(p.closes_at))+'</span>':'')+
+      '<span class="pill '+(open?"ok":"q")+'">'+(open?"Open":"Closed")+'</span></div></div>';
+    html+='<div class="opts">';
+    p.options.forEach(function(o,i){
+      var n=tl[i]||0, pct=total?Math.round(n*100/total):0;
+      var cls="opt"+(open?" pick":"")+(mine&&mine.option_index===i?" mine":"")+(showResults&&n>0&&n===max?" win":"");
+      var tag=open?"button":"div";
+      var names="";
+      if(showResults&&showNames&&n){
+        names=votes.filter(function(v){return v.poll_id===p.id&&v.option_index===i;}).map(function(v){return nameFor(v.voter_email);}).join(", ");
+      }
+      html+='<'+tag+' class="'+cls+'"'+(open?' type="button" data-vote="'+i+'"':'')+'>'+
+        (showResults?'<span class="bar" style="width:'+pct+'%"></span>':'')+
+        '<span class="box"></span><span class="lbl">'+esc(o)+'</span>'+
+        (showResults?'<span class="cnt">'+n+' · '+pct+'%</span>':'')+
+        (names?'<span class="voters">'+esc(names)+'</span>':'')+
+        '</'+tag+'>';
+    });
+    html+='</div>';
+    var foot=(total===1?"1 vote":total+" votes");
+    if(open&&!mine) foot+=" · pick one to see the results";
+    else if(open&&mine) foot+=" · tap another choice to change your vote";
+    else if(!open&&p.closes_at&&!p.closed) foot+=" · closed automatically";
+    html+='<div class="poll-foot"><span>'+foot+'</span><span class="spacer"></span>';
+    if(owner&&open) html+='<button class="btn quiet sm" data-close="'+esc(p.id)+'">Close poll</button>';
+    if(owner) html+='<button class="btn danger sm" data-del="'+esc(p.id)+'">Delete</button>';
+    html+='</div></article>';
+    return html;
+  }
+
+  /* ----- interactions ----- */
+  function act(pr){ pr.then(function(){ $("polls-notice").innerHTML=baseNotice; refresh(); }).catch(fail); }
+  document.addEventListener("click",function(e){
+    var v=e.target.closest("[data-vote]");
+    if(v&&me){ var art=v.closest("[data-poll]"); act(store.vote(art.dataset.poll,+v.dataset.vote,me.id)); return; }
+    var c=e.target.closest("[data-close]");
+    if(c){ act(store.closePoll(c.dataset.close)); return; }
+    var d=e.target.closest("[data-del]");
+    if(d){ if(d.dataset.armed){ act(store.deletePoll(d.dataset.del)); } else { d.dataset.armed="1"; d.textContent="Really delete?"; } }
+  });
+
+  $("newpoll-btn").addEventListener("click",function(){
+    var f=$("newpoll"); f.hidden=!f.hidden; if(!f.hidden) $("np-q").focus();
+  });
+  $("np-cancel").addEventListener("click",function(){ $("newpoll").hidden=true; });
+  $("np-save").addEventListener("click",function(){
+    var q=$("np-q").value.trim();
+    var opts=$("np-opts").value.split("\n").map(function(s){return s.trim();}).filter(Boolean);
+    var msg=$("np-msg"); msg.textContent="";
+    if(!q){ msg.textContent="Ask a question first."; return; }
+    if(opts.length<2){ msg.textContent="Give people at least two choices."; return; }
+    if(opts.length>12){ msg.textContent="Twelve choices, tops."; return; }
+    var hrs=+$("np-close").value, closes=hrs?new Date(Date.now()+hrs*3600000).toISOString():null;
+    $("np-save").disabled=true;
+    store.createPoll({question:q,options:opts,visibility:$("np-vis").value,closes_at:closes}).then(function(){
+      $("np-q").value=""; $("np-opts").value=""; $("newpoll").hidden=true; $("np-save").disabled=false; refresh();
+    }).catch(function(e){ $("np-save").disabled=false; msg.textContent=(e&&e.message)||String(e); });
+  });
+
+  function sendLink(){
+    var em=$("signin-email").value.trim(), m=$("signin-msg");
+    if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)){ m.style.color="var(--red)"; m.textContent="That doesn't look like an email address."; return; }
+    $("signin-btn").disabled=true; m.style.color="var(--muted)"; m.textContent="Sending…";
+    store.sendLink(em).then(function(r){
+      $("signin-btn").disabled=false; m.style.color=r.ok?"var(--green)":"var(--red)"; m.textContent=r.msg;
+    }).catch(function(e){ $("signin-btn").disabled=false; m.style.color="var(--red)"; m.textContent=(e&&e.message)||String(e); });
+  }
+  $("signin-btn").addEventListener("click",sendLink);
+  $("signin-email").addEventListener("keydown",function(k){ if(k.key==="Enter") sendLink(); });
+
+  /* ----- boot ----- */
+  function start(){
+    var fromLink=/access_token=|type=magiclink/.test(location.hash);
+    store.init().then(function(u){
+      setMe(u);
+      if(store.onChange) store.onChange(function(u2){ if(((u2&&u2.id)||null)!==((me&&me.id)||null)) setMe(u2); });
+      if(fromLink){ go("polls"); try{ history.replaceState(null,"",location.pathname); }catch(e){} }
+    }).catch(fail);
+  }
+  function boot(){
+    if(SB.url&&SB.anon){
+      var s=document.createElement("script");
+      s.src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js";
+      s.onload=function(){ store=SupaStore(window.supabase.createClient(SB.url,SB.anon)); start(); };
+      s.onerror=function(){ setNotice("Couldn't reach the league database. Try again in a minute.","bad"); };
+      document.head.appendChild(s);
+    } else {
+      store=PreviewStore();
+      setNotice("<b>Preview mode.</b> Polls made here are saved only in this browser. Email sign-in and league-wide polls switch on once the league database is connected.","warn");
+      baseNotice=$("polls-notice").innerHTML;
+      var bar=document.createElement("div"); bar.className="calc signin"; bar.style.marginTop="14px";
+      bar.innerHTML='<div class="calc-in"><div class="previewbar"><span class="eyebrow">Preview · sign in as</span>'+
+        '<select id="pv-who">'+T.map(function(t){return '<option value="'+t.id+'">'+esc(t.mgr)+' · '+esc(t.name)+'</option>';}).join("")+'</select>'+
+        '<button class="btn sm" id="pv-go">Sign in</button></div></div>';
+      $("signin-panel").appendChild(bar);
+      $("pv-go").addEventListener("click",function(){ store.signInAs($("pv-who").value).then(setMe); });
+      start();
+    }
+  }
+  boot();
+  return {refresh:refresh};
+})();
+window.Polls=Polls;
+
 /* ---------- routing ---------- */
-var views={home:"v-home",teams:"v-teams",team:"v-team",draft:"v-draft",cap:"v-cap",keepers:"v-keepers",history:"v-history",rules:"v-rules"};
+var views={home:"v-home",teams:"v-teams",team:"v-team",draft:"v-draft",cap:"v-cap",keepers:"v-keepers",polls:"v-polls",pollhist:"v-pollhist",history:"v-history",rules:"v-rules"};
 function go(v){
   Object.keys(views).forEach(function(k){document.getElementById(views[k]).classList.toggle("on",k===v);});
-  var navKey=(v==="team")?"teams":v;
+  var navKey=(v==="team")?"teams":(v==="pollhist"?"polls":v);
+  if(v==="polls"||v==="pollhist"){ if(window.Polls) Polls.refresh(); }
   Array.prototype.forEach.call(document.querySelectorAll("#nav button"),function(b){
     if(b.dataset.go===navKey){b.setAttribute("aria-current","page");}else{b.removeAttribute("aria-current");}
   });
