@@ -1924,7 +1924,7 @@ var ARCHIVE={"2019":{"league":"Harry Giles Fan Club","yid":"48593","teams":[["FR
 
 /* ---------- accounts + polls ---------- */
 /* Supabase project URL + anon (public) key. Leave both empty for preview mode. */
-var SB={url:"",anon:""};
+var SB={url:"https://gtpvhvnshzyiczyxwpsv.supabase.co",anon:"sb_publishable__Y0fvTsbMqyQHPlw8ycQ-A_8OQzR0lg"};
 
 var Polls=(function(){
   var me=null, profile=null, profiles=[], polls=[], votes=[], tallies={}, claimed=[], store=null, loading=false, isCommish=false;
@@ -2249,7 +2249,7 @@ var Polls=(function(){
   function boot(){
     if(SB.url&&SB.anon){
       var s=document.createElement("script");
-      s.src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js";
+      s.src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.js";
       s.onload=function(){ store=SupaStore(window.supabase.createClient(SB.url,SB.anon)); start(); };
       s.onerror=function(){ setNotice("Couldn't reach the league database. Try again in a minute.","bad"); };
       document.head.appendChild(s);
