@@ -4,9 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="description" content="League For Kids That Read Good — standings, keeper costs, pre-draft board and the weekly games cap.">
-<meta name="theme-color" content="#EBECEF">
+<meta name="theme-color" content="#E9DCC1">
 <meta name="robots" content="noindex">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23EBECEF'/%3E%3Ccircle cx='16' cy='16' r='11' fill='none' stroke='%23DD5F18' stroke-width='2'/%3E%3Cpath d='M5 16h22M16 5v22' stroke='%23DD5F18' stroke-width='1.2' opacity='.7'/%3E%3Cpath d='M8.2 8.2C14.4 11.5 17.5 17.7 17.5 27M23.8 8.2C17.6 11.5 14.5 17.7 14.5 27' fill='none' stroke='%23DD5F18' stroke-width='1.2' opacity='.7'/%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23E9DCC1'/%3E%3Ccircle cx='16' cy='16' r='11' fill='none' stroke='%23C1571A' stroke-width='2'/%3E%3Cpath d='M5 16h22M16 5v22' stroke='%23C1571A' stroke-width='1.2' opacity='.7'/%3E%3Cpath d='M8.2 8.2C14.4 11.5 17.5 17.7 17.5 27M23.8 8.2C17.6 11.5 14.5 17.7 14.5 27' fill='none' stroke='%23C1571A' stroke-width='1.2' opacity='.7'/%3E%3C/svg%3E">
 <meta property="og:title" content="League For Kids That Read Good">
 <meta property="og:description" content="Standings, keepers, draft board and the weekly games cap.">
 <meta property="og:type" content="website">
@@ -17,27 +17,27 @@
 
 <style>
 :root{
-  --ground:#EBECEF;
-  --surface:#FFFFFF;
-  --surface-2:#F4F5F7;
-  --surface-3:#E3E6EA;
-  --line:#D9DCE1;
-  --line-2:#BFC5CD;
-  --ink:#14181C;
-  --muted:#5F666F;
-  --dim:#8B939C;
+  /* hardwood: maple floor, painted court lines, leather ball */
+  --ground:#E9DCC1;
+  --surface:#FDFAF4;
+  --surface-2:#F5EEDF;
+  --surface-3:#E7DAC0;
+  --line:#DACAA9;
+  --line-2:#BFA97F;
+  --ink:#22190E;
+  --muted:#6B5B42;
+  --dim:#9A8967;
 
-  /* basketball leather orange is the accent; NBA blue marks live/playoff state */
-  --amber:#DD5F18;
-  --amber-dim:#EFB187;
-  --amber-glow:rgba(221,95,24,.10);
-  --cyan:#1D428A;
-  --cyan-glow:rgba(29,66,138,.09);
-  --green:#1B7A4C;
-  --red:#BE2B1B;
-  --red-glow:rgba(190,43,27,.09);
+  --amber:#C1571A;
+  --amber-dim:#DFA771;
+  --amber-glow:rgba(193,87,26,.11);
+  --cyan:#1B3F7A;
+  --cyan-glow:rgba(27,63,122,.09);
+  --green:#1E6B3F;
+  --red:#A62B18;
+  --red-glow:rgba(166,43,24,.10);
 
-  --shadow:0 1px 2px rgba(18,22,28,.05), 0 10px 26px rgba(18,22,28,.06);
+  --shadow:0 1px 2px rgba(70,48,20,.07), 0 10px 26px rgba(70,48,20,.09);
 
   --disp:"Saira Condensed","Arial Narrow",Arial,sans-serif;
   --body:"Barlow","Helvetica Neue",Arial,sans-serif;
@@ -48,8 +48,9 @@
 #splash{
   position:fixed;inset:0;z-index:200;
   background:
-    radial-gradient(760px 560px at 50% 46%, rgba(221,95,24,.14), transparent 68%),
-    #14171B;
+    radial-gradient(760px 560px at 50% 46%, rgba(193,87,26,.20), transparent 68%),
+    repeating-linear-gradient(90deg, rgba(0,0,0,.16) 0 2px, transparent 2px 138px),
+    #2E200F;
   display:grid;place-items:center;
   grid-template-rows:1fr auto 1fr;
   perspective:1400px;
@@ -95,11 +96,11 @@
 .splash-name h1{
   font-family:var(--disp);font-weight:800;text-transform:uppercase;
   font-size:clamp(26px,5.6vw,58px);letter-spacing:.045em;color:#F6F7F9;
-  text-shadow:0 0 40px rgba(221,95,24,.35);line-height:1;
+  text-shadow:0 0 44px rgba(255,150,60,.4);line-height:1;
 }
 .splash-name p{
   margin-top:14px;font-family:var(--mono);font-size:clamp(9px,1.5vw,12px);
-  letter-spacing:.42em;text-transform:uppercase;color:#FF8A45;
+  letter-spacing:.42em;text-transform:uppercase;color:#F0A45E;
 }
 @keyframes nameIn{
   0%{opacity:0;transform:translateY(24px);filter:blur(9px);letter-spacing:.3em}
@@ -108,7 +109,7 @@
 
 .splash-skip{
   grid-row:3;align-self:end;margin-bottom:34px;
-  font-family:var(--mono);font-size:9.5px;letter-spacing:.28em;text-transform:uppercase;color:#767F89;
+  font-family:var(--mono);font-size:9.5px;letter-spacing:.28em;text-transform:uppercase;color:#8A7A5F;
   animation:skipIn .5s ease 2.1s both;
 }
 @keyframes skipIn{from{opacity:0}to{opacity:1}}
@@ -125,8 +126,11 @@ html{background:var(--ground)}
 body{
   margin:0;
   background:
-    radial-gradient(1100px 460px at 50% -200px, rgba(221,95,24,.07), transparent 70%),
+    radial-gradient(1200px 500px at 50% -220px, rgba(255,244,224,.75), transparent 72%),
+    repeating-linear-gradient(90deg, rgba(120,84,38,.055) 0 2px, transparent 2px 132px),
+    repeating-linear-gradient(90deg, rgba(120,84,38,.028) 0 1px, transparent 1px 9px),
     var(--ground);
+  background-attachment:fixed, fixed, fixed, fixed;
   color:var(--ink);
   font-family:var(--body);
   font-size:16px;
@@ -148,7 +152,7 @@ a:hover{text-decoration:underline}
 .eyebrow.cool{color:var(--dim)}
 
 /* ---------- top bar ---------- */
-.topbar{position:sticky;top:0;z-index:60;background:rgba(255,255,255,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.topbar{position:sticky;top:0;z-index:60;background:rgba(253,250,244,.93);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
 .topbar-in{max-width:1200px;margin:0 auto;padding-inline:20px;display:flex;align-items:stretch;gap:20px;min-height:62px}
 .brand{display:flex;align-items:center;gap:11px;background:none;border:0;padding:0;cursor:pointer;text-align:left;flex-shrink:0}
 .mark{width:28px;height:28px;flex-shrink:0}
@@ -216,7 +220,7 @@ thead th{
   color:var(--dim);background:var(--surface-2);border-bottom:1px solid var(--line-2);white-space:nowrap;
 }
 tbody tr:last-child td{border-bottom:none}
-tbody tr:nth-child(even) td{background:rgba(18,22,28,.018)}
+tbody tr:nth-child(even) td{background:rgba(120,84,38,.028)}
 td.num,th.num{font-family:var(--mono);font-variant-numeric:tabular-nums;font-weight:500;font-size:14px}
 td.name{font-family:var(--disp);font-weight:600;font-size:17px;letter-spacing:.015em}
 td.mgr{font-family:var(--mono);font-size:12px;color:var(--muted);white-space:nowrap;text-transform:uppercase;letter-spacing:.08em}
@@ -240,7 +244,7 @@ tr.keeprow td{background:var(--amber-glow)!important;border-bottom-color:var(--a
   padding:0;text-align:left;cursor:pointer;width:100%;display:flex;flex-direction:column;
   border-top:3px solid var(--amber);transition:transform .12s,box-shadow .12s,border-color .12s;
 }
-.hubcard:hover{transform:translateY(-2px);box-shadow:0 2px 4px rgba(18,22,28,.07),0 16px 34px rgba(18,22,28,.11)}
+.hubcard:hover{transform:translateY(-2px);box-shadow:0 2px 4px rgba(70,48,20,.09),0 16px 34px rgba(70,48,20,.16)}
 .hubcard:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
 .hubcard .hc-top{padding:18px 20px 12px;display:flex;align-items:flex-start;gap:14px}
 .hubcard .hc-num{
@@ -271,7 +275,7 @@ tr.keeprow td{background:var(--amber-glow)!important;border-bottom-color:var(--a
 
 .champstrip{
   margin-top:22px;display:flex;gap:22px;align-items:center;flex-wrap:wrap;
-  background:linear-gradient(100deg,#FFF3EA,var(--surface) 62%);
+  background:linear-gradient(100deg,#F7E5CC,var(--surface) 62%);
   border:1px solid var(--amber-dim);border-radius:5px;box-shadow:var(--shadow);padding:20px 24px;
 }
 .champstrip .cs-belt{width:104px;flex-shrink:0}
@@ -284,14 +288,14 @@ tr.keeprow td{background:var(--amber-glow)!important;border-bottom-color:var(--a
 .hero{margin-top:30px;display:grid;grid-template-columns:1.45fr 1fr;gap:16px}
 .champ{
   position:relative;overflow:hidden;border-radius:4px;
-  background:linear-gradient(150deg,#FFF4EC 0%,var(--surface) 58%);
+  background:linear-gradient(150deg,#F7E5CC 0%,var(--surface) 58%);
   border:1px solid var(--amber-dim);box-shadow:var(--shadow);
   padding:30px 30px 26px;
   display:flex;flex-direction:column;justify-content:space-between;gap:26px;
 }
 .champ::before{
   content:"";position:absolute;inset:0;
-  background:repeating-linear-gradient(90deg,rgba(221,95,24,.06) 0 1px,transparent 1px 5px);
+  background:repeating-linear-gradient(90deg,rgba(120,84,38,.07) 0 1px,transparent 1px 6px);
   opacity:.5;pointer-events:none;
 }
 .champ-top{position:relative}
