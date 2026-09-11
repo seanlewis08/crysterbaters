@@ -1157,6 +1157,24 @@ footer p + p{margin-top:11px}
           </table>
         </div>
       </div>
+
+      <div class="sec-head" style="margin-top:34px"><h2 style="font-size:24px">Record a past poll</h2><span class="eyebrow cool">From the group chat</span></div>
+      <div class="rulebar"></div>
+      <p class="lede">Polls that happened on WhatsApp can live in the Poll History too. One choice per line: the choice, the vote count, and who voted, separated by <code>|</code>.</p>
+      <div class="calc newpoll" style="margin-top:16px">
+        <div class="calc-in">
+          <div class="field wide"><label for="rp-q">Question</label><input id="rp-q" maxlength="300" placeholder="Draft Time (Oct 18)"></div>
+          <div class="field wide"><label for="rp-opts">Choices — one per line: choice | votes | names</label><textarea id="rp-opts" placeholder="12pm PST (3pm EST) | 7 | Sean, Chris, David, Anush, Ben, Gonzo, Kabir&#10;2pm PST (5pm EST) | 6 | Sean, David, Anush, Ben, Gonzo, Kabir"></textarea><span class="hint">Names are optional. Two to twelve choices.</span></div>
+          <div class="field"><label for="rp-date">Asked on</label><input id="rp-date" type="date"></div>
+          <div class="field"><label for="rp-voted">How many people voted</label><input id="rp-voted" type="number" min="1" max="10" placeholder="7"></div>
+          <div class="field"><label for="rp-source">Where</label><input id="rp-source" maxlength="40" value="WhatsApp"></div>
+          <div class="field" style="flex-direction:row;align-items:center;gap:10px"><input type="checkbox" id="rp-multi" checked style="width:18px;height:18px;accent-color:var(--amber)"><label for="rp-multi" style="font-family:var(--body);font-size:15px;letter-spacing:0;text-transform:none;color:var(--ink);cursor:pointer">People could pick more than one</label></div>
+        </div>
+        <div class="calc-out">
+          <button class="btn" id="rp-save">Add to history</button>
+          <span id="rp-msg" style="font-size:13.5px;color:var(--muted)"></span>
+        </div>
+      </div>
     </section>
   </div>
 
@@ -2158,6 +2176,11 @@ var ARCHIVE={"2019":{"league":"Harry Giles Fan Club","yid":"48593","teams":[["FR
 var SB={url:"https://gtpvhvnshzyiczyxwpsv.supabase.co",anon:"sb_publishable__Y0fvTsbMqyQHPlw8ycQ-A_8OQzR0lg"};
 var LIVE_HOSTS=/(^|\.)crysterbaters\.(vercel\.app|com)$|^localhost$/;
 
+/* the draft-time poll from the group chat, kept for the preview; the live site has it in the database */
+var SEED_POLL={id:"seed-drafttime",question:"Draft Time (Oct 18)",options:["10 am PST (1pm EST)","12pm PST (3pm EST)","2pm PST (5pm EST)","4pm PST (7 PM EST)","6pm PST (9 PM EST)","8pm PST (11 PM EST)"],
+  visibility:"named",closed:true,imported:true,asked_on:"2026-09-10",created_at:"2026-09-10T16:23:00Z",created_by:"u-seanlewis08gmailcom",created_by_email:"seanlewis08@gmail.com",
+  results:{multi:true,source:"WhatsApp",voted:7,counts:[5,7,6,6,3,2],voters:[["Chris","David","Anush","Ben","Gonzo"],["Sean","Chris","David","Anush","Ben","Gonzo","Kabir"],["Sean","David","Anush","Ben","Gonzo","Kabir"],["Sean","David","Anush","Ben","Gonzo","Kabir"],["Anush","Ben","Gonzo"],["Anush","Ben"]]}};
+
 var Polls=(function(){
   var me=null, profile=null, profiles=[], polls=[], votes=[], tallies={}, claimed=[], store=null, loading=false, isCommish=false;
   var VIS={named:"Names shown",anon:"Secret ballot",anon_until_close:"Secret until it closes"};
@@ -2189,6 +2212,7 @@ var Polls=(function(){
     try{ db=JSON.parse(localStorage.getItem(KEY)||"null"); }catch(e){}
     if(!db) db={polls:[],votes:[],profiles:[],users:[],me:null,code:"KIDS26"};
     if(!db.dues) db.dues={seasons:[],payments:[]};
+    if(!db.polls.some(function(p){return p.imported&&p.question===SEED_POLL.question;})) db.polls.push(SEED_POLL);
     function save(){ try{ localStorage.setItem(KEY,JSON.stringify(db)); }catch(e){} }
     function findPoll(id){ return db.polls.filter(function(p){return p.id===id;})[0]; }
     function myProf(){ return db.me ? db.profiles.filter(function(p){return p.user_id===db.me.id;})[0]||null : null; }
@@ -2248,6 +2272,11 @@ var Polls=(function(){
       deletePoll:function(pid){
         db.polls=db.polls.filter(function(p){return p.id!==pid;});
         db.votes=db.votes.filter(function(v){return v.poll_id!==pid;}); save(); return Promise.resolve();
+      },
+      recordPoll:function(p){
+        if(!commish()) return Promise.reject(new Error("Commissioner only."));
+        p.id="p"+Date.now(); p.created_by=db.me.id; p.created_by_email=db.me.email; p.closed=true; p.imported=true; p.visibility="named";
+        db.polls.unshift(p); save(); return Promise.resolve();
       },
       /* dues */
       duesLoad:function(){ return Promise.resolve({seasons:db.dues.seasons.slice().reverse(),payments:db.dues.payments.slice()}); },
@@ -2344,6 +2373,9 @@ var Polls=(function(){
       vote:function(pid,idx,u){ return client.from("votes").upsert({poll_id:pid,user_id:u,option_index:idx},{onConflict:"poll_id,user_id"}).then(chk); },
       closePoll:function(pid){ return client.from("polls").update({closed:true}).eq("id",pid).then(chk); },
       deletePoll:function(pid){ return client.from("polls").delete().eq("id",pid).then(chk); },
+      recordPoll:function(p){
+        return client.from("polls").insert({question:p.question,options:p.options,visibility:"named",closed:true,imported:true,asked_on:p.asked_on,created_at:p.created_at,results:p.results}).then(chk);
+      },
       /* dues */
       duesLoad:function(){
         return Promise.all([
@@ -2451,6 +2483,7 @@ var Polls=(function(){
   }
 
   function card(p){
+    if(p.imported&&p.results) return importedCard(p);
     var open=isOpen(p);
     var mine=me?votes.filter(function(v){return v.poll_id===p.id && v.user_id===me.id;})[0]:null;
     var tl=tallies[p.id]||{}, total=0, max=0;
@@ -2629,6 +2662,28 @@ var Polls=(function(){
     else window.prompt("Copy this:",txt);
   });
 
+  function importedCard(p){
+    var r=p.results, counts=r.counts||[], total=r.voted||Math.max.apply(null,counts.concat([0]))||0, max=0;
+    counts.forEach(function(n){ if(n>max) max=n; });
+    var owner=!!me&&(p.created_by===me.id||isCommish);
+    var when=p.asked_on?p.asked_on.split("-"):null, whenTxt=when?new Date(+when[0],+when[1]-1,+when[2]).toLocaleDateString(undefined,{month:"short",day:"numeric"}):fmtDate(p.created_at);
+    var html='<article class="poll closed" data-poll="'+esc(p.id)+'">';
+    html+='<div class="poll-head"><h3>'+esc(p.question)+'</h3><div class="poll-meta">'+
+      '<span>Asked on '+esc(r.source||"the group chat")+' · '+esc(whenTxt)+'</span>'+
+      '<span>'+(r.multi?"Pick one or more":"Pick one")+'</span>'+
+      '<span class="pill q">Closed</span></div></div>';
+    html+='<div class="opts">';
+    p.options.forEach(function(o,i){
+      var n=counts[i]||0, pct=total?Math.round(n*100/total):0, names=(r.voters&&r.voters[i])?r.voters[i].join(", "):"";
+      html+='<div class="opt'+(n>0&&n===max?" win":"")+'"><span class="bar" style="width:'+pct+'%"></span><span class="box"></span><span class="lbl">'+esc(o)+'</span>'+
+        '<span class="cnt">'+n+' · '+pct+'%</span>'+(names?'<span class="voters">'+esc(names)+'</span>':'')+'</div>';
+    });
+    html+='</div><div class="poll-foot"><span>'+total+(total===1?" person":" people")+' voted'+(r.multi?" · percentages are of everyone who voted":"")+'</span><span class="spacer"></span>';
+    if(owner) html+='<button class="btn danger sm" data-del="'+esc(p.id)+'">Delete</button>';
+    html+='</div></article>';
+    return html;
+  }
+
   /* ----- interactions ----- */
   function act(pr){ pr.then(function(){ setNotice(""); refresh(); }).catch(fail); }
   document.addEventListener("click",function(e){
@@ -2717,6 +2772,23 @@ var Polls=(function(){
     var c=$("code-input").value.trim();
     if(c.length<4){ say("code-msg","Make it at least four characters."); return; }
     store.setCode(c).then(function(){ say("code-msg","Saved. Send it to the group.",true); }).catch(function(e){ say("code-msg",msgOf(e)); });
+  });
+
+  $("rp-save").addEventListener("click",function(){
+    var q=$("rp-q").value.trim(), lines=$("rp-opts").value.split("\n").map(function(l){return l.trim();}).filter(Boolean);
+    if(!q){ say("rp-msg","Type the question."); return; }
+    if(lines.length<2||lines.length>12){ say("rp-msg","Two to twelve choices, one per line."); return; }
+    var options=[], counts=[], voters=[];
+    lines.forEach(function(l){
+      var parts=l.split("|").map(function(x){return x.trim();});
+      var names=(parts[2]||"").split(",").map(function(x){return x.trim();}).filter(Boolean);
+      options.push(parts[0]); counts.push(parseInt(parts[1],10)||names.length||0); voters.push(names);
+    });
+    var voted=parseInt($("rp-voted").value,10)||Math.max.apply(null,counts), date=$("rp-date").value||new Date().toISOString().slice(0,10);
+    var p={question:q,options:options,asked_on:date,created_at:date+"T12:00:00Z",results:{multi:$("rp-multi").checked,source:$("rp-source").value.trim()||"the group chat",voted:voted,counts:counts,voters:voters}};
+    $("rp-save").disabled=true; say("rp-msg","Saving…",true);
+    store.recordPoll(p).then(function(){ $("rp-save").disabled=false; $("rp-q").value=""; $("rp-opts").value=""; $("rp-voted").value=""; say("rp-msg","Added. It's in the Poll History now.",true); refresh(); })
+      .catch(function(e){ $("rp-save").disabled=false; say("rp-msg",msgOf(e)); });
   });
 
   function onView(v){

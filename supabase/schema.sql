@@ -127,6 +127,29 @@ create table if not exists public.votes (
   primary key (poll_id, user_id)
 );
 
+-- Polls that happened somewhere else (WhatsApp, the group chat) and were
+-- recorded afterwards by the commissioner: no vote rows, just the result.
+-- results = {"counts":[..], "voters":[["Sean","Ben"],..], "voted":7, "multi":true, "source":"WhatsApp"}
+alter table public.polls add column if not exists imported boolean not null default false;
+alter table public.polls add column if not exists asked_on date;
+alter table public.polls add column if not exists results jsonb;
+
+-- The draft-time poll from the group chat, 10 Sep 2026 (owned by the commissioner's login).
+insert into public.polls (question, options, visibility, closed, created_by, created_by_email, created_at, imported, asked_on, results)
+select 'Draft Time (Oct 18)',
+       array['10 am PST (1pm EST)','12pm PST (3pm EST)','2pm PST (5pm EST)','4pm PST (7 PM EST)','6pm PST (9 PM EST)','8pm PST (11 PM EST)'],
+       'named', true, u.id, u.email, '2026-09-10 09:23:00-07', true, '2026-09-10',
+       '{"multi":true,"source":"WhatsApp","voted":7,"counts":[5,7,6,6,3,2],
+         "voters":[["Chris","David","Anush","Ben","Gonzo"],
+                   ["Sean","Chris","David","Anush","Ben","Gonzo","Kabir"],
+                   ["Sean","David","Anush","Ben","Gonzo","Kabir"],
+                   ["Sean","David","Anush","Ben","Gonzo","Kabir"],
+                   ["Anush","Ben","Gonzo"],
+                   ["Anush","Ben"]]}'::jsonb
+from auth.users u
+where lower(u.email) = (select lower(commissioner_email) from public.league_settings where id = 1)
+  and not exists (select 1 from public.polls where imported and question = 'Draft Time (Oct 18)');
+
 create or replace function public.poll_is_open(p public.polls)
 returns boolean language sql stable as $$
   select not p.closed and (p.closes_at is null or p.closes_at > now());
