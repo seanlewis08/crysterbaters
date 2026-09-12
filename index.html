@@ -885,10 +885,10 @@ footer p + p{margin-top:11px}
     <section>
       <div class="sec-head"><h2>Final Standings</h2><span class="eyebrow cool">2025–26</span></div>
       <div class="rulebar"></div>
-      <p class="lede">David had the best record in the league and lost the final. Sean went 12–6–1 and won it. Eight of ten made the playoffs.</p>
+      <p class="lede">Regular-season standings — the order that sets the draft, worst record picking first. Tyler and Chris both went 9–10 and Tyler holds the tiebreak on head-to-head. David had the best record and lost the final; Sean went 12–6–1 and won it. Eight of ten made the playoffs.</p>
       <div class="tablewrap" style="margin-top:18px">
         <table>
-          <thead><tr><th class="num">#</th><th>Team</th><th>Manager</th><th class="num">Record</th><th class="num">Pct</th><th class="num">FAB</th><th class="num">Moves</th></tr></thead>
+          <thead><tr><th class="num">#</th><th>Team</th><th>Manager</th><th class="num">Record</th><th class="num">Pct</th><th class="num">Playoffs</th><th class="num">FAB</th><th class="num">Moves</th><th class="num">2026 pick</th></tr></thead>
           <tbody id="standings"></tbody>
         </table>
       </div>
@@ -905,7 +905,7 @@ footer p + p{margin-top:11px}
     <section>
       <div class="sec-head"><h2>Pre-Draft Board</h2><span class="eyebrow cool">2026–27 · 12 rounds · snake</span></div>
       <div class="rulebar"></div>
-      <p class="lede">Order is loaded from last season's finish. Change it up top, log any pick swaps, and every keeper drops into the pick it costs — so you can see what's gone before anyone picks. Swapped picks show in blue with who they came from; every team still drafts twelve.</p>
+      <p class="lede">Order is the reverse of last season's regular-season standings (ties broken head-to-head). Change it up top, log any pick swaps, and every keeper drops into the pick it costs — so you can see what's gone before anyone picks. Swapped picks show in blue with who they came from; every team still drafts twelve.</p>
 
       <div class="panel" style="margin-top:20px;overflow:hidden">
         <div class="orderset" id="orderset"></div>
@@ -1505,7 +1505,7 @@ footer p + p{margin-top:11px}
             <tr><td class="name">Scoring</td><td class="sub">Head-to-head, one win per week</td></tr>
             <tr><td class="name">Categories</td><td class="sub">FG%, FT%, 3PTM, 3PT%, PTS, REB, AST, ST, BLK, A/T, DD — eleven</td></tr>
             <tr><td class="name">Roster</td><td class="sub">G, G, F, F, C, Util, six bench, one IL</td></tr>
-            <tr><td class="name">Draft</td><td class="sub">Offline, twelve rounds, order reverse of last season's finish · day and time picked on the <button class="back" data-go="sched" style="margin:0;padding:0;font-size:inherit;color:var(--amber)">Draft Day page</button></td></tr>
+            <tr><td class="name">Draft</td><td class="sub">Offline, twelve rounds, snake · order is the reverse of the regular-season standings · day and time picked on the <button class="back" data-go="sched" style="margin:0;padding:0;font-size:inherit;color:var(--amber)">Draft Day page</button></td></tr>
             <tr><td class="name">Keeper eligibility</td><td class="sub">Decided by the pre-playoff roster lock, not a date in October</td></tr>
             <tr><td class="name">Yahoo keeper deadline</td><td class="sub">Mon Oct 19, 2026 — only when Yahoo's tool wants them entered</td></tr>
             <tr><td class="name">Waivers</td><td class="sub">FAB, continual rolling tiebreak, one-day waiver time</td></tr>
@@ -1524,6 +1524,7 @@ footer p + p{margin-top:11px}
       <div class="sec-head"><h2>League Policies</h2><span class="eyebrow cool">Decided in the group chat, recorded here</span></div>
       <div class="rulebar"></div>
       <div class="rules" style="margin-top:16px">
+        <div class="rule"><h3>Draft order</h3><p>Reverse order of the regular-season standings — the worst record picks first, the best record picks last — regardless of what happened in the playoffs. Ties go to the head-to-head result. Snake from there.</p></div>
         <div class="rule"><h3>Over the games cap</h3><p>Caught the same day, the extra player comes out — your opponent picks which, or the commissioner pulls the best one. Not caught in time and it's an automatic loss; only Yahoo support can change the record after the fact.</p></div>
         <div class="rule"><h3>Short weeks</h3><p>The cap moves with the NBA schedule. NBA Cup weeks, election week and All-Star week get their own number, set by the commissioner and put to a vote when it's close.</p></div>
         <div class="rule"><h3>Last place</h3><p>Makes 100 free throws inside an hour, on one continuous video for the group. <span class="sub">Voted Oct 2025.</span></p></div>
@@ -1648,18 +1649,20 @@ var T = [
    costs:{"Jalen Johnson":9}}
 ];
 
-/* 2025-26 final standings, read from Yahoo. Rank = final playoff finish. */
+/* 2025-26 standings, read from Yahoo. fin = playoff finish; rs = regular-season
+   rank by record, which is what sets the draft order (worst record picks first).
+   Tyler and Chris both went 9-10-0 — Tyler holds the tiebreak on head-to-head. */
 var ST={
-  jalenba:{fin:1, rec:"12-6-1", pct:".658", faab:0,   moves:35, po:true},
-  rollins:{fin:2, rec:"14-5-0", pct:".737", faab:100, moves:80, po:true},
-  george: {fin:3, rec:"11-7-1", pct:".605", faab:99,  moves:58, po:true},
-  claxton:{fin:4, rec:"11-8-0", pct:".579", faab:14,  moves:40, po:true},
-  giannis:{fin:5, rec:"7-12-0", pct:".368", faab:5,   moves:20, po:true},
-  rucker: {fin:6, rec:"9-10-0", pct:".474", faab:100, moves:15, po:true},
-  ysga:   {fin:7, rec:"9-10-0", pct:".474", faab:100, moves:19, po:true},
-  freaky: {fin:8, rec:"9-9-1",  pct:".500", faab:95,  moves:20, po:true},
-  knuepp: {fin:9, rec:"6-13-0", pct:".316", faab:100, moves:59, po:false},
-  ant:    {fin:10,rec:"5-13-1", pct:".289", faab:99,  moves:18, po:false}
+  jalenba:{fin:1, rs:2, rec:"12-6-1", pct:".658", faab:0,   moves:35, po:true},
+  rollins:{fin:2, rs:1, rec:"14-5-0", pct:".737", faab:100, moves:80, po:true},
+  george: {fin:3, rs:3, rec:"11-7-1", pct:".605", faab:99,  moves:58, po:true},
+  claxton:{fin:4, rs:4, rec:"11-8-0", pct:".579", faab:14,  moves:40, po:true},
+  giannis:{fin:5, rs:8, rec:"7-12-0", pct:".368", faab:5,   moves:20, po:true},
+  rucker: {fin:6, rs:6, rec:"9-10-0", pct:".474", faab:100, moves:15, po:true, tb:"H2H over Chris"},
+  ysga:   {fin:7, rs:7, rec:"9-10-0", pct:".474", faab:100, moves:19, po:true},
+  freaky: {fin:8, rs:5, rec:"9-9-1",  pct:".500", faab:95,  moves:20, po:true},
+  knuepp: {fin:9, rs:9, rec:"6-13-0", pct:".316", faab:100, moves:59, po:false},
+  ant:    {fin:10,rs:10,rec:"5-13-1", pct:".289", faab:99,  moves:18, po:false}
 };
 
 var HISTORY = [
@@ -1807,19 +1810,21 @@ document.getElementById("watch").innerHTML=K.map(function(k){
 
 /* ---------- standings ---------- */
 document.getElementById("standings").innerHTML=T.slice().sort(function(a,b){
-  return ST[a.id].fin-ST[b.id].fin;
+  return ST[a.id].rs-ST[b.id].rs;
 }).map(function(t){
   var s=ST[t.id];
   var badge = s.fin===1?' <span class="pill warn">Champion</span>'
-            : (s.pct===".737"?' <span class="pill ok">Best record</span>':"");
+            : (s.rs===1?' <span class="pill ok">Best record</span>':"");
   return '<tr class="rowlink" data-team="'+t.id+'">'+
-    '<td class="num"><span class="rank'+(s.fin===1?" gold":"")+(s.po&&s.fin!==1?" po":"")+'">'+s.fin+'</span></td>'+
-    '<td class="name">'+esc(t.name)+badge+'</td>'+
+    '<td class="num"><span class="rank'+(s.rs===1?" gold":"")+(s.po?" po":"")+'">'+s.rs+'</span></td>'+
+    '<td class="name">'+esc(t.name)+badge+(s.tb?' <span class="sub" style="font-size:11px">'+esc(s.tb)+'</span>':"")+'</td>'+
     '<td class="mgr">'+esc(t.short)+'</td>'+
     '<td class="num">'+s.rec+'</td>'+
     '<td class="num">'+s.pct+'</td>'+
+    '<td class="num">'+(s.po?ordinal(s.fin):"—")+'</td>'+
     '<td class="num">$'+s.faab+'</td>'+
-    '<td class="num">'+s.moves+'</td></tr>';
+    '<td class="num">'+s.moves+'</td>'+
+    '<td class="num">'+(T.length+1-s.rs)+'</td></tr>';
 }).join("");
 
 /* ---------- team cards ---------- */
@@ -1969,10 +1974,10 @@ dEl.addEventListener("change",updateCalc); hEl.addEventListener("change",updateC
 
 /* ---------- draft board ---------- */
 var ROUNDS=12, SLOTS=10;
-var DEFAULT_ORDER=Object.keys(ST).sort(function(a,b){return ST[b].fin-ST[a].fin;});
+var DEFAULT_ORDER=Object.keys(ST).sort(function(a,b){return ST[b].rs-ST[a].rs;});   /* worst regular-season record picks first */
 var order=DEFAULT_ORDER.slice();
 try{
-  var saved=localStorage.getItem("cb-draft-order-v3");
+  var saved=localStorage.getItem("cb-draft-order-v4");
   if(saved){var p=JSON.parse(saved); if(Array.isArray(p)&&p.length===SLOTS) order=p;}
 }catch(e){}
 
@@ -2120,7 +2125,7 @@ document.addEventListener("change",function(e){
   var sel=e.target.closest("[data-slot]");
   if(!sel) return;
   order[parseInt(sel.dataset.slot,10)]=sel.value;
-  try{localStorage.setItem("cb-draft-order-v3",JSON.stringify(order));}catch(err){}
+  try{localStorage.setItem("cb-draft-order-v4",JSON.stringify(order));}catch(err){}
   renderBoard();
 });
 renderOrderControls();
