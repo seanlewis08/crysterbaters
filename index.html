@@ -2597,25 +2597,34 @@ var Polls=(function(){
           .then(function(rs){ chk(rs[0]); chk(rs[1]); return {items:rs[0].data||[],votes:rs[1].data||[]}; });
       },
       agendaVote:function(id,on){ return client.rpc("agenda_vote",{p_item:id,p_on:on}).then(chk); },
+      /* `current` arrived in a later schema; until Sean re-runs it, fall back to newest-first */
+      noCurrent:false,
       schedLoad:function(){
-        return client.from("avail_events").select("*").order("current",{ascending:false}).order("created_at",{ascending:false}).limit(1).then(function(r){
+        var self=this;
+        function q(){ var b=client.from("avail_events").select("*"); if(!self.noCurrent) b=b.order("current",{ascending:false}); return b.order("created_at",{ascending:false}).limit(1); }
+        return q().then(function(r){
+          if(r.error&&!self.noCurrent&&/current/.test(r.error.message||"")){ self.noCurrent=true; return q(); }
+          return r;
+        }).then(function(r){
           chk(r); var ev=(r.data||[])[0]||null; if(!ev) return {event:null,marks:[]};
           return client.from("avail_marks").select("*").eq("event_id",ev.id).then(function(m){ chk(m); return {event:ev,marks:m.data||[]}; });
         });
       },
       schedSave:function(eid,slots){ return client.from("avail_marks").upsert({event_id:eid,user_id:me.id,slots:slots},{onConflict:"event_id,user_id"}).then(chk); },
       schedCreate:function(e){
+        var self=this;
         return client.from("avail_events").update({status:"closed"}).eq("status","open").then(chk)
-          .then(function(){ return client.from("avail_events").update({current:false}).eq("current",true).then(chk); })
-          .then(function(){ return client.from("avail_events").insert({title:e.title,dates:e.dates,start_hour:e.start_hour,end_hour:e.end_hour,tz:e.tz,current:true}).then(chk); });
+          .then(function(){ if(self.noCurrent) return; return client.from("avail_events").update({current:false}).eq("current",true).then(chk); })
+          .then(function(){ var row={title:e.title,dates:e.dates,start_hour:e.start_hour,end_hour:e.end_hour,tz:e.tz}; if(!self.noCurrent) row.current=true; return client.from("avail_events").insert(row).then(chk); });
       },
       schedList:function(){
-        return client.from("avail_events").select("id,title,dates,status,chosen,current,created_at").order("created_at",{ascending:false}).then(function(r){
+        return client.from("avail_events").select(this.noCurrent?"id,title,dates,status,chosen,created_at":"id,title,dates,status,chosen,current,created_at").order("created_at",{ascending:false}).then(function(r){
           chk(r); var evs=r.data||[];
           return client.from("avail_marks").select("event_id,slots").then(function(m){ chk(m); var n={}; (m.data||[]).forEach(function(x){ if((x.slots||[]).length) n[x.event_id]=(n[x.event_id]||0)+1; }); evs.forEach(function(e){ e.marked=n[e.id]||0; }); return evs; });
         });
       },
       schedSwitch:function(eid){
+        if(this.noCurrent) return Promise.reject(new Error("Run the latest supabase/schema.sql first — this needs the new `current` column."));
         return client.from("avail_events").update({current:false}).neq("id",eid).then(chk)
           .then(function(){ return client.from("avail_events").update({current:true}).eq("id",eid).then(chk); });
       },
