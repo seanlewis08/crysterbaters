@@ -630,6 +630,8 @@ td input.capin:focus-visible{outline:1px solid var(--amber);border-color:var(--a
 
 .plotfoot{display:flex;gap:14px;align-items:baseline;flex-wrap:wrap;margin-top:10px;font-size:12.5px;color:var(--muted)}
 .plotfoot .spacer{flex:1}
+.po-chk{display:flex;align-items:center;gap:7px;padding:8px 0;font-size:13.5px;color:var(--ink);white-space:nowrap;cursor:pointer}
+.po-chk input{width:14px;height:14px;margin:0;accent-color:var(--amber);cursor:pointer}
 
 .pp{background:var(--surface);border:1px solid var(--line);border-radius:5px;box-shadow:var(--shadow);display:flex;flex-direction:column;overflow:hidden}
 .pp-top{padding:11px 12px 10px;border-bottom:1px solid var(--line)}
@@ -1443,6 +1445,7 @@ footer p + p{margin-top:11px}
         <div class="field" style="flex:0 1 96px"><label for="po-minmin">Min MPG</label><input id="po-minmin" type="number" min="0" step="1" inputmode="numeric" placeholder="0"></div>
         <div class="field"><label for="po-mode">Stats</label><select id="po-mode"><option value="pg">Per game</option><option value="tot">Totals</option></select></div>
         <div class="field"><label for="po-season">Season</label><select id="po-season"></select></div>
+        <div class="field" style="flex:0 0 auto"><label>Axes</label><label class="po-chk"><input type="checkbox" id="po-zero"> Centre on zero</label></div>
         <div class="field" style="flex:0 0 auto;justify-content:flex-end"><button class="btn quiet sm" id="po-clear">Clear</button></div>
       </div>
 
@@ -1450,6 +1453,7 @@ footer p + p{margin-top:11px}
         <div>
           <div class="plotbox" id="po-box"><div class="plot-empty" id="po-empty">Loading players…</div><div class="plot-tip" id="po-tip" aria-hidden="true"></div></div>
           <div class="plotfoot">
+            <button class="btn quiet sm" id="po-copy">Copy image</button>
             <span id="po-count"></span>
             <span id="po-corr" class="sub"></span>
             <span class="spacer"></span>
@@ -3776,7 +3780,7 @@ window.Players=Players;
 /* ---------- plot: any two stats, every player a dot ---------- */
 var Plot=(function(){
   var $=function(id){return document.getElementById(id);};
-  var f={x:"min",y:"fpts",owner:"",mingp:0,minmin:0,mode:"pg",q:"",sort:"y"};
+  var f={x:"min",y:"fpts",owner:"",mingp:0,minmin:0,mode:"pg",q:"",sort:"y",zero:false};
   var sel={}, pts=[], geo=[], hov=-1, started=false, dirty=true, W=0, H=0;
 
   /* ----- the numbers you can put on an axis ----- */
@@ -3839,6 +3843,14 @@ var Plot=(function(){
     pts.forEach(function(p){ var a=p.x-sx,b=p.y-sy; num+=a*b; dx+=a*a; dy+=b*b; });
     return (dx&&dy)?num/Math.sqrt(dx*dy):null;
   }
+  /* same rounding, but forced symmetric so 0 lands in the middle */
+  function symm(lo,hi,want){
+    var m=Math.max(Math.abs(lo),Math.abs(hi))||1, t=nice(-m,m,want);
+    var step=t.ticks.length>1?(t.ticks[1]-t.ticks[0]):m;
+    var k=Math.max(1,Math.ceil(m/step-1e-9)), a=-k*step, out=[];
+    for(var i=0;i<=2*k;i++){ var v=a+i*step; out.push(Math.abs(v)<step*1e-6?0:v); }
+    return {lo:a,hi:k*step,ticks:out};
+  }
   /* round axis bounds out to human numbers */
   function nice(lo,hi,want){
     if(!isFinite(lo)||!isFinite(hi)) { lo=0; hi=1; }
@@ -3864,7 +3876,7 @@ var Plot=(function(){
     var PL=62,PR=18,PT=16,PB=46, iw=W-PL-PR, ih=H-PT-PB;
     var xlo=Infinity,xhi=-Infinity,ylo=Infinity,yhi=-Infinity;
     pts.forEach(function(p){ if(p.x<xlo)xlo=p.x; if(p.x>xhi)xhi=p.x; if(p.y<ylo)ylo=p.y; if(p.y>yhi)yhi=p.y; });
-    var TX=nice(xlo,xhi,6), TY=nice(ylo,yhi,5);
+    var TX=f.zero?symm(xlo,xhi,6):nice(xlo,xhi,6), TY=f.zero?symm(ylo,yhi,5):nice(ylo,yhi,5);
     function sx(v){ return PL+(v-TX.lo)/(TX.hi-TX.lo)*iw; }
     function sy(v){ return PT+ih-(v-TY.lo)/(TY.hi-TY.lo)*ih; }
 
@@ -3873,13 +3885,13 @@ var Plot=(function(){
     TX.ticks.forEach(function(v){ var x=sx(v).toFixed(1); o.push('<line class="grid" x1="'+x+'" y1="'+PT+'" x2="'+x+'" y2="'+(PT+ih)+'"/>'); });
     TY.ticks.forEach(function(v){ var y=sy(v).toFixed(1); o.push('<line class="grid" x1="'+PL+'" y1="'+y+'" x2="'+(PL+iw)+'" y2="'+y+'"/>'); });
 
-    /* medians cut the field into four corners */
-    var mxv=median(pts.map(function(p){return p.x;})), myv=median(pts.map(function(p){return p.y;}));
+    /* reference lines cut the field into four corners: the medians, or zero when centred */
+    var mxv=f.zero?0:median(pts.map(function(p){return p.x;})), myv=f.zero?0:median(pts.map(function(p){return p.y;}));
     var mxx=sx(mxv), myy=sy(myv);
     o.push('<line class="med" x1="'+mxx.toFixed(1)+'" y1="'+PT+'" x2="'+mxx.toFixed(1)+'" y2="'+(PT+ih)+'"/>');
     o.push('<line class="med" x1="'+PL+'" y1="'+myy.toFixed(1)+'" x2="'+(PL+iw)+'" y2="'+myy.toFixed(1)+'"/>');
-    o.push('<text class="medtag" x="'+(mxx+4).toFixed(1)+'" y="'+(PT+10)+'">median '+esc(mx.ax(mxv))+'</text>');
-    o.push('<text class="medtag" x="'+(PL+iw-4)+'" y="'+(myy-5).toFixed(1)+'" text-anchor="end">median '+esc(my.ax(myv))+'</text>');
+    o.push('<text class="medtag" x="'+(mxx+4).toFixed(1)+'" y="'+(PT+10)+'">'+(f.zero?"zero":"median "+esc(mx.ax(mxv)))+'</text>');
+    o.push('<text class="medtag" x="'+(PL+iw-4)+'" y="'+(myy-5).toFixed(1)+'" text-anchor="end">'+(f.zero?"zero":"median "+esc(my.ax(myv)))+'</text>');
 
     /* dots: everyone recessive, the picked ones in the accent on top */
     var on=[];
@@ -3990,6 +4002,89 @@ var Plot=(function(){
     draw(); panel();
   }
 
+  /* ----- copy the chart as a picture ----- */
+  var XCSS=[
+    '.grid{stroke:#DACAA9;stroke-width:1}',
+    '.axis{stroke:#BFA97F;stroke-width:1}',
+    '.med{stroke:#BFA97F;stroke-width:1;opacity:.85}',
+    '.tick{font-family:"IBM Plex Mono",Menlo,monospace;font-size:10px;fill:#9A8967}',
+    '.medtag{font-family:"IBM Plex Mono",Menlo,monospace;font-size:9px;letter-spacing:.12em;fill:#BFA97F;text-transform:uppercase}',
+    '.axname{font-family:"Saira Condensed","Arial Narrow",Arial,sans-serif;font-size:12.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;fill:#6B5B42}',
+    '.dot{fill:#AD9A74;fill-opacity:.66}',
+    '.dot.on{fill:#C1571A;fill-opacity:1;stroke:#FDFAF4;stroke-width:2}',
+    '.lbl{font-family:"Saira Condensed","Arial Narrow",Arial,sans-serif;font-size:12px;font-weight:600;fill:#22190E;paint-order:stroke;stroke:#FDFAF4;stroke-width:3.5px;stroke-linejoin:round}',
+    '.xt{font-family:"Saira Condensed","Arial Narrow",Arial,sans-serif;font-size:19px;font-weight:800;fill:#22190E}',
+    '.xs{font-family:"IBM Plex Mono",Menlo,monospace;font-size:10px;letter-spacing:.1em;fill:#6B5B42}',
+    '.xf{font-family:"IBM Plex Mono",Menlo,monospace;font-size:9.5px;letter-spacing:.1em;fill:#9A8967}'
+  ].join("");
+  function subline(){
+    var bits=[(window.Players?Players.seasonLabel():"")||"", f.mode==="tot"?"season totals":"per game"];
+    if(f.mingp>0) bits.push("min "+f.mingp+" GP");
+    if(f.minmin>0) bits.push("min "+f.minmin+" MPG");
+    var os=$("po-owner"); if(f.owner&&os.selectedIndex>0) bits.push(os.options[os.selectedIndex].text.replace(/ —.*$/,""));
+    if(f.zero) bits.push("centred on zero");
+    return bits.filter(Boolean).join("  ·  ").toUpperCase();
+  }
+  /* the page's SVG leans on the stylesheet, so the copy gets its own styles, a
+     background and a title — otherwise it pastes as transparent unstyled text */
+  function exportSvg(){
+    var live=document.querySelector("#po-box svg"); if(!live||!pts.length) return null;
+    var clone=live.cloneNode(true), ring=clone.querySelector("#po-ring"); if(ring) ring.parentNode.removeChild(ring);
+    var band=52, foot=26, w=W, h=H+band+foot;
+    var mx=met(f.x), my=met(f.y), title=(axname(my)+" vs "+axname(mx)).toUpperCase();
+    var right=pts.length+" PLAYERS"+(pearson()==null?"":"  ·  R = "+(pearson()>0?"+":"")+pearson().toFixed(2));
+    return '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="'+w+'" height="'+h+'" viewBox="0 0 '+w+' '+h+'">'+
+      '<style>'+XCSS+'</style>'+
+      '<rect width="'+w+'" height="'+h+'" fill="#FDFAF4"/>'+
+      '<text class="xt" x="18" y="27">'+esc(title)+'</text>'+
+      '<text class="xs" x="18" y="43">'+esc(subline())+'</text>'+
+      '<line class="grid" x1="18" y1="'+(band-6)+'" x2="'+(w-18)+'" y2="'+(band-6)+'"/>'+
+      '<g transform="translate(0,'+band+')">'+clone.innerHTML+'</g>'+
+      '<text class="xf" x="18" y="'+(h-9)+'">CRYSTERBATERS.COM</text>'+
+      '<text class="xf" x="'+(w-18)+'" y="'+(h-9)+'" text-anchor="end">'+esc(right)+'</text>'+
+      '</svg>';
+  }
+  function pngBlob(){
+    return new Promise(function(res,rej){
+      var svg=exportSvg(); if(!svg){ rej(new Error("nothing to copy")); return; }
+      var m=svg.match(/width="(\d+)" height="(\d+)"/), w=+m[1], h=+m[2], k=2;
+      var img=new Image();
+      img.onload=function(){
+        var c=document.createElement("canvas"); c.width=w*k; c.height=h*k;
+        var g=c.getContext("2d"); g.fillStyle="#FDFAF4"; g.fillRect(0,0,c.width,c.height);
+        g.drawImage(img,0,0,c.width,c.height);
+        c.toBlob(function(b){ b?res(b):rej(new Error("no blob")); },"image/png");
+      };
+      img.onerror=function(){ rej(new Error("render failed")); };
+      img.src="data:image/svg+xml;charset=utf-8,"+encodeURIComponent(svg);
+    });
+  }
+  function saveBlob(b){
+    var u=URL.createObjectURL(b), a=document.createElement("a");
+    a.href=u; a.download="crysterbaters-"+f.y+"-vs-"+f.x+".png";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(u); },4000);
+  }
+  function said(msg){
+    var b=$("po-copy"); if(!b) return;
+    clearTimeout(b._t); b.textContent=msg;
+    b._t=setTimeout(function(){ b.textContent="Copy image"; },1900);
+  }
+  function copyChart(){
+    if(!pts.length){ said("Nothing to copy"); return; }
+    var p=pngBlob();
+    /* ClipboardItem has to be constructed inside the click for Safari */
+    try{
+      if(navigator.clipboard&&navigator.clipboard.write&&window.ClipboardItem){
+        navigator.clipboard.write([new ClipboardItem({"image/png":p})])
+          .then(function(){ said("Copied ✓"); })
+          .catch(function(){ p.then(function(b){ saveBlob(b); said("Downloaded ✓"); }).catch(function(){ said("Couldn't copy"); }); });
+        return;
+      }
+    }catch(e){}
+    p.then(function(b){ saveBlob(b); said("Downloaded ✓"); }).catch(function(){ said("Couldn't copy"); });
+  }
+
   /* ----- wiring ----- */
   function refresh(){ collect(); draw(); panel(); meta(); }
   function meta(){
@@ -4011,6 +4106,8 @@ var Plot=(function(){
     var os=$("po-owner"); T.forEach(function(t){ var o=document.createElement("option"); o.value=t.id; o.textContent=t.short+" — "+t.name; os.appendChild(o); });
 
     ["x","y","owner","mode"].forEach(function(k){ $("po-"+k).addEventListener("change",function(){ f[k]=this.value; refresh(); }); });
+    $("po-zero").addEventListener("change",function(){ f.zero=this.checked; draw(); });
+    $("po-copy").addEventListener("click",copyChart);
     ["mingp","minmin"].forEach(function(k){ var el=$("po-"+k); function upd(){ var v=Math.max(0,parseFloat(el.value)||0); if(v===f[k]) return; f[k]=v; refresh(); }
       el.addEventListener("input",function(){ clearTimeout(t1); t1=setTimeout(upd,140); }); el.addEventListener("change",upd); });
     $("po-season").addEventListener("change",function(){ if(window.Players) Players.setSeason(+this.value); });
