@@ -356,7 +356,7 @@ tr.keeprow td{background:var(--amber-glow)!important;border-bottom-color:var(--a
 /* ---------- detail ---------- */
 .back{background:none;border:0;cursor:pointer;font-family:var(--mono);font-size:10.5px;letter-spacing:.15em;text-transform:uppercase;color:var(--dim);padding:8px 0;margin-top:26px}
 .back:hover{color:var(--amber)}
-.hubcard[hidden],.back[hidden],nav button[hidden]{display:none}
+.hubcard[hidden],.back[hidden],.btn[hidden],nav button[hidden]{display:none}
 .detail-head{display:flex;gap:18px;align-items:center;flex-wrap:wrap;margin-top:8px;padding-bottom:22px;border-bottom:1px solid var(--amber-dim)}
 .detail-head .avatar{width:56px;height:56px;font-size:20px}
 .detail-head h2{font-size:clamp(28px,5vw,44px);font-weight:800;text-transform:uppercase;letter-spacing:.015em}
@@ -1186,7 +1186,7 @@ footer p + p{margin-top:11px}
         <div id="sc-admin" hidden>
           <div class="sec-head" style="margin-top:34px"><h2 style="font-size:24px">Set up the poll</h2><span class="eyebrow cool">Commissioner only</span></div>
           <div class="rulebar"></div>
-          <p class="lede">Pick the candidate dates and the hours to offer, in your time zone. Starting a new poll closes the current one and clears everyone's marks for it.</p>
+          <p class="lede">Pick the candidate dates and the hours to offer, in your time zone. Starting a new poll makes it the one everybody sees; the old poll and everyone's marks on it are kept, and you can switch back below.</p>
           <div class="calc newpoll" style="margin-top:16px">
             <div class="calc-in">
               <div class="field"><label for="se-title">What for</label><input id="se-title" maxlength="80" placeholder="2026 Draft"></div>
@@ -1197,8 +1197,18 @@ footer p + p{margin-top:11px}
             </div>
             <div class="calc-out">
               <button class="btn" id="se-save">Start a new poll</button>
+              <button class="btn quiet" id="se-cancel" hidden>Cancel</button>
               <button class="btn quiet" id="se-reopen" hidden>Reopen the poll</button>
               <span id="se-msg" style="font-size:13.5px;color:var(--muted)"></span>
+            </div>
+            <div id="se-past-wrap" style="margin-top:18px;padding-top:16px;border-top:1px solid var(--line)" hidden>
+              <div class="eyebrow">All polls</div>
+              <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:8px">
+                <select id="se-past" style="max-width:100%"></select>
+                <button class="btn quiet sm" id="se-switch">Show this poll</button>
+                <button class="btn danger sm" id="se-del" hidden>Delete this empty poll</button>
+                <span id="se-past-msg" style="font-size:13px;color:var(--muted)"></span>
+              </div>
             </div>
             <label style="display:flex;gap:10px;align-items:center;margin-top:16px;font-size:13.5px;cursor:pointer"><input type="checkbox" id="se-show" checked> <span><b>Show the Draft Day tab</b> — untick once the season starts to hide it from the nav and the home page (this page still opens from the Manager page or at <code>#sched</code>).</span></label>
           </div>
@@ -2458,9 +2468,12 @@ var Polls=(function(){
         db.votes=db.votes.filter(function(v){return v.poll_id!==pid;}); save(); return Promise.resolve();
       },
       agendaLoad:function(){ return Promise.resolve({items:db.agenda.slice(),votes:db.agendaVotes.slice()}); },
-      schedLoad:function(){ var ev=db.sched.events.slice().sort(function(a,b){return a.created_at<b.created_at?1:-1;})[0]||null; return Promise.resolve({event:ev,marks:ev?db.sched.marks.filter(function(m){return m.event_id===ev.id;}):[]}); },
+      schedLoad:function(){ var ev=db.sched.events.slice().sort(function(a,b){ if(!!a.current!==!!b.current) return a.current?-1:1; return a.created_at<b.created_at?1:-1; })[0]||null; return Promise.resolve({event:ev,marks:ev?db.sched.marks.filter(function(m){return m.event_id===ev.id;}):[]}); },
       schedSave:function(eid,slots){ var m=db.sched.marks.filter(function(x){return x.event_id===eid&&x.user_id===db.me.id;})[0]; if(!m){ m={event_id:eid,user_id:db.me.id,voter_email:db.me.email}; db.sched.marks.push(m); } m.slots=slots.slice(); m.updated_at=new Date().toISOString(); save(); return Promise.resolve(); },
-      schedCreate:function(e){ if(!commish()) return Promise.reject(new Error("Commissioner only.")); db.sched.events.forEach(function(x){ x.status="closed"; }); db.sched.events.push({id:"ev"+Date.now(),title:e.title,dates:e.dates,start_hour:e.start_hour,end_hour:e.end_hour,tz:e.tz,status:"open",chosen:null,created_at:new Date().toISOString()}); save(); return Promise.resolve(); },
+      schedCreate:function(e){ if(!commish()) return Promise.reject(new Error("Commissioner only.")); db.sched.events.forEach(function(x){ if(x.status==="open") x.status="closed"; x.current=false; }); db.sched.events.push({id:"ev"+Date.now(),title:e.title,dates:e.dates,start_hour:e.start_hour,end_hour:e.end_hour,tz:e.tz,status:"open",chosen:null,current:true,created_at:new Date().toISOString()}); save(); return Promise.resolve(); },
+      schedList:function(){ return Promise.resolve(db.sched.events.slice().sort(function(a,b){return a.created_at<b.created_at?1:-1;}).map(function(e){ return {id:e.id,title:e.title,dates:e.dates,status:e.status,chosen:e.chosen,current:!!e.current,created_at:e.created_at,marked:db.sched.marks.filter(function(m){return m.event_id===e.id&&(m.slots||[]).length;}).length}; })); },
+      schedSwitch:function(eid){ if(!commish()) return Promise.reject(new Error("Commissioner only.")); db.sched.events.forEach(function(x){ x.current=(x.id===eid); }); save(); return Promise.resolve(); },
+      schedDelete:function(eid){ if(!commish()) return Promise.reject(new Error("Commissioner only.")); if(db.sched.marks.some(function(m){return m.event_id===eid&&(m.slots||[]).length;})) return Promise.reject(new Error("That poll has marks on it.")); db.sched.events=db.sched.events.filter(function(x){return x.id!==eid;}); db.sched.marks=db.sched.marks.filter(function(m){return m.event_id!==eid;}); save(); return Promise.resolve(); },
       schedChoose:function(eid,slot){ if(!commish()) return Promise.reject(new Error("Commissioner only.")); var ev=db.sched.events.filter(function(x){return x.id===eid;})[0]; if(ev){ ev.chosen=slot; ev.status=slot?"closed":"open"; } save(); return Promise.resolve(); },
       agendaVote:function(id,on){
         var p=myProf(); if(!p) return Promise.reject(new Error("Claim your team first."));
@@ -2585,7 +2598,7 @@ var Polls=(function(){
       },
       agendaVote:function(id,on){ return client.rpc("agenda_vote",{p_item:id,p_on:on}).then(chk); },
       schedLoad:function(){
-        return client.from("avail_events").select("*").order("created_at",{ascending:false}).limit(1).then(function(r){
+        return client.from("avail_events").select("*").order("current",{ascending:false}).order("created_at",{ascending:false}).limit(1).then(function(r){
           chk(r); var ev=(r.data||[])[0]||null; if(!ev) return {event:null,marks:[]};
           return client.from("avail_marks").select("*").eq("event_id",ev.id).then(function(m){ chk(m); return {event:ev,marks:m.data||[]}; });
         });
@@ -2593,8 +2606,20 @@ var Polls=(function(){
       schedSave:function(eid,slots){ return client.from("avail_marks").upsert({event_id:eid,user_id:me.id,slots:slots},{onConflict:"event_id,user_id"}).then(chk); },
       schedCreate:function(e){
         return client.from("avail_events").update({status:"closed"}).eq("status","open").then(chk)
-          .then(function(){ return client.from("avail_events").insert({title:e.title,dates:e.dates,start_hour:e.start_hour,end_hour:e.end_hour,tz:e.tz}).then(chk); });
+          .then(function(){ return client.from("avail_events").update({current:false}).eq("current",true).then(chk); })
+          .then(function(){ return client.from("avail_events").insert({title:e.title,dates:e.dates,start_hour:e.start_hour,end_hour:e.end_hour,tz:e.tz,current:true}).then(chk); });
       },
+      schedList:function(){
+        return client.from("avail_events").select("id,title,dates,status,chosen,current,created_at").order("created_at",{ascending:false}).then(function(r){
+          chk(r); var evs=r.data||[];
+          return client.from("avail_marks").select("event_id,slots").then(function(m){ chk(m); var n={}; (m.data||[]).forEach(function(x){ if((x.slots||[]).length) n[x.event_id]=(n[x.event_id]||0)+1; }); evs.forEach(function(e){ e.marked=n[e.id]||0; }); return evs; });
+        });
+      },
+      schedSwitch:function(eid){
+        return client.from("avail_events").update({current:false}).neq("id",eid).then(chk)
+          .then(function(){ return client.from("avail_events").update({current:true}).eq("id",eid).then(chk); });
+      },
+      schedDelete:function(eid){ return client.from("avail_events").delete().eq("id",eid).then(chk); },
       schedChoose:function(eid,slot){ return client.from("avail_events").update({chosen:slot,status:slot?"closed":"open"}).eq("id",eid).then(chk); },
       agendaAdd:function(a){ return client.from("agenda").insert({title:a.title,details:a.details||null}).then(chk); },
       agendaDecide:function(id,outcome){ return client.from("agenda").update(outcome==null?{status:"open",outcome:null,decided_at:null}:{status:"decided",outcome:outcome,decided_at:new Date().toISOString()}).eq("id",id).then(chk); },
@@ -2788,7 +2813,26 @@ var Polls=(function(){
     if(!member){ sched={event:null,marks:[]}; schedLoaded=false; if(hc) hc.textContent="—"; return; }
     if(schedLoaded&&!force&&!$("v-sched").classList.contains("on")) return;
     if(myDirty) return;   /* don't clobber unsaved painting */
-    store.schedLoad().then(function(d){ sched=d; schedLoaded=true; var mine=d.marks.filter(function(m){return m.user_id===me.id;})[0]; mySlots={}; (mine?mine.slots:[]).forEach(function(k){ mySlots[k]=1; }); renderSched(); }).catch(function(e){ scNotice(esc(msgOf(e)),"bad"); });
+    store.schedLoad().then(function(d){ sched=d; schedLoaded=true; var mine=d.marks.filter(function(m){return m.user_id===me.id;})[0]; mySlots={}; (mine?mine.slots:[]).forEach(function(k){ mySlots[k]=1; }); renderSched(); if(isCommish) loadPast(); }).catch(function(e){ scNotice(esc(msgOf(e)),"bad"); });
+  }
+  var pastList=[];
+  function loadPast(){ store.schedList().then(function(l){ pastList=l; renderPast(); }).catch(function(){}); }
+  function renderPast(){
+    var wrap=$("se-past-wrap"), sel=$("se-past"); if(!wrap) return;
+    wrap.hidden=!isCommish||pastList.length<2;
+    var cur=sched.event?sched.event.id:null, keep=sel.value;
+    sel.innerHTML=pastList.map(function(e){
+      var d=e.dates&&e.dates.length?e.dates[0]+(e.dates.length>1?" – "+e.dates[e.dates.length-1]:""):"";
+      var tag=e.id===cur?" · showing now":(e.chosen?" · set":(e.status==="closed"?" · closed":" · open"));
+      return '<option value="'+esc(e.id)+'">'+esc(e.title)+" · "+esc(d)+" · "+e.marked+" marked"+tag+'</option>';
+    }).join("");
+    if(keep&&pastList.some(function(e){return e.id===keep;})) sel.value=keep;
+    pastButtons();
+  }
+  function pastButtons(){
+    var sel=$("se-past"), e=pastList.filter(function(x){return x.id===sel.value;})[0], cur=sched.event?sched.event.id:null;
+    $("se-switch").hidden=!e||e.id===cur;
+    $("se-del").hidden=!e||e.id===cur||e.marked>0;
   }
   function counts(ev){
     var c={}, names={}, model=scGridModel(ev);
@@ -2882,7 +2926,26 @@ var Polls=(function(){
       var slot=c.dataset.scchoose||null;
       store.schedChoose(sched.event.id,slot).then(function(){ scNotice(""); schedRefresh(true); }).catch(function(err){ scNotice(esc(msgOf(err)),"bad"); });
     });
+    var armTimer=null;
+    function disarm(){ clearTimeout(armTimer); $("se-save").dataset.armed=""; $("se-save").textContent="Start a new poll"; $("se-cancel").hidden=true; }
+    $("se-cancel").addEventListener("click",function(){ disarm(); say("se-msg",""); });
+    $("se-past").addEventListener("change",pastButtons);
+    $("se-switch").addEventListener("click",function(){
+      var eid=$("se-past").value; if(!eid) return;
+      $("se-switch").disabled=true;
+      store.schedSwitch(eid).then(function(){ $("se-switch").disabled=false; say("se-past-msg","Switched.",true); mySlots={}; scView="me"; schedRefresh(true); }).catch(function(e){ $("se-switch").disabled=false; say("se-past-msg",msgOf(e)); });
+    });
+    $("se-del").addEventListener("click",function(){
+      var eid=$("se-past").value; if(!eid) return;
+      store.schedDelete(eid).then(function(){ say("se-past-msg","Deleted.",true); loadPast(); }).catch(function(e){ say("se-past-msg",msgOf(e)); });
+    });
     $("se-save").addEventListener("click",function(){
+      if(sched.event&&!$("se-save").dataset.armed){
+        $("se-save").dataset.armed="1"; $("se-save").textContent="Yes, start it"; $("se-cancel").hidden=false;
+        say("se-msg","This replaces \u201c"+sched.event.title+"\u201d as the poll everyone sees. Its marks are kept and you can switch back from the list below.");
+        armTimer=setTimeout(disarm,15000); return;
+      }
+      disarm();
       var dates=$("se-dates").value.split("\n").map(function(x){return x.trim();}).filter(Boolean);
       var bad=dates.filter(function(d){ return !/^\d{4}-\d{2}-\d{2}$/.test(d)||isNaN(Date.parse(d)); });
       var st=+$("se-start").value, en=+$("se-end").value, title=$("se-title").value.trim();

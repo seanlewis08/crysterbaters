@@ -291,6 +291,11 @@ create table if not exists public.avail_events (
   created_at timestamptz not null default now()
 );
 
+-- Which poll the page shows. Starting a new poll flags it current; the
+-- commissioner can flip an older poll back from the page. No row flagged
+-- (e.g. right after this migration) falls back to the newest poll.
+alter table public.avail_events add column if not exists current boolean not null default false;
+
 create table if not exists public.avail_marks (
   event_id    uuid not null references public.avail_events (id) on delete cascade,
   user_id     uuid not null default auth.uid() references auth.users (id) on delete cascade,
