@@ -660,7 +660,7 @@ td input.capin:focus-visible{outline:1px solid var(--amber);border-color:var(--a
 .pp-row.on .tick::after{content:"";position:absolute;left:3.5px;top:.5px;width:4px;height:8px;border:solid var(--surface);border-width:0 2px 2px 0;transform:rotate(42deg)}
 .pp-row .g{flex:1;min-width:0}
 .pp-row .g b{display:block;font-weight:600;font-size:13px;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.pp-row .g small{display:block;font-family:var(--mono);font-size:9.5px;letter-spacing:.06em;color:var(--dim);text-transform:uppercase}
+.pp-row .g small{display:block;font-family:var(--mono);font-size:9.5px;letter-spacing:.06em;color:var(--dim);text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pp-row .n{width:46px;text-align:right;font-family:var(--mono);font-size:11.5px;font-variant-numeric:tabular-nums;color:var(--muted);flex-shrink:0}
 .pp-row.on .n{color:var(--ink)}
 .pp-none{padding:22px 12px;text-align:center;color:var(--dim);font-size:13px}
@@ -3490,7 +3490,17 @@ var Players=(function(){
   var STATS_URL="https://site.web.api.espn.com/apis/common/v3/sports/basketball/nba/statistics/byathlete?region=us&lang=en&contentorigin=espn&isqualified=false&limit=1000&seasontype=2";
   var KEY="cb-players-v1", TTL=6*3600000;
   var C={id:0,name:1,team:2,pos:3,age:4,gp:5,min:6,pts:7,reb:8,ast:9,stl:10,blk:11,tpm:12,tpa:13,fgm:14,fga:15,ftm:16,fta:17,to:18,dd:19,td:20,salary:21,yrs:22,gtd:23,src:24,
-          pf:25,tech:26,ff:27,ejct:28,oreb:29,dreb:30,gs:31};
+          pf:25,tech:26,ff:27,ejct:28,oreb:29,dreb:30,gs:31,elig:32};
+  var COARSE={PG:"G",SG:"G",SF:"F",PF:"F",G:"G",F:"F",C:"C"};
+  /* "SG/SF" -> ["G","F"]; the first entry is his primary spot, not alphabetical */
+  function buckets(elig){
+    var out=[];
+    String(elig||"").split("/").forEach(function(p){
+      var b=COARSE[p.trim()]; if(b&&out.indexOf(b)<0) out.push(b);
+    });
+    return out;
+  }
+  function plays(r,pos){ return !pos||(r.pgs&&r.pgs.indexOf(pos)>=0); }
   var snap=null, live={}, season=null, opened=false, userSeason=false, capSeason=2027, rows=[], view=[], sortKey="val", sortAsc=false, booted=false, started=false;
   var subs=[];
   function fire(){ subs.forEach(function(cb){ try{ cb(); }catch(e){} }); }
@@ -3583,7 +3593,7 @@ var Players=(function(){
           v("offensive","avgTurnovers"),v("general","doubleDouble"),v("general","tripleDouble"),
           0,0,0,"",                                                  /* salary block: filled from the snapshot */
           v("general","avgFouls"),v("general","technicalFouls"),v("general","flagrantFouls"),v("general","ejections"),
-          null,null,null];                                           /* OREB / DREB / GS aren't in this feed */
+          null,null,null,""];                                        /* OREB / DREB / GS / eligibility aren't in this feed */
       });
       var rs=d.requestedSeason||d.currentSeason||{};
       return {year:rs.year||year,label:rs.displayName||String(year),rows:out};
@@ -3594,7 +3604,7 @@ var Players=(function(){
   /* ----- assemble rows for the chosen season ----- */
   function build(){
     var sal={}, salByName={};
-    snap.players.forEach(function(r){ var s={salary:r[C.salary],yrs:r[C.yrs],gtd:r[C.gtd],oreb:r[C.oreb],dreb:r[C.dreb],gs:r[C.gs]}; if(r[C.id]) sal[r[C.id]]=s; salByName[norm(r[C.name])]=s; });
+    snap.players.forEach(function(r){ var s={salary:r[C.salary],yrs:r[C.yrs],gtd:r[C.gtd],oreb:r[C.oreb],dreb:r[C.dreb],gs:r[C.gs],elig:r[C.elig]}; if(r[C.id]) sal[r[C.id]]=s; salByName[norm(r[C.name])]=s; });
     var src = live[season] ? live[season].rows : snap.players;
     var seenId={}, seenName={}, list=[];
     src.forEach(function(r){ list.push(r); if(r[C.id]) seenId[r[C.id]]=1; seenName[norm(r[C.name])]=1; });
@@ -3604,7 +3614,7 @@ var Players=(function(){
       list.push(r.slice(0,21).map(function(v,i){return i<5?v:0;}));
     });
     rows=list.map(function(r){
-      var s=(r[C.id]&&sal[r[C.id]])||salByName[norm(r[C.name])]||{salary:0,yrs:0,gtd:0};
+      var s=(r[C.id]&&sal[r[C.id]])||salByName[norm(r[C.name])]||{salary:0,yrs:0,gtd:0,elig:""};
       var gp=r[C.gp]||0;
       var o={id:r[C.id],name:r[C.name],team:r[C.team],pos:r[C.pos],age:r[C.age],gp:gp,min:r[C.min],pts:r[C.pts],reb:r[C.reb],ast:r[C.ast],stl:r[C.stl],blk:r[C.blk],
         tpm:r[C.tpm],tpa:r[C.tpa],fgm:r[C.fgm],fga:r[C.fga],ftm:r[C.ftm],fta:r[C.fta],to:r[C.to],dd:r[C.dd],td:r[C.td],
@@ -3619,7 +3629,12 @@ var Players=(function(){
       o.fgp=o.fga?o.fgm/o.fga:0; o.ftp=o.fta?o.ftm/o.fta:0; o.tpp=o.tpa?o.tpm/o.tpa:0;
       o.at=o.to?o.ast/o.to:(o.ast?9.99:0); o.ddpg=gp?o.dd/gp:0; o.tdpg=gp?o.td/gp:0;
       o.fpts=o.pts+1.2*o.reb+1.5*o.ast+3*o.stl+3*o.blk-o.to;
-      o.posg=/G/.test(o.pos)?"G":/C/.test(o.pos)?"C":/F/.test(o.pos)?"F":"";
+      /* Yahoo plays most guys at more than one spot, so a player belongs to every
+         bucket he is eligible at. `elig` is the snapshot's "SG/SF" / "C/F" string;
+         it rides with the snapshot (like salary) so it applies in every season. */
+      o.elig=s.elig||o.pos||"";
+      o.pgs=buckets(o.elig);
+      o.posg=o.pgs[0]||"";
       return o;
     });
     value();
@@ -3675,7 +3690,7 @@ var Players=(function(){
     view=rows.filter(function(r){
       if(q&&r.key.indexOf(q)<0) return false;
       if(f.team&&r.team!==f.team) return false;
-      if(f.pos&&r.posg!==f.pos) return false;
+      if(!plays(r,f.pos)) return false;
       if(f.owner==="fa"&&r.own) return false;
       if(f.owner==="owned"&&!r.own) return false;
       if(f.owner==="keeper"&&!(r.own&&r.own.k)) return false;
@@ -3729,7 +3744,7 @@ var Players=(function(){
         var c=COLS[j];
         if(c.k==="name"){
           cells.push('<td class="pl-name">'+(r.id?'<img loading="lazy" alt="" src="https://a.espncdn.com/i/headshots/nba/players/full/'+r.id+'.png" onerror="this.style.visibility=\'hidden\'">':'<span style="width:30px;flex-shrink:0"></span>')+
-            '<span class="nm"><b>'+esc(r.name)+'</b><small>'+(r.rank?"#"+r.rank+" · ":"")+esc(r.team)+(r.pos?" · "+esc(r.pos):"")+(r.gp?(r.q?"":" · "+r.gp+" GP, unranked"):" · no games")+'</small></span></td>');
+            '<span class="nm"><b>'+esc(r.name)+'</b><small>'+(r.rank?"#"+r.rank+" · ":"")+esc(r.team)+(r.elig?" · "+esc(r.elig):"")+(r.gp?(r.q?"":" · "+r.gp+" GP, unranked"):" · no games")+'</small></span></td>');
         } else if(c.k==="owner"){
           cells.push('<td class="own">'+(r.own?esc(r.own.t)+(r.own.k?'<span class="k">K'+(r.own.cost?" RD "+r.own.cost:"")+'</span>':''):'<span style="color:var(--line-2)">—</span>')+'</td>');
         } else {
@@ -3794,6 +3809,7 @@ var Players=(function(){
     cap:function(){ return CAPS[capSeason]; },
     srcLine:function(){ var lv=live[season]; return snap?((lv?"Stats from ESPN":"Stats from the last snapshot")+" · salaries as of "+new Date(snap.built).toLocaleDateString(undefined,{month:"short",day:"numeric"})):""; },
     seasonLabel:function(){ var lv=live[season]; return lv?lv.label:(season?(season-1)+"-"+String(season).slice(2):""); },
+    plays:plays,
     snapLabel:function(){ return snap?((snap.statsSeason-1)+"-"+String(snap.statsSeason).slice(2)):""; },
     seasons:function(){ var years={}; if(snap) years[snap.statsSeason]=1; liveSeasons().forEach(function(y){years[y]=1;});
       return Object.keys(years).map(Number).sort(function(a,b){return b-a;}).map(function(y){ return {y:y,label:(live[y]&&live[y].label)||((y-1)+"-"+String(y).slice(2))}; }); },
@@ -3868,7 +3884,7 @@ var Plot=(function(){
     for(var i=0;i<rows.length;i++){
       var r=rows[i];
       if(!r.gp) continue;
-      if(f.pos&&r.posg!==f.pos) continue;
+      if(!Players.plays(r,f.pos)) continue;
       if(f.owner==="fa"&&r.own) continue;
       if(f.owner==="owned"&&!r.own) continue;
       if(f.owner==="keeper"&&!(r.own&&r.own.k)) continue;
@@ -4019,7 +4035,7 @@ var Plot=(function(){
       var r=p.r;
       return '<button class="pp-row'+(sel[r.key]?" on":"")+'" data-k="'+esc(r.key)+'" aria-pressed="'+(sel[r.key]?"true":"false")+'">'+
         '<span class="tick"></span>'+
-        '<span class="g"><b>'+esc(r.name)+'</b><small>'+esc(r.team||"FA")+(r.pos?" · "+esc(r.pos):"")+" · "+r.gp+' GP</small></span>'+
+        '<span class="g"><b>'+esc(r.name)+'</b><small>'+esc(r.team||"FA")+(r.elig?" · "+esc(r.elig):"")+" · "+r.gp+' GP</small></span>'+
         '<span class="n">'+esc(mx.fmt(p.x))+'</span><span class="n">'+esc(my.fmt(p.y))+'</span></button>';
     }).join("");
     $("po-list").innerHTML=out||'<div class="pp-none">'+(pts.length?"Nobody by that name on the chart.":"No players on the chart yet.")+"</div>";
@@ -4037,7 +4053,7 @@ var Plot=(function(){
     var el=$("po-tip"); if(!el) return;
     if(!show){ el.style.opacity=0; return; }
     var mx=met(f.x), my=met(f.y), r=p.r;
-    el.innerHTML='<b>'+esc(r.name)+'</b><span class="who">'+esc(r.team||"FA")+(r.pos?" · "+esc(r.pos):"")+" · "+r.gp+' GP'+(r.own?" · "+esc(r.own.t):"")+'</span>'+
+    el.innerHTML='<b>'+esc(r.name)+'</b><span class="who">'+esc(r.team||"FA")+(r.elig?" · "+esc(r.elig):"")+" · "+r.gp+' GP'+(r.own?" · "+esc(r.own.t):"")+'</span>'+
       '<span class="r"><i>'+esc(mx.s)+'</i><s>'+esc(mx.fmt(p.x))+'</s></span>'+
       '<span class="r"><i>'+esc(my.s)+'</i><s>'+esc(my.fmt(p.y))+'</s></span>'+
       '<span class="hint">'+(sel[r.key]?"click to unhighlight":"click to highlight")+'</span>';
@@ -4069,7 +4085,7 @@ var Plot=(function(){
   }
   /* a whole position at once: on unless they are all already lit, in which case off */
   function group(pos){
-    var mine=pts.filter(function(p){ return p.r.posg===pos; });
+    var mine=pts.filter(function(p){ return Players.plays(p.r,pos); });
     if(!mine.length) return;
     var allOn=mine.every(function(p){ return sel[p.r.key]; });
     mine.forEach(function(p){ if(allOn) delete sel[p.r.key]; else sel[p.r.key]=1; });
@@ -4079,15 +4095,18 @@ var Plot=(function(){
   function litLabel(){
     var lit=pts.filter(function(p){ return sel[p.r.key]; });
     if(!lit.length) return null;
-    var one=lit[0].r.posg, same=one&&lit.every(function(p){ return p.r.posg===one; });
-    if(same&&pts.filter(function(p){ return p.r.posg===one; }).every(function(p){ return sel[p.r.key]; }))
-      return {G:"Guards",F:"Forwards",C:"Centers"}[one]||"Highlighted";
-    return "Highlighted";
+    var names={G:"Guards",F:"Forwards",C:"Centers"}, out=null;
+    ["G","F","C"].forEach(function(k){
+      if(out) return;
+      var mine=pts.filter(function(p){ return Players.plays(p.r,k); });
+      if(mine.length===lit.length&&mine.every(function(p){ return sel[p.r.key]; })) out=names[k];
+    });
+    return out||"Highlighted";
   }
   function groupState(){
     ["G","F","C"].forEach(function(k){
       var btn=document.querySelector('[data-hlpos="'+k+'"]'); if(!btn) return;
-      var mine=pts.filter(function(p){ return p.r.posg===k; });
+      var mine=pts.filter(function(p){ return Players.plays(p.r,k); });
       btn.disabled=!mine.length;
       btn.classList.toggle("on",!!mine.length&&mine.every(function(p){ return sel[p.r.key]; }));
     });

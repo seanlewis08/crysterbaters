@@ -21,6 +21,8 @@ STATS = "https://site.web.api.espn.com/apis/common/v3/sports/basketball/nba/stat
 CONTRACT = "https://sports.core.api.espn.com/v2/sports/basketball/leagues/nba/athletes/{id}/contracts/{season}?lang=en&region=us"
 BBR = "https://www.basketball-reference.com/contracts/players.html"
 BBR_PG = "https://www.basketball-reference.com/leagues/NBA_{season}_per_game.html"
+FBA = ("https://lm-api-reads.fantasy.espn.com/apis/v3/games/fba/seasons/{season}"
+       "/players?scoringPeriodId=0&view=players_wl")
 HDR = {"User-Agent": "Mozilla/5.0 (crysterbaters league site)"}
 
 def norm(name):
@@ -56,6 +58,42 @@ def bbr_contracts():
         gtd = cell("remain_gtd")[1]
         out[norm(name)] = [vals[0], yrs, int(gtd) if gtd.isdigit() else 0, vals[1], name, cell("team_id")[0]]
     return out, (season.group(1) if season else None)
+
+# ESPN's fantasy game is the one public feed that says which positions a player is
+# *eligible* at, not just the one he's listed at. Slots 0-4 are the real positions;
+# everything above them (G, F, G/F, UTIL, BE, IR) is derived from those.
+FBA_SLOT = {0: "PG", 1: "SG", 2: "SF", 3: "PF", 4: "C"}
+COARSE = {"PG": "G", "SG": "G", "SF": "F", "PF": "F", "C": "C"}
+
+def fba_eligibility(season):
+    """{norm name: ["PF", "C"]} for the coming season, falling back to the one before."""
+    out = {}
+    for yr in (season, season - 1):
+        try:
+            req = urllib.request.Request(FBA.format(season=yr), headers=dict(
+                HDR, **{"x-fantasy-filter": json.dumps({"players": {"limit": 4000, "offset": 0}})}))
+            with urllib.request.urlopen(req, timeout=60) as r:
+                data = json.load(r)
+        except Exception as e:
+            print("  ESPN fantasy", yr, "failed:", e)
+            continue
+        for p in data:
+            e = [FBA_SLOT[s] for s in p.get("eligibleSlots", []) if s in FBA_SLOT]
+            if e:
+                out.setdefault(norm(p["fullName"]), e)
+        if out:
+            return out, yr
+    return out, None
+
+def eligible(fine, listed):
+    """Fine positions, widened by the position the stats feed lists him at when that
+       bucket is missing (ESPN's two feeds disagree - Wembanyama is C in one, F in the
+       other, and Yahoo has him at both). Returns e.g. "PF/C", "C/F", "G"."""
+    bucket = "G" if listed.endswith("G") else "C" if listed == "C" else "F" if listed.endswith("F") else ""
+    out = list(fine)
+    if bucket and bucket not in [COARSE[x] for x in fine]:
+        out.append(bucket)
+    return "/".join(out)
 
 def bbr_pergame(season):
     """{normalized name: [oreb, dreb, games started]} — ESPN's bulk feed has total
@@ -196,10 +234,18 @@ def main():
         if s2: pg_hits += 1
         r.extend([round(e[0], 3), e[1], e[2], e[3]] + (s2 if s2 else ([None, None, None] if r[5] else [0, 0, 0])))
     print(f"matched {pg_hits} of {len(rows)} for rebound splits")
+    fba, fba_year = fba_eligibility(cap_season)
+    print(f"ESPN fantasy {fba_year}: {len(fba)} players with position eligibility")
+    el_hits = 0
+    for r in rows:
+        fine = fba.get(norm(r[1]))
+        if fine: el_hits += 1
+        r.append(eligible(fine or [], r[3] or ""))
+    print(f"matched {el_hits} of {len(rows)} for multi-position eligibility")
     out = {
         "built": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "statsSeason": stats_season, "salarySeason": cap_season,
-        "cols": ["id","name","team","pos","age","gp","min","pts","reb","ast","stl","blk","tpm","tpa","fgm","fga","ftm","fta","to","dd","td","salary","yrs","gtd","src","pf","tech","ff","ejct","oreb","dreb","gs"],
+        "cols": ["id","name","team","pos","age","gp","min","pts","reb","ast","stl","blk","tpm","tpa","fgm","fga","ftm","fta","to","dd","td","salary","yrs","gtd","src","pf","tech","ff","ejct","oreb","dreb","gs","elig"],
         "players": rows,
     }
     path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "players.json")
