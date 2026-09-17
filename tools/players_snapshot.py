@@ -20,6 +20,7 @@ from concurrent.futures import ThreadPoolExecutor
 STATS = "https://site.web.api.espn.com/apis/common/v3/sports/basketball/nba/statistics/byathlete?region=us&lang=en&contentorigin=espn&isqualified=false&limit=1000&seasontype=2&season={season}"
 CONTRACT = "https://sports.core.api.espn.com/v2/sports/basketball/leagues/nba/athletes/{id}/contracts/{season}?lang=en&region=us"
 BBR = "https://www.basketball-reference.com/contracts/players.html"
+BBR_PG = "https://www.basketball-reference.com/leagues/NBA_{season}_per_game.html"
 HDR = {"User-Agent": "Mozilla/5.0 (crysterbaters league site)"}
 
 def norm(name):
@@ -55,6 +56,36 @@ def bbr_contracts():
         gtd = cell("remain_gtd")[1]
         out[norm(name)] = [vals[0], yrs, int(gtd) if gtd.isdigit() else 0, vals[1], name, cell("team_id")[0]]
     return out, (season.group(1) if season else None)
+
+def bbr_pergame(season):
+    """{normalized name: [oreb, dreb, games started]} — ESPN's bulk feed has total
+    rebounds only, and no games started, so the Yahoo categories OREB/DREB/GS come
+    from Basketball-Reference's per-game table (one request)."""
+    try:
+        with urllib.request.urlopen(urllib.request.Request(BBR_PG.format(season=season), headers=HDR), timeout=40) as r:
+            page = r.read().decode("utf-8", "ignore")
+    except Exception as e:
+        print("Basketball-Reference per-game unavailable:", e)
+        return {}
+    out = {}
+    for row in page.split("<tr")[1:]:
+        def cell(k):
+            m = re.search(r'data-stat="' + k + r'"[^>]*>(.*?)</t[dh]>', row, re.S)
+            return html.unescape(re.sub(r"<[^>]+>", "", m.group(1))).strip() if m else ""
+        name = cell("name_display") or cell("player")
+        if not name or name == "Player":
+            continue
+        def num(k):
+            v = cell(k)
+            try: return float(v)
+            except ValueError: return 0.0
+        g = num("games")
+        rec = [num("orb_per_g"), num("drb_per_g"), int(num("games_started")), g]
+        prev = out.get(norm(name))
+        # a traded player has one row per team plus a combined 2TM row: keep the fullest
+        if not prev or g > prev[3]:
+            out[norm(name)] = rec
+    return {k: v[:3] for k, v in out.items()}
 
 # Basketball-Reference team codes that differ from ESPN's
 BBR_TEAM = {"BRK": "BKN", "CHO": "CHA", "PHO": "PHX", "GSW": "GS", "SAS": "SA", "NYK": "NY", "NOP": "NO", "UTA": "UTAH", "WAS": "WSH"}
@@ -148,10 +179,27 @@ def main():
         rows.append([0, c[4], BBR_TEAM.get(c[5], c[5]), "", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, c[0], c[1], c[2], "bbr"])
         extra += 1
     print(f"added {extra} players under contract with no games last season")
+    # the rest of the Yahoo categories: fouls and friends from ESPN, rebound splits and GS from BBR
+    espn_extra = {}
+    for a in (d or {}).get("athletes", []):
+        byname = {c["name"]: c for c in a["categories"]}
+        gn = {c["name"]: c["names"] for c in d["categories"]}["general"]
+        espn_extra[int(a["athlete"]["id"])] = [
+            pick(byname["general"], gn, "avgFouls"), pick(byname["general"], gn, "technicalFouls"),
+            pick(byname["general"], gn, "flagrantFouls"), pick(byname["general"], gn, "ejections")]
+    pg = bbr_pergame(stats_season)
+    print(f"Basketball-Reference per-game: {len(pg)} players (OREB / DREB / GS)")
+    pg_hits = 0
+    for r in rows:
+        e = espn_extra.get(r[0], [0, 0, 0, 0])
+        s2 = pg.get(norm(r[1]))
+        if s2: pg_hits += 1
+        r.extend([round(e[0], 3), e[1], e[2], e[3]] + (s2 if s2 else ([None, None, None] if r[5] else [0, 0, 0])))
+    print(f"matched {pg_hits} of {len(rows)} for rebound splits")
     out = {
         "built": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "statsSeason": stats_season, "salarySeason": cap_season,
-        "cols": ["id","name","team","pos","age","gp","min","pts","reb","ast","stl","blk","tpm","tpa","fgm","fga","ftm","fta","to","dd","td","salary","yrs","gtd","src"],
+        "cols": ["id","name","team","pos","age","gp","min","pts","reb","ast","stl","blk","tpm","tpa","fgm","fga","ftm","fta","to","dd","td","salary","yrs","gtd","src","pf","tech","ff","ejct","oreb","dreb","gs"],
         "players": rows,
     }
     path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "players.json")

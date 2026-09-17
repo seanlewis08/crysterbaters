@@ -3489,7 +3489,8 @@ var Players=(function(){
   };
   var STATS_URL="https://site.web.api.espn.com/apis/common/v3/sports/basketball/nba/statistics/byathlete?region=us&lang=en&contentorigin=espn&isqualified=false&limit=1000&seasontype=2";
   var KEY="cb-players-v1", TTL=6*3600000;
-  var C={id:0,name:1,team:2,pos:3,age:4,gp:5,min:6,pts:7,reb:8,ast:9,stl:10,blk:11,tpm:12,tpa:13,fgm:14,fga:15,ftm:16,fta:17,to:18,dd:19,td:20,salary:21,yrs:22,gtd:23,src:24};
+  var C={id:0,name:1,team:2,pos:3,age:4,gp:5,min:6,pts:7,reb:8,ast:9,stl:10,blk:11,tpm:12,tpa:13,fgm:14,fga:15,ftm:16,fta:17,to:18,dd:19,td:20,salary:21,yrs:22,gtd:23,src:24,
+          pf:25,tech:26,ff:27,ejct:28,oreb:29,dreb:30,gs:31};
   var snap=null, live={}, season=null, opened=false, userSeason=false, capSeason=2027, rows=[], view=[], sortKey="val", sortAsc=false, booted=false, started=false;
   var subs=[];
   function fire(){ subs.forEach(function(cb){ try{ cb(); }catch(e){} }); }
@@ -3579,7 +3580,10 @@ var Players=(function(){
           v("general","gamesPlayed"),v("general","avgMinutes"),v("offensive","avgPoints"),v("general","avgRebounds"),v("offensive","avgAssists"),
           v("defensive","avgSteals"),v("defensive","avgBlocks"),v("offensive","avgThreePointFieldGoalsMade"),v("offensive","avgThreePointFieldGoalsAttempted"),
           v("offensive","avgFieldGoalsMade"),v("offensive","avgFieldGoalsAttempted"),v("offensive","avgFreeThrowsMade"),v("offensive","avgFreeThrowsAttempted"),
-          v("offensive","avgTurnovers"),v("general","doubleDouble"),v("general","tripleDouble")];
+          v("offensive","avgTurnovers"),v("general","doubleDouble"),v("general","tripleDouble"),
+          0,0,0,"",                                                  /* salary block: filled from the snapshot */
+          v("general","avgFouls"),v("general","technicalFouls"),v("general","flagrantFouls"),v("general","ejections"),
+          null,null,null];                                           /* OREB / DREB / GS aren't in this feed */
       });
       var rs=d.requestedSeason||d.currentSeason||{};
       return {year:rs.year||year,label:rs.displayName||String(year),rows:out};
@@ -3590,7 +3594,7 @@ var Players=(function(){
   /* ----- assemble rows for the chosen season ----- */
   function build(){
     var sal={}, salByName={};
-    snap.players.forEach(function(r){ var s={salary:r[C.salary],yrs:r[C.yrs],gtd:r[C.gtd]}; if(r[C.id]) sal[r[C.id]]=s; salByName[norm(r[C.name])]=s; });
+    snap.players.forEach(function(r){ var s={salary:r[C.salary],yrs:r[C.yrs],gtd:r[C.gtd],oreb:r[C.oreb],dreb:r[C.dreb],gs:r[C.gs]}; if(r[C.id]) sal[r[C.id]]=s; salByName[norm(r[C.name])]=s; });
     var src = live[season] ? live[season].rows : snap.players;
     var seenId={}, seenName={}, list=[];
     src.forEach(function(r){ list.push(r); if(r[C.id]) seenId[r[C.id]]=1; seenName[norm(r[C.name])]=1; });
@@ -3604,9 +3608,16 @@ var Players=(function(){
       var gp=r[C.gp]||0;
       var o={id:r[C.id],name:r[C.name],team:r[C.team],pos:r[C.pos],age:r[C.age],gp:gp,min:r[C.min],pts:r[C.pts],reb:r[C.reb],ast:r[C.ast],stl:r[C.stl],blk:r[C.blk],
         tpm:r[C.tpm],tpa:r[C.tpa],fgm:r[C.fgm],fga:r[C.fga],ftm:r[C.ftm],fta:r[C.fta],to:r[C.to],dd:r[C.dd],td:r[C.td],
+        pf:r[C.pf]||0,tech:r[C.tech]||0,ff:r[C.ff]||0,ejct:r[C.ejct]||0,
         salary:s.salary,yrs:s.yrs,gtd:s.gtd,own:OWN[norm(r[C.name])]||null,key:norm(r[C.name])};
+      /* ESPN's bulk feed has no rebound splits or games started: those ride with the
+         snapshot, so they only apply to the season the snapshot was built for */
+      var sameSeason=(season===snap.statsSeason);
+      o.oreb=sameSeason&&s.oreb!=null?s.oreb:null;
+      o.dreb=sameSeason&&s.dreb!=null?s.dreb:null;
+      o.gs=sameSeason&&s.gs!=null?s.gs:null;
       o.fgp=o.fga?o.fgm/o.fga:0; o.ftp=o.fta?o.ftm/o.fta:0; o.tpp=o.tpa?o.tpm/o.tpa:0;
-      o.at=o.to?o.ast/o.to:(o.ast?9.99:0); o.ddpg=gp?o.dd/gp:0;
+      o.at=o.to?o.ast/o.to:(o.ast?9.99:0); o.ddpg=gp?o.dd/gp:0; o.tdpg=gp?o.td/gp:0;
       o.fpts=o.pts+1.2*o.reb+1.5*o.ast+3*o.stl+3*o.blk-o.to;
       o.posg=/G/.test(o.pos)?"G":/C/.test(o.pos)?"C":/F/.test(o.pos)?"F":"";
       return o;
@@ -3783,6 +3794,7 @@ var Players=(function(){
     cap:function(){ return CAPS[capSeason]; },
     srcLine:function(){ var lv=live[season]; return snap?((lv?"Stats from ESPN":"Stats from the last snapshot")+" · salaries as of "+new Date(snap.built).toLocaleDateString(undefined,{month:"short",day:"numeric"})):""; },
     seasonLabel:function(){ var lv=live[season]; return lv?lv.label:(season?(season-1)+"-"+String(season).slice(2):""); },
+    snapLabel:function(){ return snap?((snap.statsSeason-1)+"-"+String(snap.statsSeason).slice(2)):""; },
     seasons:function(){ var years={}; if(snap) years[snap.statsSeason]=1; liveSeasons().forEach(function(y){years[y]=1;});
       return Object.keys(years).map(Number).sort(function(a,b){return b-a;}).map(function(y){ return {y:y,label:(live[y]&&live[y].label)||((y-1)+"-"+String(y).slice(2))}; }); },
     season:function(){ return season; },
@@ -3806,35 +3818,53 @@ var Plot=(function(){
   function mon(v){ return v?"$"+(v>=1e6?(v/1e6).toFixed(1)+"M":Math.round(v/1e3)+"K"):"—"; }
   function monax(v){ return v>=1e6?"$"+(v/1e6).toFixed(v>=1e7?0:1)+"M":(v?"$"+Math.round(v/1e3)+"K":"$0"); }
   function sg(v){ return (v>0?"+":"")+(+v).toFixed(1); }
+  function cntn(k){ return function(r){ return r[k]==null?null:(f.mode==="tot"?r[k]*r.gp:r[k]); }; }
+  function whole(v){ return String(Math.round(v)); }
+  /* every category Yahoo can score a league on, in Yahoo's own order, then our own numbers.
+     (DISQ — times fouled out — is the one Yahoo category no bulk feed carries.) */
   var M=[
-    {k:"pts",   s:"PTS",  h:"Points",            get:cnt("pts"), fmt:n1,  ax:ax},
-    {k:"reb",   s:"REB",  h:"Rebounds",          get:cnt("reb"), fmt:n1,  ax:ax},
-    {k:"ast",   s:"AST",  h:"Assists",           get:cnt("ast"), fmt:n1,  ax:ax},
-    {k:"stl",   s:"STL",  h:"Steals",            get:cnt("stl"), fmt:n1,  ax:ax},
-    {k:"blk",   s:"BLK",  h:"Blocks",            get:cnt("blk"), fmt:n1,  ax:ax},
-    {k:"tpm",   s:"3PM",  h:"Threes made",       get:cnt("tpm"), fmt:n1,  ax:ax},
-    {k:"to",    s:"TO",   h:"Turnovers",         get:cnt("to"),  fmt:n1,  ax:ax},
-    {k:"fgp",   s:"FG%",  h:"Field goal %",      get:function(r){return r.fgp;}, fmt:pc3, ax:pcax, flat:true},
-    {k:"ftp",   s:"FT%",  h:"Free throw %",      get:function(r){return r.ftp;}, fmt:pc3, ax:pcax, flat:true},
-    {k:"tpp",   s:"3P%",  h:"Three point %",     get:function(r){return r.tpp;}, fmt:pc3, ax:pcax, flat:true},
-    {k:"at",    s:"A/T",  h:"Assist to turnover",get:function(r){return r.at;},  fmt:function(v){return v?v.toFixed(2):"—";}, ax:function(v){return v.toFixed(1);}, flat:true},
-    {k:"dd",    s:"DD",   h:"Double-doubles",    get:function(r){return f.mode==="tot"?r.dd:r.ddpg;}, fmt:function(v){return f.mode==="tot"?String(v):(+v).toFixed(2);}, ax:function(v){return f.mode==="tot"?String(Math.round(v)):(+v).toFixed(2);}},
-    {k:"min",   s:"MIN",  h:"Minutes",           get:cnt("min"), fmt:n1,  ax:ax},
-    {k:"fpts",  s:"FPTS", h:"Fantasy points",    get:cnt("fpts"),fmt:n1,  ax:ax},
-    {k:"val",   s:"VAL",  h:"Value (total z)",   get:function(r){return r.z;}, fmt:sg, ax:function(v){return sg(v);}, flat:true},
-    {k:"gp",    s:"GP",   h:"Games played",      get:function(r){return r.gp;}, fmt:function(v){return String(v);}, ax:ax, flat:true},
-    {k:"age",   s:"AGE",  h:"Age",               get:function(r){return r.age||null;}, fmt:function(v){return String(v);}, ax:ax, flat:true},
-    {k:"salary",s:"SAL",  h:"Salary",            get:function(r){return r.salary||null;}, fmt:mon, ax:monax, flat:true},
-    {k:"cappct",s:"%CAP", h:"% of the cap",      get:function(r,cap){return r.salary?r.salary/cap:null;}, fmt:function(v){return (v*100).toFixed(1)+"%";}, ax:pcax, flat:true},
-    {k:"yrs",   s:"YRS",  h:"Years left",        get:function(r){return r.yrs||null;}, fmt:function(v){return String(v);}, ax:ax, flat:true}
+    {k:"gp",    s:"GP",   h:"Games played",        g:"Yahoo categories", get:function(r){return r.gp;}, fmt:whole, ax:ax, flat:true},
+    {k:"gs",    s:"GS",   h:"Games started",       g:"Yahoo categories", get:function(r){return r.gs;}, fmt:whole, ax:ax, flat:true, snap:true},
+    {k:"min",   s:"MIN",  h:"Minutes",             g:"Yahoo categories", get:cnt("min"), fmt:n1, ax:ax},
+    {k:"fga",   s:"FGA",  h:"Field goals attempted",g:"Yahoo categories", get:cnt("fga"), fmt:n1, ax:ax},
+    {k:"fgm",   s:"FGM",  h:"Field goals made",    g:"Yahoo categories", get:cnt("fgm"), fmt:n1, ax:ax},
+    {k:"fgp",   s:"FG%",  h:"Field goal %",        g:"Yahoo categories", get:function(r){return r.fgp;}, fmt:pc3, ax:pcax, flat:true},
+    {k:"fta",   s:"FTA",  h:"Free throws attempted",g:"Yahoo categories", get:cnt("fta"), fmt:n1, ax:ax},
+    {k:"ftm",   s:"FTM",  h:"Free throws made",    g:"Yahoo categories", get:cnt("ftm"), fmt:n1, ax:ax},
+    {k:"ftp",   s:"FT%",  h:"Free throw %",        g:"Yahoo categories", get:function(r){return r.ftp;}, fmt:pc3, ax:pcax, flat:true},
+    {k:"tpa",   s:"3PA",  h:"Threes attempted",    g:"Yahoo categories", get:cnt("tpa"), fmt:n1, ax:ax},
+    {k:"tpm",   s:"3PM",  h:"Threes made",         g:"Yahoo categories", get:cnt("tpm"), fmt:n1, ax:ax},
+    {k:"tpp",   s:"3P%",  h:"Three point %",       g:"Yahoo categories", get:function(r){return r.tpp;}, fmt:pc3, ax:pcax, flat:true},
+    {k:"pts",   s:"PTS",  h:"Points",              g:"Yahoo categories", get:cnt("pts"), fmt:n1, ax:ax},
+    {k:"oreb",  s:"OREB", h:"Offensive rebounds",  g:"Yahoo categories", get:cntn("oreb"), fmt:n1, ax:ax, snap:true},
+    {k:"dreb",  s:"DREB", h:"Defensive rebounds",  g:"Yahoo categories", get:cntn("dreb"), fmt:n1, ax:ax, snap:true},
+    {k:"reb",   s:"REB",  h:"Rebounds",            g:"Yahoo categories", get:cnt("reb"), fmt:n1, ax:ax},
+    {k:"ast",   s:"AST",  h:"Assists",             g:"Yahoo categories", get:cnt("ast"), fmt:n1, ax:ax},
+    {k:"stl",   s:"STL",  h:"Steals",              g:"Yahoo categories", get:cnt("stl"), fmt:n1, ax:ax},
+    {k:"blk",   s:"BLK",  h:"Blocks",              g:"Yahoo categories", get:cnt("blk"), fmt:n1, ax:ax},
+    {k:"to",    s:"TO",   h:"Turnovers",           g:"Yahoo categories", get:cnt("to"),  fmt:n1, ax:ax},
+    {k:"at",    s:"A/T",  h:"Assist to turnover",  g:"Yahoo categories", get:function(r){return r.at;}, fmt:function(v){return v?v.toFixed(2):"—";}, ax:function(v){return v.toFixed(1);}, flat:true},
+    {k:"pf",    s:"PF",   h:"Personal fouls",      g:"Yahoo categories", get:cnt("pf"), fmt:n1, ax:ax},
+    {k:"tech",  s:"TECH", h:"Technical fouls",     g:"Yahoo categories", get:function(r){return r.tech;}, fmt:whole, ax:ax, flat:true},
+    {k:"ejct",  s:"EJCT", h:"Ejections",           g:"Yahoo categories", get:function(r){return r.ejct;}, fmt:whole, ax:ax, flat:true},
+    {k:"ff",    s:"FF",   h:"Flagrant fouls",      g:"Yahoo categories", get:function(r){return r.ff;}, fmt:whole, ax:ax, flat:true},
+    {k:"dd",    s:"DD",   h:"Double-doubles",      g:"Yahoo categories", get:function(r){return f.mode==="tot"?r.dd:r.ddpg;}, fmt:function(v){return f.mode==="tot"?whole(v):(+v).toFixed(2);}, ax:function(v){return f.mode==="tot"?whole(v):(+v).toFixed(2);}},
+    {k:"td",    s:"TD",   h:"Triple-doubles",      g:"Yahoo categories", get:function(r){return f.mode==="tot"?r.td:r.tdpg;}, fmt:function(v){return f.mode==="tot"?whole(v):(+v).toFixed(2);}, ax:function(v){return f.mode==="tot"?whole(v):(+v).toFixed(2);}},
+    {k:"val",   s:"VAL",  h:"Value (total z)",     g:"Our numbers", get:function(r){return r.z;}, fmt:sg, ax:sg, flat:true},
+    {k:"fpts",  s:"FPTS", h:"Fantasy points",      g:"Our numbers", get:cnt("fpts"), fmt:n1, ax:ax},
+    {k:"age",   s:"AGE",  h:"Age",                 g:"Contract", get:function(r){return r.age||null;}, fmt:whole, ax:ax, flat:true},
+    {k:"salary",s:"SAL",  h:"Salary",              g:"Contract", get:function(r){return r.salary||null;}, fmt:mon, ax:monax, flat:true},
+    {k:"cappct",s:"%CAP", h:"% of the cap",        g:"Contract", get:function(r,cap){return r.salary?r.salary/cap:null;}, fmt:function(v){return (v*100).toFixed(1)+"%";}, ax:pcax, flat:true},
+    {k:"yrs",   s:"YRS",  h:"Years left",          g:"Contract", get:function(r){return r.yrs||null;}, fmt:whole, ax:ax, flat:true}
   ];
   function met(k){ for(var i=0;i<M.length;i++){ if(M[i].k===k) return M[i]; } return M[0]; }
   function axname(m){ return m.h+(m.flat?"":(f.mode==="tot"?" — season total":" per game")); }
 
   /* ----- who lands on the chart ----- */
+  var dropX=0, dropY=0;
   function collect(){
     var rows=(window.Players&&Players.rows())||[], mx=met(f.x), my=met(f.y), cap=((window.Players&&Players.cap())||{cap:1}).cap;
-    pts=[];
+    pts=[]; dropX=0; dropY=0;
     for(var i=0;i<rows.length;i++){
       var r=rows[i];
       if(!r.gp) continue;
@@ -3846,9 +3876,19 @@ var Plot=(function(){
       if(f.mingp>0&&r.gp<f.mingp) continue;
       if(f.minmin>0&&r.min<f.minmin) continue;
       var xv=mx.get(r,cap), yv=my.get(r,cap);
-      if(xv==null||yv==null||!isFinite(xv)||!isFinite(yv)) continue;
+      if(xv==null||!isFinite(xv)){ dropX++; continue; }
+      if(yv==null||!isFinite(yv)){ dropY++; continue; }
       pts.push({r:r,x:xv,y:yv});
     }
+  }
+  /* a stat that only exists in the snapshot is missing for any other season: say so
+     rather than leaving the reader with "nobody matches those filters" */
+  function whyEmpty(){
+    var mx=met(f.x), my=met(f.y), lab=(window.Players?Players.seasonLabel():"that season");
+    var gone=(dropX&&mx.snap?mx:0)||(dropY&&my.snap?my:0);
+    if(gone&&!pts.length) return gone.h+" comes from the salary snapshot, which only covers "+
+      ((window.Players&&Players.snapLabel())||"one season")+" — pick that season, or another stat.";
+    return "Nobody matches those filters. Loosen Min GP or Min MPG.";
   }
   function median(a){ if(!a.length) return 0; var b=a.slice().sort(function(p,q){return p-q;}), h=b.length>>1; return b.length%2?b[h]:(b[h-1]+b[h])/2; }
   function pearson(){
@@ -3883,7 +3923,7 @@ var Plot=(function(){
     var mx=met(f.x), my=met(f.y);
     var old=box.querySelector("svg"); if(old) old.remove();
     geo=[]; hov=-1; tip(false);
-    if(!pts.length){ $("po-empty").hidden=false; $("po-empty").textContent=(window.Players&&Players.rows().length)?"Nobody matches those filters. Loosen Min GP or Min MPG.":"Loading players…"; return; }
+    if(!pts.length){ $("po-empty").hidden=false; $("po-empty").textContent=(window.Players&&Players.rows().length)?whyEmpty():"Loading players…"; return; }
     $("po-empty").hidden=true;
 
     W=Math.max(280,Math.round(box.clientWidth-28));
@@ -4155,7 +4195,12 @@ var Plot=(function(){
   var t1=null,t2=null;
   function bind(){
     var xs=$("po-x"), ys=$("po-y");
-    var opts=M.map(function(m){ return '<option value="'+m.k+'">'+esc(m.h)+'</option>'; }).join("");
+    var opts="", lastG="";
+    M.forEach(function(m){
+      if(m.g!==lastG){ if(lastG) opts+="</optgroup>"; opts+='<optgroup label="'+esc(m.g)+'">'; lastG=m.g; }
+      opts+='<option value="'+m.k+'">'+esc(m.h)+'</option>';
+    });
+    opts+="</optgroup>";
     xs.innerHTML=opts; ys.innerHTML=opts; xs.value=f.x; ys.value=f.y;
     var os=$("po-owner"); T.forEach(function(t){ var o=document.createElement("option"); o.value=t.id; o.textContent=t.short+" — "+t.name; os.appendChild(o); });
 
