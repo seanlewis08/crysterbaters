@@ -1440,6 +1440,7 @@ footer p + p{margin-top:11px}
       <div class="pltools">
         <div class="field"><label for="po-x">X axis</label><select id="po-x"></select></div>
         <div class="field"><label for="po-y">Y axis</label><select id="po-y"></select></div>
+        <div class="field"><label for="po-pos">Position</label><select id="po-pos"><option value="">Any</option><option value="G">Guards</option><option value="F">Forwards</option><option value="C">Centers</option></select></div>
         <div class="field"><label for="po-owner">In our league</label><select id="po-owner"><option value="">Everyone</option><option value="fa">Not on a roster</option><option value="owned">On a roster</option><option value="keeper">Flagged keepers</option></select></div>
         <div class="field" style="flex:0 1 96px"><label for="po-mingp">Min GP</label><input id="po-mingp" type="number" min="0" step="1" inputmode="numeric" placeholder="0"></div>
         <div class="field" style="flex:0 1 96px"><label for="po-minmin">Min MPG</label><input id="po-minmin" type="number" min="0" step="1" inputmode="numeric" placeholder="0"></div>
@@ -3780,7 +3781,7 @@ window.Players=Players;
 /* ---------- plot: any two stats, every player a dot ---------- */
 var Plot=(function(){
   var $=function(id){return document.getElementById(id);};
-  var f={x:"min",y:"fpts",owner:"",mingp:0,minmin:0,mode:"pg",q:"",sort:"y",zero:false};
+  var f={x:"min",y:"fpts",pos:"",owner:"",mingp:0,minmin:0,mode:"pg",q:"",sort:"y",zero:false};
   var sel={}, pts=[], geo=[], hov=-1, started=false, dirty=true, W=0, H=0;
 
   /* ----- the numbers you can put on an axis ----- */
@@ -3824,6 +3825,7 @@ var Plot=(function(){
     for(var i=0;i<rows.length;i++){
       var r=rows[i];
       if(!r.gp) continue;
+      if(f.pos&&r.posg!==f.pos) continue;
       if(f.owner==="fa"&&r.own) continue;
       if(f.owner==="owned"&&!r.own) continue;
       if(f.owner==="keeper"&&!(r.own&&r.own.k)) continue;
@@ -4019,6 +4021,7 @@ var Plot=(function(){
   ].join("");
   function subline(){
     var bits=[(window.Players?Players.seasonLabel():"")||"", f.mode==="tot"?"season totals":"per game"];
+    if(f.pos) bits.push({G:"guards",F:"forwards",C:"centers"}[f.pos]);
     if(f.mingp>0) bits.push("min "+f.mingp+" GP");
     if(f.minmin>0) bits.push("min "+f.minmin+" MPG");
     var os=$("po-owner"); if(f.owner&&os.selectedIndex>0) bits.push(os.options[os.selectedIndex].text.replace(/ —.*$/,""));
@@ -4105,14 +4108,14 @@ var Plot=(function(){
     xs.innerHTML=opts; ys.innerHTML=opts; xs.value=f.x; ys.value=f.y;
     var os=$("po-owner"); T.forEach(function(t){ var o=document.createElement("option"); o.value=t.id; o.textContent=t.short+" — "+t.name; os.appendChild(o); });
 
-    ["x","y","owner","mode"].forEach(function(k){ $("po-"+k).addEventListener("change",function(){ f[k]=this.value; refresh(); }); });
+    ["x","y","pos","owner","mode"].forEach(function(k){ $("po-"+k).addEventListener("change",function(){ f[k]=this.value; refresh(); }); });
     $("po-zero").addEventListener("change",function(){ f.zero=this.checked; draw(); });
     $("po-copy").addEventListener("click",copyChart);
     ["mingp","minmin"].forEach(function(k){ var el=$("po-"+k); function upd(){ var v=Math.max(0,parseFloat(el.value)||0); if(v===f[k]) return; f[k]=v; refresh(); }
       el.addEventListener("input",function(){ clearTimeout(t1); t1=setTimeout(upd,140); }); el.addEventListener("change",upd); });
     $("po-season").addEventListener("change",function(){ if(window.Players) Players.setSeason(+this.value); });
-    $("po-clear").addEventListener("click",function(){ f.owner=""; f.mingp=0; f.minmin=0; f.mode="pg";
-      $("po-owner").value=""; $("po-mingp").value=""; $("po-minmin").value=""; $("po-mode").value="pg"; refresh(); });
+    $("po-clear").addEventListener("click",function(){ f.pos=""; f.owner=""; f.mingp=0; f.minmin=0; f.mode="pg";
+      $("po-pos").value=""; $("po-owner").value=""; $("po-mingp").value=""; $("po-minmin").value=""; $("po-mode").value="pg"; refresh(); });
     $("po-q").addEventListener("input",function(){ f.q=this.value; clearTimeout(t2); t2=setTimeout(panel,60); });
     $("po-sort").addEventListener("change",function(){ f.sort=this.value; panel(); });
     $("po-none").addEventListener("click",function(){ sel={}; draw(); panel(); });
