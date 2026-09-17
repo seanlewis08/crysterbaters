@@ -615,6 +615,9 @@ td input.capin:focus-visible{outline:1px solid var(--amber);border-color:var(--a
 .plotbox .axname{font-family:var(--disp);font-size:12.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;fill:var(--muted)}
 .plotbox .dot{fill:#AD9A74;fill-opacity:.66}
 .plotbox .dot.on{fill:var(--amber);fill-opacity:1;stroke:var(--surface);stroke-width:2}
+.plotbox .lgd{font-family:var(--mono);font-size:10px;letter-spacing:.08em;fill:var(--muted)}
+.plotbox .lgdot{fill:#AD9A74;fill-opacity:.66}
+.plotbox .lgdot.on{fill:var(--amber);fill-opacity:1}
 .plotbox .lbl{font-family:var(--disp);font-size:12px;font-weight:600;fill:var(--ink);paint-order:stroke;stroke:var(--surface);stroke-width:3.5px;stroke-linejoin:round}
 .plotbox .hov{fill:none;stroke:var(--cyan);stroke-width:2}
 .plot-empty[hidden]{display:none}
@@ -639,6 +642,10 @@ td input.capin:focus-visible{outline:1px solid var(--amber);border-color:var(--a
 .pp-top input{width:100%;padding:7px 9px;font-size:13.5px}
 .pp-act{display:flex;gap:8px;align-items:center;margin-top:8px}
 .pp-act select{flex:1;padding:5px 7px;font-size:12px}
+.pp-act .pp-lbl{font-family:var(--mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);flex:0 0 auto}
+.pp-act .grp{flex:1 1 0;padding:5px 4px;font-size:11.5px;letter-spacing:.05em;min-width:0}
+.pp-act .grp.on{background:var(--amber);border-color:var(--amber);color:#FFF8EC}
+.pp-act .grp.on:hover{color:#FFF8EC}
 .pp-cols{display:flex;align-items:center;gap:8px;padding:6px 12px;background:var(--surface-2);border-bottom:1px solid var(--line);font-family:var(--mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
 .pp-cols .g{flex:1}
 .pp-cols .n{width:46px;text-align:right}
@@ -1469,6 +1476,12 @@ footer p + p{margin-top:11px}
             <div class="pp-act">
               <select id="po-sort" aria-label="Sort the list"><option value="y">Sort by Y</option><option value="x">Sort by X</option><option value="name">Sort by name</option></select>
               <button class="btn quiet sm" id="po-none" style="flex:0 0 auto">Clear</button>
+            </div>
+            <div class="pp-act" id="po-groups">
+              <span class="pp-lbl">Whole group</span>
+              <button class="btn quiet sm grp" data-hlpos="G" title="Highlight every guard on the chart">Guards</button>
+              <button class="btn quiet sm grp" data-hlpos="F" title="Highlight every forward on the chart">Fwds</button>
+              <button class="btn quiet sm grp" data-hlpos="C" title="Highlight every center on the chart">Centers</button>
             </div>
           </div>
           <div class="pp-cols"><span style="width:13px"></span><span class="g" id="po-col-n">Player</span><span class="n" id="po-col-x">X</span><span class="n" id="po-col-y">Y</span></div>
@@ -3782,7 +3795,7 @@ window.Players=Players;
 var Plot=(function(){
   var $=function(id){return document.getElementById(id);};
   var f={x:"min",y:"fpts",pos:"",owner:"",mingp:0,minmin:0,mode:"pg",q:"",sort:"y",zero:false};
-  var sel={}, pts=[], geo=[], hov=-1, started=false, dirty=true, W=0, H=0;
+  var sel={}, pts=[], geo=[], hov=-1, started=false, dirty=true, W=0, H=0, LBL_MAX=14;
 
   /* ----- the numbers you can put on an axis ----- */
   function cnt(k){ return function(r){ return f.mode==="tot"?r[k]*r.gp:r[k]; }; }
@@ -3875,7 +3888,8 @@ var Plot=(function(){
 
     W=Math.max(280,Math.round(box.clientWidth-28));
     H=Math.max(280,Math.min(540,Math.round(W*(W<560?0.94:0.62))));
-    var PL=62,PR=18,PT=16,PB=46, iw=W-PL-PR, ih=H-PT-PB;
+    var nOn=pts.filter(function(p){ return sel[p.r.key]; }).length, showLgd=nOn>LBL_MAX;
+    var PL=62,PR=18,PT=showLgd?36:16,PB=46, iw=W-PL-PR, ih=H-PT-PB;
     var xlo=Infinity,xhi=-Infinity,ylo=Infinity,yhi=-Infinity;
     pts.forEach(function(p){ if(p.x<xlo)xlo=p.x; if(p.x>xhi)xhi=p.x; if(p.y<ylo)ylo=p.y; if(p.y>yhi)yhi=p.y; });
     var TX=f.zero?symm(xlo,xhi,6):nice(xlo,xhi,6), TY=f.zero?symm(ylo,yhi,5):nice(ylo,yhi,5);
@@ -3905,9 +3919,10 @@ var Plot=(function(){
     });
     on.forEach(function(d){ o.push('<circle class="dot on" cx="'+d.x.toFixed(1)+'" cy="'+d.y.toFixed(1)+'" r="6"/>'); });
 
-    /* direct labels on the picked ones, skipping any that would collide */
+    /* direct labels on the picked ones, skipping any that would collide; a whole
+       position lit up is far too many names to write on the chart */
     var placed=[];
-    on.sort(function(a,b){return a.y-b.y;}).forEach(function(d){
+    if(on.length<=LBL_MAX) on.sort(function(a,b){return a.y-b.y;}).forEach(function(d){
       var nm=d.p.r.name, w=nm.length*6.4+6;
       var tries=[[11,4,"start"],[-11,4,"end"],[0,-11,"middle"],[0,18,"middle"],[10,-8,"start"],[-10,-8,"end"],[10,16,"start"],[-10,16,"end"],[0,-22,"middle"],[0,29,"middle"]];
       for(var t=0;t<tries.length;t++){
@@ -3923,6 +3938,14 @@ var Plot=(function(){
       }
     });
 
+    if(showLgd){
+      var lg=litLabel()||"Highlighted", rest=pts.length-nOn, lx=PL;
+      [[lg+" ("+nOn+")","on"],["Everyone else ("+rest+")",""]].forEach(function(it){
+        o.push('<circle class="lgdot'+(it[1]?" on":"")+'" cx="'+(lx+5)+'" cy="12" r="'+(it[1]?5:4)+'"/>');
+        o.push('<text class="lgd" x="'+(lx+15)+'" y="16">'+esc(it[0])+'</text>');
+        lx+=it[0].length*6.1+30;
+      });
+    }
     o.push('<line class="axis" x1="'+PL+'" y1="'+(PT+ih)+'" x2="'+(PL+iw)+'" y2="'+(PT+ih)+'"/>');
     o.push('<line class="axis" x1="'+PL+'" y1="'+PT+'" x2="'+PL+'" y2="'+(PT+ih)+'"/>');
     TX.ticks.forEach(function(v){ o.push('<text class="tick" x="'+sx(v).toFixed(1)+'" y="'+(PT+ih+16)+'" text-anchor="middle">'+esc(mx.ax(v))+'</text>'); });
@@ -3965,7 +3988,8 @@ var Plot=(function(){
     pts.forEach(function(p){ if(sel[p.r.key]) shown++; });
     var lab=$("po-list").previousElementSibling;
     var head=document.querySelector(".pp-top .eyebrow");
-    if(head) head.textContent=n?("Highlighting "+n+(n>shown?" · "+(n-shown)+" off the chart":"")):"Highlight players";
+    if(head) head.textContent=n?("Highlighting "+n+(n>shown?" · "+(n-shown)+" off the chart":"")+(shown>LBL_MAX?" · too many to label":"")):"Highlight players";
+    groupState();
   }
 
   /* ----- hover ----- */
@@ -4003,6 +4027,31 @@ var Plot=(function(){
     if(sel[key]) delete sel[key]; else sel[key]=1;
     draw(); panel();
   }
+  /* a whole position at once: on unless they are all already lit, in which case off */
+  function group(pos){
+    var mine=pts.filter(function(p){ return p.r.posg===pos; });
+    if(!mine.length) return;
+    var allOn=mine.every(function(p){ return sel[p.r.key]; });
+    mine.forEach(function(p){ if(allOn) delete sel[p.r.key]; else sel[p.r.key]=1; });
+    draw(); panel();
+  }
+  /* when names can't be written on the chart, the colour needs a key */
+  function litLabel(){
+    var lit=pts.filter(function(p){ return sel[p.r.key]; });
+    if(!lit.length) return null;
+    var one=lit[0].r.posg, same=one&&lit.every(function(p){ return p.r.posg===one; });
+    if(same&&pts.filter(function(p){ return p.r.posg===one; }).every(function(p){ return sel[p.r.key]; }))
+      return {G:"Guards",F:"Forwards",C:"Centers"}[one]||"Highlighted";
+    return "Highlighted";
+  }
+  function groupState(){
+    ["G","F","C"].forEach(function(k){
+      var btn=document.querySelector('[data-hlpos="'+k+'"]'); if(!btn) return;
+      var mine=pts.filter(function(p){ return p.r.posg===k; });
+      btn.disabled=!mine.length;
+      btn.classList.toggle("on",!!mine.length&&mine.every(function(p){ return sel[p.r.key]; }));
+    });
+  }
 
   /* ----- copy the chart as a picture ----- */
   var XCSS=[
@@ -4015,6 +4064,8 @@ var Plot=(function(){
     '.dot{fill:#AD9A74;fill-opacity:.66}',
     '.dot.on{fill:#C1571A;fill-opacity:1;stroke:#FDFAF4;stroke-width:2}',
     '.lbl{font-family:"Saira Condensed","Arial Narrow",Arial,sans-serif;font-size:12px;font-weight:600;fill:#22190E;paint-order:stroke;stroke:#FDFAF4;stroke-width:3.5px;stroke-linejoin:round}',
+    '.lgd{font-family:"IBM Plex Mono",Menlo,monospace;font-size:10px;letter-spacing:.08em;fill:#6B5B42}',
+    '.lgdot{fill:#AD9A74;fill-opacity:.66}','.lgdot.on{fill:#C1571A;fill-opacity:1}',
     '.xt{font-family:"Saira Condensed","Arial Narrow",Arial,sans-serif;font-size:19px;font-weight:800;fill:#22190E}',
     '.xs{font-family:"IBM Plex Mono",Menlo,monospace;font-size:10px;letter-spacing:.1em;fill:#6B5B42}',
     '.xf{font-family:"IBM Plex Mono",Menlo,monospace;font-size:9.5px;letter-spacing:.1em;fill:#9A8967}'
@@ -4119,6 +4170,7 @@ var Plot=(function(){
     $("po-q").addEventListener("input",function(){ f.q=this.value; clearTimeout(t2); t2=setTimeout(panel,60); });
     $("po-sort").addEventListener("change",function(){ f.sort=this.value; panel(); });
     $("po-none").addEventListener("click",function(){ sel={}; draw(); panel(); });
+    $("po-groups").addEventListener("click",function(e){ var b=e.target.closest("[data-hlpos]"); if(b&&!b.disabled) group(b.dataset.hlpos); });
     $("po-list").addEventListener("click",function(e){ var b=e.target.closest("[data-k]"); if(b) toggle(b.dataset.k); });
 
     var box=$("po-box");
