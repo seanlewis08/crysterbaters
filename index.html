@@ -1924,21 +1924,34 @@ document.getElementById("watch").innerHTML=K.map(function(k){
       '<span class="hc-go">Open<span>→</span></span></button>';
   }).join("");
 
+  window.draftSetLabel=function(){
+    if(!window.DRAFT_SET) return "";
+    var d=new Date(window.DRAFT_SET);
+    return d.toLocaleDateString([], {weekday:"short",month:"short",day:"numeric"})+", "+
+           d.toLocaleTimeString([], {hour:"numeric",minute:"2-digit",timeZoneName:"short"}).replace(":00","");
+  };
   function daysTo(y,m,d){
     var t=new Date(), target=new Date(y,m-1,d);
     var n=Math.ceil((target-new Date(t.getFullYear(),t.getMonth(),t.getDate()))/86400000);
     return n>1 ? n+" days away" : (n===1 ? "tomorrow" : (n===0 ? "today" : "passed"));
   }
   document.getElementById("cd-season").textContent=daysTo(2026,10,20);
+  /* Yahoo has the live draft on the league calendar, so that is the answer whether or
+     not the Draft Day poll was ever closed out. Set it back to "" if the draft moves. */
+  window.DRAFT_SET="2026-10-17T15:00:00-07:00";  /* Sat Oct 17 2026, 3:00pm PDT */
   window.setDraftTiles=function(iso){
+    if(!iso) iso=window.DRAFT_SET||"";
     var td=document.getElementById("tile-draft"), tk=document.getElementById("tile-keep");
     if(!iso){ td.className="hot"; td.innerHTML='Picking a day<small id="cd-draft">Oct 11–19 · mark when you\'re free</small>'; tk.innerHTML='Week before<small id="cd-keep">the draft, once it\'s set</small>'; document.getElementById("tkr-draft").textContent="day vote open"; document.getElementById("tkr-keep").textContent="week before the draft"; return; }
     var d=new Date(iso), k=new Date(d.getTime()-7*86400000);
-    var day=function(x){ return x.toLocaleDateString([], {weekday:"short",month:"short",day:"numeric"}); }, tm=d.toLocaleTimeString([], {hour:"numeric"});
+    var day=function(x){ return x.toLocaleDateString([], {weekday:"short",month:"short",day:"numeric"}); };
+    var tm=d.toLocaleTimeString([], {hour:"numeric",minute:"2-digit",timeZoneName:"short"}).replace(":00","");
     td.className=""; td.innerHTML=esc(day(d))+'<small id="cd-draft">'+esc(daysTo(d.getFullYear(),d.getMonth()+1,d.getDate()))+' · '+esc(tm)+' · offline, 12 rounds</small>';
     tk.className="hot"; tk.innerHTML=esc(day(k))+'<small id="cd-keep">'+esc(daysTo(k.getFullYear(),k.getMonth()+1,k.getDate()))+' · a week before the draft</small>';
     document.getElementById("tkr-draft").textContent=day(d)+" · "+tm; document.getElementById("tkr-keep").textContent=day(k);
   };
+  /* the ticker should read right on first paint, before anyone opens the Draft Day page */
+  window.setDraftTiles(window.DRAFT_SET);
 })();
 
 /* ---------- standings ---------- */
@@ -2990,7 +3003,8 @@ var Polls=(function(){
     $("sc-count").textContent=responded+" of "+T.length+" have answered";
     var closed=ev.status==="closed";
     $("sc-chosen").innerHTML= ev.chosen ? '<div class="notice" style="border-left-color:var(--cyan)"><b>Draft set: '+esc(fmtSlot(ev.chosen))+'</b> ('+esc(tzShort())+'). '+(k.c[ev.chosen]||0)+' of '+T.length+' marked free.'+(isCommish?' <button class="btn quiet sm" data-scchoose="" style="margin-left:10px">Undo</button>':'')+'</div>'
-      : (closed?'<div class="notice warn">This poll is closed.</div>':'');
+      : (window.DRAFT_SET?'<div class="notice" style="border-left-color:var(--cyan)"><b>Draft set: '+esc(draftSetLabel())+'</b> — it is on the Yahoo league calendar. This poll stays up for the record.</div>'
+      : (closed?'<div class="notice warn">This poll is closed.</div>':''));
     $("sc-hint").hidden=closed;
     var showAll=scView==="all"||closed;
     $("sc-seg").querySelectorAll("button").forEach(function(b){ b.classList.toggle("on",b.dataset.scview===(showAll?"all":"me")); });
