@@ -545,3 +545,37 @@ grant execute on function public.is_member(), public.is_commissioner(), public.c
 grant execute on function public.check_invite_code(text) to anon, authenticated;
 revoke all on public.league_settings, public.profiles, public.polls, public.votes, public.poll_tallies,
   public.agenda, public.agenda_votes, public.avail_events, public.avail_marks, public.dues_seasons, public.dues_payments from anon;
+
+-- ---------------------------------------------------------------------------
+-- Saved charts (the Analysis page gallery). A chart is just its controls, so a
+-- row is small; anyone can read them (they're league stats, nothing private),
+-- members save them, and the commissioner pins one to the home page.
+-- ---------------------------------------------------------------------------
+create table if not exists public.charts (
+  id               uuid primary key default gen_random_uuid(),
+  title            text not null check (length(title) between 1 and 80),
+  state            jsonb not null default '{}'::jsonb,
+  author           text,
+  created_by       uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  created_at       timestamptz not null default now(),
+  pinned           boolean not null default false
+);
+alter table public.charts enable row level security;
+drop policy if exists charts_read on public.charts;
+create policy charts_read on public.charts for select to anon, authenticated using (true);
+drop policy if exists charts_add on public.charts;
+create policy charts_add on public.charts for insert to authenticated with check (public.is_member() and created_by = auth.uid());
+drop policy if exists charts_delete on public.charts;
+create policy charts_delete on public.charts for delete to authenticated using (created_by = auth.uid() or public.is_commissioner());
+grant select on public.charts to anon, authenticated;
+grant insert, delete on public.charts to authenticated;
+
+-- Only one chart is pinned at a time, and only the commissioner moves the pin.
+create or replace function public.chart_pin(p_id uuid, p_on boolean)
+returns void language plpgsql security definer set search_path = public as $$
+begin
+  if not public.is_commissioner() then raise exception 'Commissioner only.'; end if;
+  update public.charts set pinned = false where pinned;
+  if p_on then update public.charts set pinned = true where id = p_id; end if;
+end $$;
+grant execute on function public.chart_pin(uuid, boolean) to authenticated;
