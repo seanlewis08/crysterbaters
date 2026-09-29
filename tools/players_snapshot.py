@@ -7,6 +7,7 @@ ESPN's contract feed as a fallback for anyone missing there.
 
     python3 tools/players_snapshot.py            # stats for the latest season with games, salaries for the cap season
     python3 tools/players_snapshot.py 2026 2027  # stats season (2026 = 2025-26), salary season (2027 = 2026-27)
+    python3 tools/players_snapshot.py --numbers  # only refresh jersey numbers in the existing players.json (seconds)
 
 Writes players.json next to index.html. The page loads that file first (instant),
 then refreshes stats from ESPN in the browser. Run this again whenever salaries
@@ -23,6 +24,7 @@ BBR = "https://www.basketball-reference.com/contracts/players.html"
 BBR_PG = "https://www.basketball-reference.com/leagues/NBA_{season}_per_game.html"
 FBA = ("https://lm-api-reads.fantasy.espn.com/apis/v3/games/fba/seasons/{season}"
        "/players?scoringPeriodId=0&view=players_wl")
+ATHLETES = "https://sports.core.api.espn.com/v3/sports/basketball/nba/athletes?limit=2000&active=true"
 HDR = {"User-Agent": "Mozilla/5.0 (crysterbaters league site)"}
 
 def norm(name):
@@ -141,6 +143,44 @@ def get(url, tries=3):
             time.sleep(1 + i)
     return None
 
+def jerseys():
+    """{espn id: number} and {normalized name: number} for every active player (for the
+    jersey a manager hangs on his team page). Numbers change with trades; rerun --numbers."""
+    d = get(ATHLETES) or {}
+    by_id, by_name = {}, {}
+    for a in d.get("items", d.get("athletes", [])):
+        j = (a.get("jersey") or "").strip()
+        if not j:
+            continue
+        by_id[int(a["id"])] = j
+        by_name[norm(a.get("displayName", ""))] = j
+    return by_id, by_name
+
+def add_numbers(rows):
+    by_id, by_name = jerseys()
+    hits = 0
+    for r in rows:
+        n = by_id.get(r[0]) or by_name.get(norm(r[1])) or ""
+        if n: hits += 1
+        r.append(n)
+    print(f"jersey numbers for {hits} of {len(rows)} players")
+
+def refresh_numbers_only():
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "players.json")
+    with open(path) as f:
+        out = json.load(f)
+    cols = out["cols"]
+    if "num" in cols:
+        i = cols.index("num")
+        for r in out["players"]:
+            del r[i]
+        cols.pop(i)
+    add_numbers(out["players"])
+    cols.append("num")
+    with open(path, "w") as f:
+        json.dump(out, f, separators=(",", ":"))
+    print("wrote", os.path.normpath(path), os.path.getsize(path), "bytes")
+
 def pick(cat, names, key):
     i = names.index(key)
     return cat["values"][i]
@@ -242,10 +282,11 @@ def main():
         if fine: el_hits += 1
         r.append(eligible(fine or [], r[3] or ""))
     print(f"matched {el_hits} of {len(rows)} for multi-position eligibility")
+    add_numbers(rows)
     out = {
         "built": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "statsSeason": stats_season, "salarySeason": cap_season,
-        "cols": ["id","name","team","pos","age","gp","min","pts","reb","ast","stl","blk","tpm","tpa","fgm","fga","ftm","fta","to","dd","td","salary","yrs","gtd","src","pf","tech","ff","ejct","oreb","dreb","gs","elig"],
+        "cols": ["id","name","team","pos","age","gp","min","pts","reb","ast","stl","blk","tpm","tpa","fgm","fga","ftm","fta","to","dd","td","salary","yrs","gtd","src","pf","tech","ff","ejct","oreb","dreb","gs","elig","num"],
         "players": rows,
     }
     path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "players.json")
@@ -254,4 +295,7 @@ def main():
     print("wrote", os.path.normpath(path), os.path.getsize(path), "bytes")
 
 if __name__ == "__main__":
-    main()
+    if "--numbers" in sys.argv:
+        refresh_numbers_only()
+    else:
+        main()

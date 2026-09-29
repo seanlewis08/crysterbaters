@@ -619,3 +619,31 @@ create policy badge_awards_delete on public.badge_awards for delete to authentic
 grant select on public.badge_meta, public.badge_awards to anon, authenticated;
 grant insert, update on public.badge_meta to authenticated;
 grant insert, delete on public.badge_awards to authenticated;
+
+-- ---------------------------------------------------------------------------
+-- Home courts. One row per league team: which NBA team's floor the page wears
+-- and which player's jersey hangs on it. Anyone can read; only the manager who
+-- claimed that team (or the commissioner) writes.
+-- ---------------------------------------------------------------------------
+create table if not exists public.team_prefs (
+  team_id          text primary key check (team_id ~ '^[a-z0-9]{2,20}$'),
+  nba_team         text check (nba_team is null or nba_team ~ '^[A-Z]{2,4}$'),
+  jersey_player    text check (jersey_player is null or length(jersey_player) <= 60),
+  jersey_num       text check (jersey_num is null or jersey_num ~ '^[0-9]{1,2}$'),
+  updated_by       uuid not null default auth.uid() references auth.users (id) on delete set null,
+  updated_at       timestamptz not null default now()
+);
+alter table public.team_prefs enable row level security;
+create or replace function public.owns_team(p_team_id text)
+returns boolean language sql stable security definer set search_path = public as $$
+  select public.is_commissioner() or exists (select 1 from public.profiles where user_id = auth.uid() and team_id = p_team_id);
+$$;
+drop policy if exists team_prefs_read on public.team_prefs;
+create policy team_prefs_read on public.team_prefs for select to anon, authenticated using (true);
+drop policy if exists team_prefs_write on public.team_prefs;
+create policy team_prefs_write on public.team_prefs for insert to authenticated with check (public.owns_team(team_id));
+drop policy if exists team_prefs_update on public.team_prefs;
+create policy team_prefs_update on public.team_prefs for update to authenticated using (public.owns_team(team_id)) with check (public.owns_team(team_id));
+grant select on public.team_prefs to anon, authenticated;
+grant insert, update on public.team_prefs to authenticated;
+grant execute on function public.owns_team(text) to authenticated;
