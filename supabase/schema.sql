@@ -579,3 +579,43 @@ begin
   if p_on then update public.charts set pinned = true where id = p_id; end if;
 end $$;
 grant execute on function public.chart_pin(uuid, boolean) to authenticated;
+
+-- ---------------------------------------------------------------------------
+-- Badges (the trophy case). The catalogue of twenty badges lives in the site;
+-- these tables hold what the commissioner decides: who earned which badge and
+-- when, and the prize on each one. Anyone can read them (they're league lore),
+-- only the commissioner writes.
+-- ---------------------------------------------------------------------------
+create table if not exists public.badge_meta (
+  badge_id         text primary key check (badge_id ~ '^[a-z][a-z0-9-]{1,40}$'),
+  prize            text check (prize is null or length(prize) <= 140),
+  claimed          boolean not null default false,   -- legacy badges: the prize has been handed over, the holder is final
+  updated_at       timestamptz not null default now()
+);
+create table if not exists public.badge_awards (
+  id               uuid primary key default gen_random_uuid(),
+  badge_id         text not null check (badge_id ~ '^[a-z][a-z0-9-]{1,40}$'),
+  team_id          text not null check (team_id ~ '^[a-z0-9]{2,20}$'),
+  season           text not null check (length(season) between 4 and 12),   -- "2026–27"
+  note             text check (note is null or length(note) <= 120),        -- "Week 4", "Round 3 · Reed Sheppard"
+  awarded_by       uuid not null default auth.uid() references auth.users (id) on delete set null,
+  awarded_at       timestamptz not null default now()
+);
+create index if not exists badge_awards_badge_idx on public.badge_awards (badge_id, awarded_at desc);
+alter table public.badge_meta enable row level security;
+alter table public.badge_awards enable row level security;
+drop policy if exists badge_meta_read on public.badge_meta;
+create policy badge_meta_read on public.badge_meta for select to anon, authenticated using (true);
+drop policy if exists badge_meta_write on public.badge_meta;
+create policy badge_meta_write on public.badge_meta for insert to authenticated with check (public.is_commissioner());
+drop policy if exists badge_meta_update on public.badge_meta;
+create policy badge_meta_update on public.badge_meta for update to authenticated using (public.is_commissioner()) with check (public.is_commissioner());
+drop policy if exists badge_awards_read on public.badge_awards;
+create policy badge_awards_read on public.badge_awards for select to anon, authenticated using (true);
+drop policy if exists badge_awards_add on public.badge_awards;
+create policy badge_awards_add on public.badge_awards for insert to authenticated with check (public.is_commissioner() and awarded_by = auth.uid());
+drop policy if exists badge_awards_delete on public.badge_awards;
+create policy badge_awards_delete on public.badge_awards for delete to authenticated using (public.is_commissioner());
+grant select on public.badge_meta, public.badge_awards to anon, authenticated;
+grant insert, update on public.badge_meta to authenticated;
+grant insert, delete on public.badge_awards to authenticated;

@@ -801,6 +801,72 @@ footer p + p{margin-top:11px}
   .champ{padding:24px 20px}
   .scoreline div{border-right:0;padding-right:0;margin-right:22px}
 }
+/* badges */
+.seal{position:relative;display:inline-grid;place-items:center;width:34px;height:34px;flex-shrink:0;vertical-align:middle}
+.seal svg{position:absolute;inset:0;width:100%;height:100%}
+.seal svg path{fill:var(--surface-3);stroke:var(--line-2);stroke-width:1.6}
+.seal b{position:relative;font-family:var(--disp);font-weight:800;font-size:12px;letter-spacing:.02em;color:var(--muted)}
+.seal i{position:absolute;right:-5px;top:-5px;font:600 9px/1 var(--mono);color:#fff;background:var(--ink);border-radius:8px;padding:2px 4px;font-style:normal}
+.seal.k-legacy svg path{fill:var(--amber);stroke:var(--amber)}
+.seal.k-legacy b{color:#fff}
+.seal.k-season svg path{fill:var(--cyan);stroke:var(--cyan)}
+.seal.k-season b{color:#fff}
+.seal.k-draft svg path{fill:var(--green);stroke:var(--green)}
+.seal.k-draft b{color:#fff}
+.seal.k-weekly svg path{fill:var(--surface);stroke:var(--ink);stroke-width:2}
+.seal.k-weekly b{color:var(--ink)}
+.seal.dim{opacity:.38}
+.seal.big{width:52px;height:52px}
+.seal.big b{font-size:18px}
+.bstrip{display:flex;gap:6px;flex-wrap:wrap;min-height:0}
+.bstrip:empty,.bstrip.none:empty{display:none}
+.bstrip.lg .seal{width:40px;height:40px}
+.bstrip.lg .seal b{font-size:14px}
+.bd-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin-top:18px}
+.bd-kind{grid-column:1/-1;margin-top:14px}
+.bd-kind:first-child{margin-top:0}
+.bd-kind .sub{margin-top:4px;max-width:70ch}
+.bd-card{background:var(--surface);border:1px solid var(--line);border-radius:4px;box-shadow:var(--shadow);padding:16px 18px 14px;display:flex;flex-direction:column;gap:10px;min-width:0;transition:box-shadow .2s}
+.bd-card.held{border-color:var(--line-2)}
+.bd-card.special{border-top:3px solid var(--amber)}
+.bd-card.flash{box-shadow:0 0 0 3px var(--amber-glow),var(--shadow);border-color:var(--amber)}
+.bd-top{display:flex;gap:14px;align-items:center}
+.bd-id{min-width:0;display:flex;flex-direction:column;gap:5px;align-items:flex-start}
+.bd-id h3{font-family:var(--disp);font-size:22px;font-weight:700;text-transform:uppercase;letter-spacing:.02em;line-height:1;margin:0}
+.bd-rule{font-size:14.5px;color:var(--muted);margin:0}
+.bd-special{font-size:13.5px;color:var(--amber);margin:0;font-style:italic}
+.bd-held{display:flex;flex-direction:column;gap:2px;padding:10px 12px;border:1px solid var(--line);border-radius:3px;background:var(--surface-2)}
+.bd-held b{font-family:var(--disp);font-size:17px;font-weight:700;text-transform:uppercase;letter-spacing:.02em}
+.bd-holder{cursor:pointer}
+.bd-holder:hover{color:var(--amber)}
+.bd-held small{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+.bd-unclaimed{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.bd-prize{display:flex;gap:10px;align-items:baseline;font-size:14px}
+.bd-prize .eyebrow{flex-shrink:0}
+.bd-prize.claimed em{color:var(--green);font-style:normal;font-weight:600}
+.bd-prize.none{opacity:.7}
+.bd-tools{display:flex;gap:8px;flex-wrap:wrap;margin-top:auto;padding-top:4px}
+.bd-form{display:flex;flex-wrap:wrap;gap:12px 16px;padding:14px;border:1px dashed var(--line-2);border-radius:4px;background:var(--surface-2);margin-top:6px;width:100%}
+.bd-form .field.wide{flex-basis:100%}
+.bd-form .field input,.bd-form .field select{font-size:15px;padding:8px 10px}
+.bd-form .hint{flex-basis:100%;font-size:12.5px;color:var(--dim);margin:0}
+.bd-form-out{flex-basis:100%;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.bd-msg{font-size:13px}
+.bd-hist{list-style:none;margin:0;padding:0;border-top:1px solid var(--line)}
+.bd-hist li{display:flex;gap:10px;align-items:baseline;padding:8px 0;border-bottom:1px solid var(--line);font-size:14px}
+.bd-hist li b{font-family:var(--disp);font-size:16px;text-transform:uppercase;letter-spacing:.02em;flex:0 0 auto}
+.bd-hist li span{flex:1;color:var(--muted)}
+.bd-hist li small{font-family:var(--mono);font-size:10px;letter-spacing:.08em;color:var(--dim)}
+.homebadges{margin-top:14px;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:12px 16px;box-shadow:var(--shadow)}
+.homebadges[hidden]{display:none}
+.hb-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px 14px;margin-top:8px}
+.hb{display:flex;gap:10px;align-items:center;text-align:left;background:none;border:0;padding:4px 0;cursor:pointer;color:inherit;min-width:0}
+.hb span{display:flex;flex-direction:column;min-width:0}
+.hb b{font-family:var(--disp);font-size:17px;font-weight:700;text-transform:uppercase;letter-spacing:.02em;line-height:1.05}
+.hb small{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hb:hover b{color:var(--amber)}
+@media (max-width:600px){.bd-grid{grid-template-columns:1fr}}
+
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
@@ -911,6 +977,7 @@ footer p + p{margin-top:11px}
       <button data-go="keepers">Keepers</button>
       <button data-go="polls">Polls</button>
       <button data-go="dues">Dues</button>
+      <button data-go="badges">Badges</button>
       <button data-go="history">History</button>
       <button data-go="rules">Rules</button>
     </nav>
@@ -991,6 +1058,10 @@ footer p + p{margin-top:11px}
         <small id="home-chart-by"></small>
         <button class="btn sm" id="home-chart-open">Open it</button>
       </div>
+      <div class="homebadges" id="home-badges" hidden>
+        <span class="eyebrow">Latest badges</span>
+        <div class="hb-list" id="home-badges-list"></div>
+      </div>
     </section>
 
     <section>
@@ -1031,6 +1102,24 @@ footer p + p{margin-top:11px}
   <div class="view" id="v-team">
     <button class="back" data-go="teams">← All teams</button>
     <div id="teamdetail"></div>
+  </div>
+
+  <!-- ================= BADGES ================= -->
+  <div class="view" id="v-badges">
+    <section>
+      <div class="sec-head"><h2>Badges</h2><span class="eyebrow cool" id="bd-eyebrow">Loading…</span></div>
+      <div class="rulebar"></div>
+      <p class="lede">The trophy case. Nothing here is handed out for what already happened: every badge starts unclaimed and goes to the first manager who earns it from now on. Some are won each season, some are held and passed along, and each one can carry a prize.</p>
+      <div id="bd-admin-note" class="notice" style="margin-top:16px" hidden>You're the commissioner, so you can award any badge, pass a legacy badge to its next holder, set the prize on each one, and take an award back from its history.</div>
+      <div class="seg" id="bd-tabs" style="margin-top:16px;flex-wrap:wrap">
+        <button type="button" class="on" data-kind="all">All</button>
+        <button type="button" data-kind="legacy">Legacy</button>
+        <button type="button" data-kind="season">Season</button>
+        <button type="button" data-kind="draft">Draft day</button>
+        <button type="button" data-kind="weekly">Weekly</button>
+      </div>
+      <div class="bd-grid" id="bd-grid"></div>
+    </section>
   </div>
 
   <!-- ================= DRAFT ================= -->
@@ -2003,6 +2092,7 @@ document.getElementById("watch").innerHTML=K.map(function(k){
     {go:"sched",   n:"—",        lbl:"Free",     h:"Draft Day",  p:"Mark the hours you could draft and watch the best slot rise out of everyone's calendars.", id:"hc-sched"},
     {go:"agenda",  n:"—",        lbl:"Open",     h:"Open Items", p:"What the league still has to decide. Raise one, argue about it, then put it to a vote.", id:"hc-agenda"},
     {go:"dues",    n:"—",        lbl:"Paid",     h:"Dues",       p:"What the buy-in is, where to send it, and who has settled up. Pick Venmo, Zelle or Cash App and mark yours sent.", id:"hc-dues"},
+    {go:"badges",  n:"—",        lbl:"Claimed",  h:"Badges",     p:"The trophy case. Twenty badges the league can earn, from Father Time to Waffle House, each with a prize once Sean sets one.", id:"hc-badges"},
     {go:"history", n:"14",       lbl:"Seasons",  h:"History",    p:"Every champion since 2012. Four managers tied at two titles, two still hunting their first."},
     {go:"rules",   n:"11",       lbl:"Categories",h:"Rules",     p:"How keepers work, why rosters lock before the playoffs, and the league settings as Yahoo has them."}
   ];
@@ -2075,6 +2165,7 @@ function teamCard(t){
     '<div class="team-body">'+
       '<div class="kv"><dt>2025–26</dt><dd>'+s.rec+' · '+ordinal(s.fin)+'</dd></div>'+
       '<div class="kv"><dt>Titles</dt><dd>'+(t.titles.length?t.titles.join(" · "):"—")+'</dd></div>'+
+      '<div class="bstrip" data-bstrip="'+t.id+'"></div>'+
       '<div class="keeper-mini">'+kp+'</div>'+
     '</div></button>';
 }
@@ -2135,6 +2226,7 @@ function renderTeam(id){
             '<div class="kv"><dt>Titles</dt><dd>'+(t.titles.length?t.titles.join(" · "):"None yet")+'</dd></div>'+
             '<div class="kv"><dt>FAB left</dt><dd>$'+s.faab+'</dd></div>'+
             '<div class="kv"><dt>Moves</dt><dd>'+s.moves+'</dd></div>'+
+            '<div class="kv" style="flex-direction:column;align-items:stretch;gap:8px"><dt>Badges</dt><dd class="bstrip lg" data-bstrip="'+t.id+'" data-bempty="None yet — see the Badges page."></dd></div>'+
           '</div></div>'+
       '</div>'+
     '</div>';
@@ -2705,6 +2797,11 @@ var Polls=(function(){
       chartsAdd:function(c){ if(!db.me) return Promise.reject(new Error("Sign in first.")); var p=myProf(); if(!p) return Promise.reject(new Error("Claim your team first.")); if(!db.charts) db.charts=[]; db.charts.unshift({id:"c"+Date.now(),title:c.title,state:c.state,author:c.author||p.display_name||p.team_id,created_by:db.me.id,created_at:new Date().toISOString(),pinned:false}); save(); return Promise.resolve(); },
       chartsPin:function(id,on){ if(!commish()) return Promise.reject(new Error("Commissioner only.")); (db.charts||[]).forEach(function(c){ c.pinned=on&&c.id===id; }); save(); return Promise.resolve(); },
       chartsDelete:function(id){ var c=(db.charts||[]).filter(function(x){return x.id===id;})[0]; if(!c) return Promise.resolve(); if(!(commish()||(db.me&&c.created_by===db.me.id))) return Promise.reject(new Error("Not yours to delete.")); db.charts=db.charts.filter(function(x){return x.id!==id;}); save(); return Promise.resolve(); },
+      /* badges */
+      badgesLoad:function(){ if(!db.badges) db.badges={meta:[],awards:[]}; return Promise.resolve({meta:db.badges.meta.slice(),awards:db.badges.awards.slice()}); },
+      badgeAward:function(a){ if(!commish()) return Promise.reject(new Error("Commissioner only.")); if(!db.badges) db.badges={meta:[],awards:[]}; db.badges.awards.push({id:"b"+Date.now(),badge_id:a.badge_id,team_id:a.team_id,season:a.season,note:a.note||null,awarded_by:db.me.id,awarded_at:new Date().toISOString()}); save(); return Promise.resolve(); },
+      badgeRevoke:function(id){ if(!commish()) return Promise.reject(new Error("Commissioner only.")); if(!db.badges) return Promise.resolve(); db.badges.awards=db.badges.awards.filter(function(x){return x.id!==id;}); save(); return Promise.resolve(); },
+      badgeMeta:function(badge_id,o){ if(!commish()) return Promise.reject(new Error("Commissioner only.")); if(!db.badges) db.badges={meta:[],awards:[]}; var m=db.badges.meta.filter(function(x){return x.badge_id===badge_id;})[0]; if(!m){ m={badge_id:badge_id}; db.badges.meta.push(m); } m.prize=o.prize||null; m.claimed=!!o.claimed; m.updated_at=new Date().toISOString(); save(); return Promise.resolve(); },
       schedChoose:function(eid,slot){ if(!commish()) return Promise.reject(new Error("Commissioner only.")); var ev=db.sched.events.filter(function(x){return x.id===eid;})[0]; if(ev){ ev.chosen=slot; ev.status=slot?"closed":"open"; } save(); return Promise.resolve(); },
       agendaVote:function(id,on){
         var p=myProf(); if(!p) return Promise.reject(new Error("Claim your team first."));
@@ -2864,6 +2961,16 @@ var Polls=(function(){
       chartsAdd:function(c){ return client.from("charts").insert({title:c.title,state:c.state,author:c.author||null}).then(chk); },
       chartsPin:function(id,on){ return client.rpc("chart_pin",{p_id:id,p_on:!!on}).then(chk); },
       chartsDelete:function(id){ return client.from("charts").delete().eq("id",id).then(chk); },
+      /* badges */
+      badgesLoad:function(){
+        return Promise.all([
+          client.from("badge_meta").select("badge_id,prize,claimed,updated_at"),
+          client.from("badge_awards").select("id,badge_id,team_id,season,note,awarded_by,awarded_at").order("awarded_at",{ascending:false})
+        ]).then(function(rs){ chk(rs[0]); chk(rs[1]); return {meta:rs[0].data||[],awards:rs[1].data||[]}; });
+      },
+      badgeAward:function(a){ return client.from("badge_awards").insert({badge_id:a.badge_id,team_id:a.team_id,season:a.season,note:a.note||null}).then(chk); },
+      badgeRevoke:function(id){ return client.from("badge_awards").delete().eq("id",id).then(chk); },
+      badgeMeta:function(badge_id,o){ return client.from("badge_meta").upsert({badge_id:badge_id,prize:o.prize||null,claimed:!!o.claimed,updated_at:new Date().toISOString()},{onConflict:"badge_id"}).then(chk); },
       schedChoose:function(eid,slot){ return client.from("avail_events").update({chosen:slot,status:slot?"closed":"open"}).eq("id",eid).then(chk); },
       agendaAdd:function(a){ return client.from("agenda").insert({title:a.title,details:a.details||null}).then(chk); },
       agendaDecide:function(id,outcome){ return client.from("agenda").update(outcome==null?{status:"open",outcome:null,decided_at:null}:{status:"decided",outcome:outcome,decided_at:new Date().toISOString()}).eq("id",id).then(chk); },
@@ -4842,8 +4949,263 @@ var Plot=(function(){
 })();
 window.Plot=Plot;
 
+/* ---------- badges: the league's trophy case ---------- */
+var Badges=(function(){
+  var $=function(id){return document.getElementById(id);};
+  /* The catalogue is league lore, so it lives here; prizes and awards live in the store.
+     kind: legacy = one holder, passes hand to hand, prize at the very end
+           season = one winner a season   draft = handed out at the table   weekly = many a season */
+  var KINDS={legacy:"Legacy",season:"Season",draft:"Draft day",weekly:"Weekly"};
+  var KIND_BLURB={
+    legacy:"Held, not won. One holder at a time; it passes when the thing it tracks changes hands, and the prize goes to whoever holds it at the very end.",
+    season:"Decided once the regular season ends in March. One winner a season, and it stays on your card for good.",
+    draft:"Handed out at the table on draft day, the moment it happens.",
+    weekly:"Awarded week by week. The count at the end of the season decides who wears it."
+  };
+  var CAT=[
+    {id:"father-time", name:"Father Time", mark:"FT", kind:"legacy",
+     rule:"Drafts LeBron James. The badge follows him: trade him or drop him and it goes with him. Whoever holds it the day he retires wins the prize.",
+     special:"The one that pays out once. Every holder is written down below; the last name on the list gets the prize."},
+    {id:"the-belt", name:"The Belt", mark:"B", kind:"legacy",
+     rule:"Reigning champion. Passes at the final every March."},
+    {id:"grandfather-clause", name:"Grandfather Clause", mark:"GC", kind:"legacy",
+     rule:"Holds the longest-running keeper in the league. Pays out when that streak finally breaks."},
+
+    {id:"regular-season-giannis", name:"Regular Season Giannis", mark:"RS", kind:"season",
+     rule:"Best regular-season record, no title."},
+    {id:"trader-joe", name:"Trader Joe", mark:"TJ", kind:"season",
+     rule:"Most trades in a season."},
+    {id:"the-hoarder", name:"The Hoarder", mark:"H", kind:"season",
+     rule:"Fewest roster moves in a season."},
+    {id:"all-gas", name:"All Gas", mark:"AG", kind:"season",
+     rule:"Burned the FAB budget all the way to $0."},
+    {id:"the-accountant", name:"The Accountant", mark:"AC", kind:"season",
+     rule:"Never went over the games cap all season."},
+    {id:"cap-casualty", name:"Cap Casualty", mark:"CC", kind:"season",
+     rule:"First team over the games cap."},
+    {id:"mr-irrelevant", name:"Mr. Irrelevant", mark:"MI", kind:"season",
+     rule:"Best value out of the twelfth round."},
+    {id:"sunk-cost", name:"Sunk Cost", mark:"SC", kind:"season",
+     rule:"Kept the player who returned the least for the round he cost."},
+    {id:"free-throw-king", name:"Free Throw King", mark:"FK", kind:"season",
+     rule:"Completed the hundred-free-throw punishment."},
+
+    {id:"the-reach", name:"The Reach", mark:"RE", kind:"draft",
+     rule:"Biggest jump over consensus rank on draft day."},
+    {id:"the-steal", name:"The Steal", mark:"ST", kind:"draft",
+     rule:"Biggest fall below consensus rank on draft day."},
+    {id:"homer", name:"Homer", mark:"HO", kind:"draft",
+     rule:"Three or more players from one NBA team."},
+    {id:"nursery", name:"Nursery", mark:"NU", kind:"draft",
+     rule:"Most rookies drafted."},
+
+    {id:"the-sweep", name:"The Sweep", mark:"SW", kind:"weekly",
+     rule:"Won nine or more of the eleven categories in a week."},
+    {id:"iron-man", name:"Iron Man", mark:"IM", kind:"weekly",
+     rule:"Landed on exactly thirty games."},
+    {id:"the-upset", name:"The Upset", mark:"UP", kind:"weekly",
+     rule:"Lowest seed to beat the highest that week."},
+    {id:"waffle-house", name:"Waffle House", mark:"WH", kind:"weekly",
+     rule:"Biggest blowout loss of the week."}
+  ];
+  var BY={}; CAT.forEach(function(b){ BY[b.id]=b; });
+  var SEASON_NOW="2026–27";
+
+  var meta={}, awards=[], loaded=false, started=false, filter="all", openForm=null, openPrize=null, openHist={};
+
+  function metaOf(id){ return meta[id]||{}; }
+  function awardsOf(id){ return awards.filter(function(a){return a.badge_id===id;}).sort(function(a,b){ return a.awarded_at<b.awarded_at?1:-1; }); }
+  /* who wears it now: legacy = latest award; season/draft = latest season's winner; weekly = most awards this season */
+  function holder(id){
+    var b=BY[id], list=awardsOf(id); if(!b||!list.length) return null;
+    if(b.kind==="weekly"){
+      var cnt={}, top=null, season=list[0].season;
+      list.filter(function(a){return a.season===season;}).forEach(function(a){ cnt[a.team_id]=(cnt[a.team_id]||0)+1; });
+      Object.keys(cnt).forEach(function(t){ if(!top||cnt[t]>cnt[top]) top=t; });
+      return {team_id:top, season:season, n:cnt[top], of:list.filter(function(a){return a.season===season;}).length};
+    }
+    return {team_id:list[0].team_id, season:list[0].season, since:list[0].awarded_at, note:list[0].note, n:1};
+  }
+  /* badges a team shows on its card: legacy it holds now, every season/draft award, weekly as counts */
+  function forTeam(tid){
+    var out=[];
+    CAT.forEach(function(b){
+      var list=awardsOf(b.id).filter(function(a){return a.team_id===tid;}); if(!list.length) return;
+      if(b.kind==="legacy"){ var h=holder(b.id); if(h&&h.team_id===tid) out.push({b:b,n:1,cur:true,label:b.name+" · held since "+list[list.length-1].season}); else out.push({b:b,n:0,cur:false,label:b.name+" · held "+uniqSeasons(list).join(", ")}); }
+      else if(b.kind==="weekly") out.push({b:b,n:list.length,cur:true,label:b.name+" · "+list.length+"×"});
+      else out.push({b:b,n:list.length,cur:true,label:b.name+" · "+uniqSeasons(list).join(", ")});
+    });
+    return out;
+  }
+  function uniqSeasons(list){ var s=[]; list.forEach(function(a){ if(s.indexOf(a.season)<0) s.push(a.season); }); return s.sort(); }
+  function teamName(tid){ var t=byId(tid); return t?t.name:tid; }
+  function teamShort(tid){ var t=byId(tid); return t?t.short:tid; }
+  function fmtDate(iso){ if(!iso) return ""; var d=new Date(iso); return isNaN(d)?"":d.toLocaleDateString([],{month:"short",day:"numeric",year:"numeric"}); }
+
+  function seal(b,opts){
+    opts=opts||{};
+    return '<span class="seal k-'+b.kind+(opts.dim?" dim":"")+(opts.big?" big":"")+'" title="'+esc(opts.title||b.name)+'" aria-label="'+esc(opts.title||b.name)+'">'+
+      '<svg viewBox="0 0 40 40" aria-hidden="true"><path d="M20 2 L36 11 V29 L20 38 L4 29 V11 Z"/></svg><b>'+esc(b.mark)+'</b>'+
+      (opts.n>1?'<i>'+opts.n+'</i>':'')+'</span>';
+  }
+
+  /* ----- the page ----- */
+  function render(){
+    var el=$("bd-grid"); if(!el) return;
+    var com=window.Polls?Polls.commish():false;
+    $("bd-admin-note").hidden=!com;
+    Array.prototype.forEach.call(document.querySelectorAll("#bd-tabs button"),function(t){ t.classList.toggle("on",t.dataset.kind===filter); });
+    var list=CAT.filter(function(b){ return filter==="all"||b.kind===filter; });
+    var won=CAT.filter(function(b){ return awardsOf(b.id).length; }).length;
+    $("bd-eyebrow").textContent=loaded?(won?won+" of "+CAT.length+" claimed":"Nothing claimed yet"):"Loading…";
+    var hc=document.querySelector("#hc-badges .hc-n"); if(hc) hc.textContent=loaded?String(won):"—";
+    var html="";
+    var lastKind=null;
+    list.forEach(function(b){
+      if(b.kind!==lastKind){ lastKind=b.kind; html+='<div class="bd-kind"><span class="eyebrow">'+esc(KINDS[b.kind])+'</span><p class="sub">'+esc(KIND_BLURB[b.kind])+'</p></div>'; }
+      html+=card(b,com);
+    });
+    el.innerHTML=html;
+    fillStrips(); homeStrip();
+  }
+  function card(b,com){
+    var m=metaOf(b.id), h=holder(b.id), hist=awardsOf(b.id), open=openHist[b.id];
+    var held;
+    if(!h) held='<span class="bd-unclaimed">Unclaimed</span>';
+    else if(b.kind==="weekly") held='<b data-team="'+esc(h.team_id)+'" class="bd-holder">'+esc(teamName(h.team_id))+'</b><small>'+h.n+' of '+h.of+' this season · '+esc(h.season)+'</small>';
+    else if(b.kind==="legacy") held='<b data-team="'+esc(h.team_id)+'" class="bd-holder">'+esc(teamName(h.team_id))+'</b><small>'+(m.claimed?"final holder · prize claimed":"holding since "+esc(h.season))+(h.note?' · '+esc(h.note):'')+'</small>';
+    else held='<b data-team="'+esc(h.team_id)+'" class="bd-holder">'+esc(teamName(h.team_id))+'</b><small>'+esc(h.season)+(h.note?' · '+esc(h.note):'')+'</small>';
+    var prize=m.prize?'<div class="bd-prize'+(m.claimed?" claimed":"")+'"><span class="eyebrow">Prize</span><span>'+esc(m.prize)+(m.claimed?' · <em>claimed</em>':'')+'</span></div>':(com?'<div class="bd-prize none"><span class="eyebrow">Prize</span><span class="sub">none yet</span></div>':'');
+    var tools="";
+    if(com){
+      tools='<div class="bd-tools">'+
+        '<button class="btn sm" data-baward="'+b.id+'">'+(b.kind==="legacy"&&h?"Pass it":"Award")+'</button>'+
+        '<button class="btn quiet sm" data-bprize="'+b.id+'">'+(m.prize?"Edit prize":"Set prize")+'</button>'+
+        (hist.length?'<button class="btn quiet sm" data-bhist="'+b.id+'">'+(open?"Hide history":"History ("+hist.length+")")+'</button>':'')+
+        '</div>';
+      if(openForm===b.id) tools+=awardForm(b);
+      if(openPrize===b.id) tools+=prizeForm(b,m);
+    } else if(hist.length){
+      tools='<div class="bd-tools"><button class="btn quiet sm" data-bhist="'+b.id+'">'+(open?"Hide history":"History ("+hist.length+")")+'</button></div>';
+    }
+    var history="";
+    if(open&&hist.length){
+      history='<ol class="bd-hist">'+hist.map(function(a){
+        return '<li><b>'+esc(teamShort(a.team_id))+'</b><span>'+esc(a.season)+(a.note?' · '+esc(a.note):'')+'</span><small>'+esc(fmtDate(a.awarded_at))+'</small>'+
+          (com?'<button class="btn quiet sm" data-brevoke="'+esc(a.id)+'" title="Take this one back">✕</button>':'')+'</li>';
+      }).join("")+'</ol>';
+    }
+    return '<article class="bd-card k-'+b.kind+(h?" held":"")+(b.special?" special":"")+'" id="bd-'+b.id+'">'+
+      '<div class="bd-top">'+seal(b,{big:true})+'<div class="bd-id"><h3>'+esc(b.name)+'</h3><span class="pill q">'+esc(KINDS[b.kind])+'</span></div></div>'+
+      '<p class="bd-rule">'+esc(b.rule)+'</p>'+
+      (b.special?'<p class="bd-special">'+esc(b.special)+'</p>':'')+
+      '<div class="bd-held">'+held+'</div>'+
+      prize+tools+history+
+      '</article>';
+  }
+  function awardForm(b){
+    var h=holder(b.id);
+    var teams=T.slice().sort(function(a,c){return a.short<c.short?-1:1;}).map(function(t){ return '<option value="'+t.id+'"'+(h&&h.team_id===t.id&&b.kind!=="legacy"?"":"")+'>'+esc(t.short)+' · '+esc(t.name)+'</option>'; }).join("");
+    var hint=b.kind==="legacy"?(h?"This passes the badge from "+teamShort(h.team_id)+". The old holder stays in the history.":"First holder. Every later holder gets written down under it."):
+             b.kind==="weekly"?"Put the week in the note, e.g. “Week 4”. Award it as often as it happens.":
+             b.kind==="draft"?"Put the pick in the note, e.g. “Round 3 · Reed Sheppard”.":"One a season. Put the number in the note if there is one.";
+    return '<form class="bd-form" data-bform="'+b.id+'">'+
+      '<div class="field"><label>Team</label><select name="team">'+teams+'</select></div>'+
+      '<div class="field" style="flex:0 0 120px;min-width:120px"><label>Season</label><input name="season" value="'+esc(SEASON_NOW)+'" maxlength="12"></div>'+
+      '<div class="field wide"><label>Note (optional)</label><input name="note" maxlength="120" placeholder="'+esc(b.kind==="weekly"?"Week 4":(b.kind==="draft"?"Round 3 · Reed Sheppard":"12-6-1"))+'"></div>'+
+      '<p class="hint">'+esc(hint)+'</p>'+
+      '<div class="bd-form-out"><button class="btn sm" type="submit">'+(b.kind==="legacy"&&h?"Pass it":"Award it")+'</button><button class="btn quiet sm" type="button" data-bcancel="1">Cancel</button><span class="bd-msg"></span></div>'+
+      '</form>';
+  }
+  function prizeForm(b,m){
+    return '<form class="bd-form" data-bprizeform="'+b.id+'">'+
+      '<div class="field wide"><label>Prize</label><input name="prize" maxlength="140" value="'+esc(m.prize||"")+'" placeholder="'+esc(b.kind==="legacy"?"A 2003 vintage, opened the day he retires":"Winner picks the draft-day snacks")+'"></div>'+
+      (b.kind==="legacy"?'<div class="field wide" style="flex-direction:row;align-items:center;gap:10px"><input type="checkbox" name="claimed" id="bd-claimed-'+b.id+'"'+(m.claimed?" checked":"")+' style="width:18px;height:18px;accent-color:var(--amber)"><label for="bd-claimed-'+b.id+'" style="font-family:var(--body);font-size:14.5px;letter-spacing:0;text-transform:none;color:var(--ink);cursor:pointer">Prize claimed — the current holder is the final one</label></div>':'')+
+      '<div class="bd-form-out"><button class="btn sm" type="submit">Save</button><button class="btn quiet sm" type="button" data-bcancel="1">Cancel</button><span class="bd-msg"></span></div>'+
+      '</form>';
+  }
+
+  /* ----- strips on team cards, the team page, the home page ----- */
+  function fillStrips(){
+    Array.prototype.forEach.call(document.querySelectorAll("[data-bstrip]"),function(el){
+      var tid=el.dataset.bstrip, list=forTeam(tid);
+      if(!list.length){ el.innerHTML=el.dataset.bempty?'<span class="sub">'+esc(el.dataset.bempty)+'</span>':''; el.classList.toggle("none",true); return; }
+      el.classList.remove("none");
+      el.innerHTML=list.map(function(x){ return seal(x.b,{n:x.n,dim:!x.cur,title:x.label}); }).join("");
+    });
+  }
+  function homeStrip(){
+    var el=$("home-badges"); if(!el) return;
+    var recent=awards.slice().sort(function(a,b){ return a.awarded_at<b.awarded_at?1:-1; }).slice(0,4);
+    if(!recent.length){ el.hidden=true; return; }
+    el.hidden=false;
+    $("home-badges-list").innerHTML=recent.map(function(a){
+      var b=BY[a.badge_id]; if(!b) return "";
+      return '<button class="hb" data-go="badges" data-badge="'+b.id+'">'+seal(b)+'<span><b>'+esc(b.name)+'</b><small>'+esc(teamShort(a.team_id))+' · '+esc(a.season)+(a.note?' · '+esc(a.note):'')+'</small></span></button>';
+    }).join("");
+  }
+
+  /* ----- data ----- */
+  function load(){
+    if(!window.Polls||!Polls.store||!Polls.store()) return;
+    Polls.store().badgesLoad().then(function(d){
+      meta={}; (d.meta||[]).forEach(function(m){ meta[m.badge_id]=m; });
+      awards=d.awards||[]; loaded=true; render();
+    }).catch(function(){ loaded=true; render(); });
+  }
+  function msg(form,text,ok){ var m=form.querySelector(".bd-msg"); if(m){ m.style.color=ok?"var(--green)":"var(--red)"; m.textContent=text||""; } }
+
+  /* ----- wiring ----- */
+  function bind(){
+    var root=$("v-badges");
+    $("bd-tabs").addEventListener("click",function(e){ var b=e.target.closest("button[data-kind]"); if(!b) return; filter=b.dataset.kind; render(); });
+    root.addEventListener("click",function(e){
+      var t;
+      if((t=e.target.closest("[data-baward]"))){ openForm=openForm===t.dataset.baward?null:t.dataset.baward; openPrize=null; render(); return; }
+      if((t=e.target.closest("[data-bprize]"))){ openPrize=openPrize===t.dataset.bprize?null:t.dataset.bprize; openForm=null; render(); return; }
+      if((t=e.target.closest("[data-bhist]"))){ openHist[t.dataset.bhist]=!openHist[t.dataset.bhist]; render(); return; }
+      if((t=e.target.closest("[data-bcancel]"))){ openForm=null; openPrize=null; render(); return; }
+      if((t=e.target.closest("[data-brevoke]"))){
+        if(!confirm("Take this award back? It disappears from the history.")) return;
+        Polls.store().badgeRevoke(t.dataset.brevoke).then(load).catch(function(err){ alert((err&&err.message)||"Couldn't do that."); });
+        return;
+      }
+    });
+    root.addEventListener("submit",function(e){
+      var f=e.target.closest("form[data-bform]"), p=e.target.closest("form[data-bprizeform]");
+      if(!f&&!p) return;
+      e.preventDefault();
+      if(f){
+        var team=f.team.value, season=f.season.value.trim(), note=f.note.value.trim();
+        if(!season){ msg(f,"Season?"); return; }
+        f.querySelector('button[type=submit]').disabled=true;
+        Polls.store().badgeAward({badge_id:f.dataset.bform,team_id:team,season:season,note:note||null}).then(function(){ openForm=null; load(); })
+          .catch(function(err){ f.querySelector('button[type=submit]').disabled=false; msg(f,(err&&err.message)||"Couldn't save."); });
+      } else {
+        var prize=p.prize.value.trim(), claimed=p.claimed?p.claimed.checked:false;
+        p.querySelector('button[type=submit]').disabled=true;
+        Polls.store().badgeMeta(p.dataset.bprizeform,{prize:prize||null,claimed:claimed}).then(function(){ openPrize=null; load(); })
+          .catch(function(err){ p.querySelector('button[type=submit]').disabled=false; msg(p,(err&&err.message)||"Couldn't save."); });
+      }
+    });
+    /* jump from the home strip to a badge */
+    document.addEventListener("click",function(e){
+      var b=e.target.closest("[data-badge]"); if(!b) return;
+      setTimeout(function(){ var c=$("bd-"+b.dataset.badge); if(c){ c.scrollIntoView({block:"center"}); c.classList.add("flash"); setTimeout(function(){ c.classList.remove("flash"); },1600); } },80);
+    });
+  }
+  function onView(v){
+    if(!started){ started=true; bind(); }
+    if(v==="badges"){ openForm=null; openPrize=null; render(); }
+    fillStrips();
+  }
+  if(window.Polls&&Polls.onAuth) Polls.onAuth(load);
+  return {onView:onView, load:load, forTeam:forTeam, catalogue:CAT, seal:seal};
+})();
+window.Badges=Badges;
+
 /* ---------- routing ---------- */
-var views={home:"v-home",teams:"v-teams",team:"v-team",players:"v-players",plot:"v-plot",draft:"v-draft",cap:"v-cap",keepers:"v-keepers",polls:"v-polls",pollhist:"v-pollhist",agenda:"v-agenda",sched:"v-sched",dues:"v-dues",signup:"v-signup",manager:"v-manager",history:"v-history",rules:"v-rules"};
+var views={home:"v-home",teams:"v-teams",team:"v-team",players:"v-players",plot:"v-plot",draft:"v-draft",cap:"v-cap",keepers:"v-keepers",polls:"v-polls",pollhist:"v-pollhist",agenda:"v-agenda",sched:"v-sched",dues:"v-dues",badges:"v-badges",signup:"v-signup",manager:"v-manager",history:"v-history",rules:"v-rules"};
 var curTeam=null;
 function routeFor(v){ return v==="team"&&curTeam ? "team/"+curTeam : v; }
 function go(v,silent){
@@ -4854,6 +5216,7 @@ function go(v,silent){
   if(window.Polls) Polls.onView(v);
   if(window.Players) Players.onView(v);
   if(window.Plot) Plot.onView(v);
+  if(window.Badges) Badges.onView(v);
   Array.prototype.forEach.call(document.querySelectorAll("#nav button"),function(b){
     if(b.dataset.go===navKey){b.setAttribute("aria-current","page");}else{b.removeAttribute("aria-current");}
   });
