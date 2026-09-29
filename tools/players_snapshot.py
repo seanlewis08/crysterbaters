@@ -177,6 +177,7 @@ def refresh_numbers_only():
         cols.pop(i)
     add_numbers(out["players"])
     cols.append("num")
+    out["built"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())   # the site only swaps its cached snapshot when this moves
     with open(path, "w") as f:
         json.dump(out, f, separators=(",", ":"))
     print("wrote", os.path.normpath(path), os.path.getsize(path), "bytes")

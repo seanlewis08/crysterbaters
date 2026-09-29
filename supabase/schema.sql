@@ -633,6 +633,7 @@ create table if not exists public.team_prefs (
   updated_by       uuid not null default auth.uid() references auth.users (id) on delete set null,
   updated_at       timestamptz not null default now()
 );
+alter table public.team_prefs add column if not exists jersey_team text check (jersey_team is null or jersey_team ~ '^[A-Z]{2,4}$');   -- the player's own NBA team, so his jersey wears the right colours
 alter table public.team_prefs enable row level security;
 create or replace function public.owns_team(p_team_id text)
 returns boolean language sql stable security definer set search_path = public as $$

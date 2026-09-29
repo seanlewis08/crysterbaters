@@ -2852,7 +2852,7 @@ var Polls=(function(){
       badgeMeta:function(badge_id,o){ if(!commish()) return Promise.reject(new Error("Commissioner only.")); if(!db.badges) db.badges={meta:[],awards:[]}; var m=db.badges.meta.filter(function(x){return x.badge_id===badge_id;})[0]; if(!m){ m={badge_id:badge_id}; db.badges.meta.push(m); } m.prize=o.prize||null; m.claimed=!!o.claimed; m.updated_at=new Date().toISOString(); save(); return Promise.resolve(); },
       /* home courts */
       prefsLoad:function(){ return Promise.resolve((db.prefs||[]).slice()); },
-      prefsSet:function(team_id,o){ var p=myProf(); if(!(commish()||(p&&p.team_id===team_id))) return Promise.reject(new Error("That's not your team.")); if(!db.prefs) db.prefs=[]; var row=db.prefs.filter(function(x){return x.team_id===team_id;})[0]; if(!row){ row={team_id:team_id}; db.prefs.push(row); } row.nba_team=o.nba_team||null; row.jersey_player=o.jersey_player||null; row.jersey_num=o.jersey_num||null; row.updated_by=db.me.id; row.updated_at=new Date().toISOString(); save(); return Promise.resolve(); },
+      prefsSet:function(team_id,o){ var p=myProf(); if(!(commish()||(p&&p.team_id===team_id))) return Promise.reject(new Error("That's not your team.")); if(!db.prefs) db.prefs=[]; var row=db.prefs.filter(function(x){return x.team_id===team_id;})[0]; if(!row){ row={team_id:team_id}; db.prefs.push(row); } row.nba_team=o.nba_team||null; row.jersey_player=o.jersey_player||null; row.jersey_num=o.jersey_num||null; row.jersey_team=o.jersey_team||null; row.updated_by=db.me.id; row.updated_at=new Date().toISOString(); save(); return Promise.resolve(); },
       schedChoose:function(eid,slot){ if(!commish()) return Promise.reject(new Error("Commissioner only.")); var ev=db.sched.events.filter(function(x){return x.id===eid;})[0]; if(ev){ ev.chosen=slot; ev.status=slot?"closed":"open"; } save(); return Promise.resolve(); },
       agendaVote:function(id,on){
         var p=myProf(); if(!p) return Promise.reject(new Error("Claim your team first."));
@@ -3023,8 +3023,8 @@ var Polls=(function(){
       badgeRevoke:function(id){ return client.from("badge_awards").delete().eq("id",id).then(chk); },
       badgeMeta:function(badge_id,o){ return client.from("badge_meta").upsert({badge_id:badge_id,prize:o.prize||null,claimed:!!o.claimed,updated_at:new Date().toISOString()},{onConflict:"badge_id"}).then(chk); },
       /* home courts */
-      prefsLoad:function(){ return client.from("team_prefs").select("team_id,nba_team,jersey_player,jersey_num,updated_at").then(function(r){ chk(r); return r.data||[]; }); },
-      prefsSet:function(team_id,o){ return client.from("team_prefs").upsert({team_id:team_id,nba_team:o.nba_team||null,jersey_player:o.jersey_player||null,jersey_num:o.jersey_num||null,updated_at:new Date().toISOString()},{onConflict:"team_id"}).then(chk); },
+      prefsLoad:function(){ return client.from("team_prefs").select("team_id,nba_team,jersey_player,jersey_num,jersey_team,updated_at").then(function(r){ chk(r); return r.data||[]; }); },
+      prefsSet:function(team_id,o){ return client.from("team_prefs").upsert({team_id:team_id,nba_team:o.nba_team||null,jersey_player:o.jersey_player||null,jersey_num:o.jersey_num||null,jersey_team:o.jersey_team||null,updated_at:new Date().toISOString()},{onConflict:"team_id"}).then(chk); },
       schedChoose:function(eid,slot){ return client.from("avail_events").update({chosen:slot,status:slot?"closed":"open"}).eq("id",eid).then(chk); },
       agendaAdd:function(a){ return client.from("agenda").insert({title:a.title,details:a.details||null}).then(chk); },
       agendaDecide:function(id,outcome){ return client.from("agenda").update(outcome==null?{status:"open",outcome:null,decided_at:null}:{status:"decided",outcome:outcome,decided_at:new Date().toISOString()}).eq("id",id).then(chk); },
@@ -3838,7 +3838,7 @@ var Players=(function(){
       build(); render();
       if(opened) refreshLive();
       /* a newer snapshot (salaries refreshed) replaces the cached one quietly */
-      fresh.then(function(j){ if(j&&j.built!==snap.built){ snap=j; capSeason=CAPS[snap.salarySeason]?snap.salarySeason:capSeason; save(); build(); render(); } }).catch(function(){});
+      fresh.then(function(j){ if(j&&(j.built!==snap.built||(j.cols||[]).join()!==(snap.cols||[]).join())){ snap=j; capSeason=CAPS[snap.salarySeason]?snap.salarySeason:capSeason; save(); build(); render(); } }).catch(function(){});
     }).catch(function(e){
       if(!snap){ setNotice("Player stats load on crysterbaters.com — this preview can't reach them.","warn"); $("pl-eyebrow").textContent="Unavailable here"; }
     });
@@ -5426,7 +5426,7 @@ var Court=(function(){
     var floor=nba||HOME;
     var court=courtSvg(floor,{logo:nba?logo(nba.abbr):"",top:"HOME COURT · "+t.name.toUpperCase()});
     var jersey="";
-    if(p.jersey_player) jersey='<div class="hero-jersey" title="'+esc(p.jersey_player+(p.jersey_num?" · #"+p.jersey_num:""))+'">'+jerseySvg(nba||HOME,p.jersey_player,p.jersey_num||"")+'</div>';
+    if(p.jersey_player){ var pr=findRow(p.jersey_player); var jt=team(p.jersey_team)||(pr&&team(pr.team))||nba||HOME; jersey='<div class="hero-jersey" title="'+esc(p.jersey_player+(p.jersey_num?" · #"+p.jersey_num:"")+(jt.abbr?" · "+jt.city+" "+jt.name:""))+'">'+jerseySvg(jt,p.jersey_player,p.jersey_num||"")+'</div>'; }
     return '<div class="hero'+(nba?"":" plain")+'" style="--h1:'+floor.c1+';--h2:'+floor.c2+'">'+court+
       '<div class="hero-fade"></div>'+
       (nba?'<div class="hero-tag">Home court<b>'+esc(nba.city+" "+nba.name)+'</b></div>':'')+
@@ -5443,11 +5443,11 @@ var Court=(function(){
       var opts='<option value="">Crysterbaters (no team)</option>'+NBA.slice().sort(function(a,b){return a[1]<b[1]?-1:1;}).map(function(r){ return '<option value="'+r[0]+'"'+(p.nba_team===r[0]?" selected":"")+'>'+esc(r[1]+" "+r[2])+'</option>'; }).join("");
       var rows=(window.Players&&Players.rows())||[];
       var picked=p.jersey_player?findRow(p.jersey_player):null;
-      var chip=p.jersey_player?'<div class="hc-chip"><b>'+esc(p.jersey_player)+'</b><span>'+esc((p.jersey_num?"#"+p.jersey_num+" · ":"")+(picked&&picked.team?picked.team:""))+'</span><button type="button" class="hc-clear" title="Take the jersey down">✕</button></div>':'';
+      var chip=p.jersey_player?'<div class="hc-chip"><b>'+esc(p.jersey_player)+'</b><span>'+esc((p.jersey_num?"#"+p.jersey_num+" · ":"")+(p.jersey_team||(picked&&picked.team)||""))+'</span><button type="button" class="hc-clear" title="Take the jersey down">✕</button></div>':'';
       body='<form class="hc-form" id="hc-form" autocomplete="off">'+
         '<div class="field"><label>NBA team</label><select name="nba" id="hc-nba">'+opts+'</select></div>'+
         '<div class="field"><label>Jersey</label>'+chip+
-          '<input type="hidden" name="player" id="hc-player" value="'+esc(p.jersey_player||"")+'">'+
+          '<input type="hidden" name="player" id="hc-player" value="'+esc(p.jersey_player||"")+'"><input type="hidden" name="team" id="hc-team" value="'+esc(p.jersey_team||(picked&&picked.team)||"")+'">'+
           '<div class="hc-search"><input id="hc-q" placeholder="'+(rows.length?"Type a player\u2019s name\u2026":"Loading players\u2026")+'"'+(rows.length?"":" disabled")+'><div class="hc-list" id="hc-list" hidden></div></div></div>'+
         '<div class="field" style="flex:0 0 110px;min-width:110px"><label>Number</label><input name="num" id="hc-num" maxlength="2" inputmode="numeric" value="'+esc(p.jersey_num||"")+'" placeholder="\u2014"></div>'+
         '<p class="hint" id="hc-hint">'+(rows.length?"Pick a player and his current number fills in from ESPN. Change it only if ESPN has it wrong.":"Fetching the player list\u2026")+'</p>'+
@@ -5480,8 +5480,8 @@ var Court=(function(){
     el.innerHTML=hits.map(function(r){ return '<button type="button" class="hc-hit" data-pick="'+esc(r.name)+'" data-num="'+esc(r.num||"")+'" data-team="'+esc(r.team||"")+'"><b>'+esc(r.name)+'</b><span>'+esc((r.num?"#"+r.num+" · ":"")+(r.team||""))+'</span></button>'; }).join("");
     el.hidden=false;
   }
-  function pick(name,num){
-    var p=prefOf(curTid); prefs[curTid]=Object.assign({},p,{nba_team:$("hc-nba").value,jersey_player:name||null,jersey_num:num||null}); paint();
+  function pick(name,num,teamAbbr){
+    var p=prefOf(curTid); prefs[curTid]=Object.assign({},p,{nba_team:$("hc-nba").value,jersey_player:name||null,jersey_num:num||null,jersey_team:teamAbbr||null}); paint();
     var n=$("hc-num"); if(n&&!num) n.focus();
   }
   function paint(){
@@ -5498,22 +5498,22 @@ var Court=(function(){
     document.addEventListener("input",function(e){ if(e.target.id==="hc-q") showList(e.target.value); });
     document.addEventListener("focusin",function(e){ if(e.target.id==="hc-q"&&e.target.value) showList(e.target.value); });
     document.addEventListener("click",function(e){
-      var h=e.target.closest("[data-pick]"); if(h){ pick(h.dataset.pick,h.dataset.num); return; }
-      if(e.target.closest(".hc-clear")){ pick(null,null); return; }
+      var h=e.target.closest("[data-pick]"); if(h){ pick(h.dataset.pick,h.dataset.num,h.dataset.team); return; }
+      if(e.target.closest(".hc-clear")){ pick(null,null,null); return; }
       if(!e.target.closest(".hc-search")){ var l=$("hc-list"); if(l) l.hidden=true; }
     });
     document.addEventListener("keydown",function(e){
       if(e.target.id!=="hc-q") return;
       var l=$("hc-list"); if(!l||l.hidden) return;
-      if(e.key==="Enter"){ e.preventDefault(); var f=l.querySelector("[data-pick]"); if(f) pick(f.dataset.pick,f.dataset.num); }
+      if(e.key==="Enter"){ e.preventDefault(); var f=l.querySelector("[data-pick]"); if(f) pick(f.dataset.pick,f.dataset.num,f.dataset.team); }
       if(e.key==="Escape"){ l.hidden=true; }
     });
     document.addEventListener("change",function(e){
-      if(e.target.id==="hc-nba"){ var p=prefOf(curTid); prefs[curTid]=Object.assign({},p,{nba_team:e.target.value,jersey_player:$("hc-player").value,jersey_num:$("hc-num").value}); paint(); }
+      if(e.target.id==="hc-nba"){ var p=prefOf(curTid); prefs[curTid]=Object.assign({},p,{nba_team:e.target.value,jersey_player:$("hc-player").value,jersey_num:$("hc-num").value,jersey_team:$("hc-team").value}); paint(); }
     });
     document.addEventListener("submit",function(e){
       var f=e.target.closest("#hc-form"); if(!f) return; e.preventDefault();
-      var o={nba_team:f.nba.value||null,jersey_player:f.player.value||null,jersey_num:(f.num.value||"").trim()||null};
+      var o={nba_team:f.nba.value||null,jersey_player:f.player.value||null,jersey_num:(f.num.value||"").trim()||null,jersey_team:f.team.value||null};
       f.querySelector("button[type=submit]").disabled=true;
       Polls.store().prefsSet(curTid,o).then(function(){ editing=false; load(); }).catch(function(err){ f.querySelector("button[type=submit]").disabled=false; var m=$("hc-msg"); if(m){ m.style.color="var(--red)"; m.textContent=(err&&err.message)||"Couldn't save."; } });
     });
