@@ -802,26 +802,22 @@ footer p + p{margin-top:11px}
   .scoreline div{border-right:0;padding-right:0;margin-right:22px}
 }
 /* badges */
-.seal{position:relative;display:inline-grid;place-items:center;width:34px;height:34px;flex-shrink:0;vertical-align:middle}
-.seal svg{position:absolute;inset:0;width:100%;height:100%}
-.seal svg path{fill:var(--surface-3);stroke:var(--line-2);stroke-width:1.6}
-.seal b{position:relative;font-family:var(--disp);font-weight:800;font-size:12px;letter-spacing:.02em;color:var(--muted)}
-.seal i{position:absolute;right:-5px;top:-5px;font:600 9px/1 var(--mono);color:#fff;background:var(--ink);border-radius:8px;padding:2px 4px;font-style:normal}
-.seal.k-legacy svg path{fill:var(--amber);stroke:var(--amber)}
-.seal.k-legacy b{color:#fff}
-.seal.k-season svg path{fill:var(--cyan);stroke:var(--cyan)}
-.seal.k-season b{color:#fff}
-.seal.k-draft svg path{fill:var(--green);stroke:var(--green)}
-.seal.k-draft b{color:#fff}
-.seal.k-weekly svg path{fill:var(--surface);stroke:var(--ink);stroke-width:2}
-.seal.k-weekly b{color:var(--ink)}
-.seal.dim{opacity:.38}
-.seal.big{width:52px;height:52px}
-.seal.big b{font-size:18px}
+.seal{position:relative;display:inline-block;width:34px;height:41px;flex-shrink:0;vertical-align:middle;filter:drop-shadow(0 2px 3px rgba(40,25,8,.28))}
+.seal svg{display:block;width:100%;height:100%}
+.seal i{position:absolute;right:-6px;top:-5px;font:600 9px/1 var(--mono);color:#fff;background:var(--ink);border-radius:8px;padding:2px 4px;font-style:normal}
+.seal.dim{opacity:.42;filter:grayscale(.5)}
+.seal.big{width:66px;height:79px}
 .bstrip{display:flex;gap:6px;flex-wrap:wrap;min-height:0}
 .bstrip:empty,.bstrip.none:empty{display:none}
-.bstrip.lg .seal{width:40px;height:40px}
-.bstrip.lg .seal b{font-size:14px}
+.bstrip.lg .seal{width:40px;height:48px}
+.bcase{display:flex;flex-direction:column}
+.bc-row{display:flex;gap:12px;align-items:center;padding:10px 16px;border-bottom:1px solid var(--line)}
+.bc-row:last-child{border-bottom:0}
+.bc-row .seal{width:42px;height:50px}
+.bc-row b{display:block;font-family:var(--disp);font-size:17px;font-weight:700;text-transform:uppercase;letter-spacing:.02em;line-height:1.05}
+.bc-row small{display:block;font-size:12.5px;color:var(--muted);margin-top:3px}
+.bc-row.past b{color:var(--muted)}
+.bc-none{padding:16px;font-size:13.5px;color:var(--muted)}
 .bd-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin-top:18px}
 .bd-kind{grid-column:1/-1;margin-top:14px}
 .bd-kind:first-child{margin-top:0}
@@ -830,7 +826,7 @@ footer p + p{margin-top:11px}
 .bd-card.held{border-color:var(--line-2)}
 .bd-card.special{border-top:3px solid var(--amber)}
 .bd-card.flash{box-shadow:0 0 0 3px var(--amber-glow),var(--shadow);border-color:var(--amber)}
-.bd-top{display:flex;gap:14px;align-items:center}
+.bd-top{display:flex;gap:16px;align-items:center}
 .bd-id{min-width:0;display:flex;flex-direction:column;gap:5px;align-items:flex-start}
 .bd-id h3{font-family:var(--disp);font-size:22px;font-weight:700;text-transform:uppercase;letter-spacing:.02em;line-height:1;margin:0}
 .bd-rule{font-size:14.5px;color:var(--muted);margin:0}
@@ -1025,6 +1021,12 @@ footer p + p{margin-top:11px}
 <div class="wrap">
 
   <!-- ================= HOME ================= -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+    <linearGradient id="bgf" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F6D97C"/><stop offset=".35" stop-color="#D9A83B"/><stop offset=".7" stop-color="#A66E17"/><stop offset="1" stop-color="#E9C25E"/></linearGradient>
+    <linearGradient id="bfld" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2A2117"/><stop offset="1" stop-color="#0F0B07"/></linearGradient>
+    <linearGradient id="bgm" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFE59A"/><stop offset=".55" stop-color="#E4B44A"/><stop offset="1" stop-color="#B57A1D"/></linearGradient>
+    <g id="bshield"><path d="M7 6 H93 V78 L50 114 L7 78 Z" fill="url(#bgf)"/><path d="M13 12 H87 V75 L50 106 L13 75 Z" fill="url(#bfld)"/><path d="M15.5 14.5 H84.5 V73.8 L50 102.6 L15.5 73.8 Z" fill="none" stroke="#E9C25E" stroke-width="1" opacity=".55"/><path d="M7 6 H93 V10 H7 Z" fill="#FFF0B8" opacity=".55"/></g>
+  </defs></svg>
   <div class="view on" id="v-home">
     <div id="home-notice"></div>
 
@@ -1109,7 +1111,7 @@ footer p + p{margin-top:11px}
     <section>
       <div class="sec-head"><h2>Badges</h2><span class="eyebrow cool" id="bd-eyebrow">Loading…</span></div>
       <div class="rulebar"></div>
-      <p class="lede">The trophy case. Nothing here is handed out for what already happened: every badge starts unclaimed and goes to the first manager who earns it from now on. Some are won each season, some are held and passed along, and each one can carry a prize.</p>
+      <p class="lede">The trophy case, seventeen badges strong. Nothing here is handed out for what already happened: every badge starts unclaimed and goes to the first manager who earns it from now on. Some are won each season, some are held and passed along, and each one can carry a prize.</p>
       <div id="bd-admin-note" class="notice" style="margin-top:16px" hidden>You're the commissioner, so you can award any badge, pass a legacy badge to its next holder, set the prize on each one, and take an award back from its history.</div>
       <div class="seg" id="bd-tabs" style="margin-top:16px;flex-wrap:wrap">
         <button type="button" class="on" data-kind="all">All</button>
@@ -2092,7 +2094,7 @@ document.getElementById("watch").innerHTML=K.map(function(k){
     {go:"sched",   n:"—",        lbl:"Free",     h:"Draft Day",  p:"Mark the hours you could draft and watch the best slot rise out of everyone's calendars.", id:"hc-sched"},
     {go:"agenda",  n:"—",        lbl:"Open",     h:"Open Items", p:"What the league still has to decide. Raise one, argue about it, then put it to a vote.", id:"hc-agenda"},
     {go:"dues",    n:"—",        lbl:"Paid",     h:"Dues",       p:"What the buy-in is, where to send it, and who has settled up. Pick Venmo, Zelle or Cash App and mark yours sent.", id:"hc-dues"},
-    {go:"badges",  n:"—",        lbl:"Claimed",  h:"Badges",     p:"The trophy case. Twenty badges the league can earn, from Father Time to Waffle House, each with a prize once Sean sets one.", id:"hc-badges"},
+    {go:"badges",  n:"—",        lbl:"Claimed",  h:"Badges",     p:"The trophy case. Seventeen badges the league can earn, from Father Time to Waffle House, each with a prize once Sean sets one.", id:"hc-badges"},
     {go:"history", n:"14",       lbl:"Seasons",  h:"History",    p:"Every champion since 2012. Four managers tied at two titles, two still hunting their first."},
     {go:"rules",   n:"11",       lbl:"Categories",h:"Rules",     p:"How keepers work, why rosters lock before the playoffs, and the league settings as Yahoo has them."}
   ];
@@ -2220,13 +2222,14 @@ function renderTeam(id){
       '<div class="panel" style="grid-column:span 2;min-width:0">'+
         '<div class="panel-hd"><span class="eyebrow">Locked roster · 2025–26</span></div>'+rosterHtml+'</div>'+
       '<div style="display:flex;flex-direction:column;gap:16px">'+
+        '<div class="panel"><div class="panel-hd" style="display:flex;justify-content:space-between;align-items:center;gap:10px"><span class="eyebrow">Trophy case</span><button class="back" data-go="badges" style="margin:0;padding:0;font-size:11px;color:var(--amber)">All badges →</button></div>'+
+          '<div class="bcase" data-bcase="'+t.id+'"></div></div>'+
         '<div class="panel"><div class="panel-hd"><span class="eyebrow">Keeper ladders</span></div>'+ladders+'</div>'+
         '<div class="panel"><div class="panel-hd"><span class="eyebrow">Franchise</span></div>'+
           '<div style="padding:16px;display:flex;flex-direction:column;gap:12px">'+
             '<div class="kv"><dt>Titles</dt><dd>'+(t.titles.length?t.titles.join(" · "):"None yet")+'</dd></div>'+
             '<div class="kv"><dt>FAB left</dt><dd>$'+s.faab+'</dd></div>'+
             '<div class="kv"><dt>Moves</dt><dd>'+s.moves+'</dd></div>'+
-            '<div class="kv" style="flex-direction:column;align-items:stretch;gap:8px"><dt>Badges</dt><dd class="bstrip lg" data-bstrip="'+t.id+'" data-bempty="None yet — see the Badges page."></dd></div>'+
           '</div></div>'+
       '</div>'+
     '</div>';
@@ -4979,10 +4982,6 @@ var Badges=(function(){
      rule:"Fewest roster moves in a season."},
     {id:"all-gas", name:"All Gas", mark:"AG", kind:"season",
      rule:"Burned the FAB budget all the way to $0."},
-    {id:"the-accountant", name:"The Accountant", mark:"AC", kind:"season",
-     rule:"Never went over the games cap all season."},
-    {id:"cap-casualty", name:"Cap Casualty", mark:"CC", kind:"season",
-     rule:"First team over the games cap."},
     {id:"mr-irrelevant", name:"Mr. Irrelevant", mark:"MI", kind:"season",
      rule:"Best value out of the twelfth round."},
     {id:"sunk-cost", name:"Sunk Cost", mark:"SC", kind:"season",
@@ -5001,8 +5000,6 @@ var Badges=(function(){
 
     {id:"the-sweep", name:"The Sweep", mark:"SW", kind:"weekly",
      rule:"Won nine or more of the eleven categories in a week."},
-    {id:"iron-man", name:"Iron Man", mark:"IM", kind:"weekly",
-     rule:"Landed on exactly thirty games."},
     {id:"the-upset", name:"The Upset", mark:"UP", kind:"weekly",
      rule:"Lowest seed to beat the highest that week."},
     {id:"waffle-house", name:"Waffle House", mark:"WH", kind:"weekly",
@@ -5042,10 +5039,31 @@ var Badges=(function(){
   function teamShort(tid){ var t=byId(tid); return t?t.short:tid; }
   function fmtDate(iso){ if(!iso) return ""; var d=new Date(iso); return isNaN(d)?"":d.toLocaleDateString([],{month:"short",day:"numeric",year:"numeric"}); }
 
+  /* one pictogram per badge, drawn on the shared gold shield (defs sit in the page, id bshield/bgm) */
+  var S='fill="none" stroke="url(#bgm)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"', F='fill="url(#bgm)"', K='#1A120A';
+  var ICON={
+    "father-time":'<path d="M33 24 H67 M33 84 H67 M37 26 C37 44 47 48 50 54 C53 48 63 44 63 26 M37 82 C37 64 47 60 50 54 C53 60 63 64 63 82" '+S+'/><path d="M43 79 L50 66 L57 79 Z" '+F+'/>',
+    "the-belt":'<rect x="18" y="42" width="12" height="20" rx="3" '+F+'/><rect x="70" y="42" width="12" height="20" rx="3" '+F+'/><rect x="27" y="36" width="46" height="32" rx="7" '+F+'/><circle cx="50" cy="52" r="11" fill="'+K+'"/><circle cx="50" cy="52" r="7" '+F+'/><path d="M37 45 L37 59 M63 45 L63 59" stroke="'+K+'" stroke-width="2.5" stroke-linecap="round"/>',
+    "grandfather-clause":'<rect x="28" y="24" width="44" height="58" rx="3" '+S+'/><path d="M36 36 H64 M36 46 H64 M36 56 H56" '+S+' stroke-width="4"/><circle cx="62" cy="70" r="9" fill="'+K+'" stroke="url(#bgm)" stroke-width="4"/><path d="M62 66 V70 L65 72" stroke="url(#bgm)" stroke-width="3" stroke-linecap="round" fill="none"/>',
+    "regular-season-giannis":'<path d="M26 74 H74 M28 70 L24 38 L39 52 L50 30 L61 52 L76 38 L72 70 Z" '+S+' stroke-dasharray="7 5"/>',
+    "trader-joe":'<path d="M28 42 H66 M58 32 L68 42 L58 52" '+S+'/><path d="M72 66 H34 M42 56 L32 66 L42 76" '+S+'/>',
+    "the-hoarder":'<path d="M24 46 H76 V80 H24 Z" '+F+'/><path d="M24 46 C24 34 32 28 50 28 C68 28 76 34 76 46 Z" '+F+'/><rect x="24" y="46" width="52" height="5" fill="'+K+'"/><rect x="44" y="52" width="12" height="12" rx="2" fill="'+K+'"/><circle cx="50" cy="57" r="2.5" '+F+'/>',
+    "all-gas":'<path d="M26 66 A24 24 0 0 1 74 66" '+S+' stroke-width="6"/><path d="M50 68 L31 54" '+S+' stroke-width="4"/><circle cx="50" cy="68" r="5" '+F+'/><text x="26" y="82" font-family="Saira Condensed,Arial Narrow,sans-serif" font-weight="800" font-size="15" fill="url(#bgm)">E</text><text x="66" y="82" font-family="Saira Condensed,Arial Narrow,sans-serif" font-weight="800" font-size="15" fill="url(#bgm)">F</text>',
+    "mr-irrelevant":'<path d="M36 26 L44 22 C46 27 54 27 56 22 L64 26 L72 38 L64 44 V82 H36 V44 L28 38 Z" '+F+'/><text x="50" y="72" text-anchor="middle" font-family="Saira Condensed,Arial Narrow,sans-serif" font-weight="800" font-size="26" fill="'+K+'">12</text>',
+    "sunk-cost":'<path d="M22 44 C30 38 36 38 44 44 S58 50 66 44 S78 38 78 44" '+S+' stroke-width="4"/><circle cx="50" cy="66" r="14" '+S+' stroke-width="5"/><text x="50" y="72" text-anchor="middle" font-family="Saira Condensed,Arial Narrow,sans-serif" font-weight="800" font-size="18" fill="url(#bgm)">$</text><path d="M50 80 L50 88 M44 84 L50 90 L56 84" '+S+' stroke-width="4"/>',
+    "free-throw-king":'<path d="M32 40 L28 24 L40 32 L50 20 L60 32 L72 24 L68 40 Z" '+F+'/><circle cx="50" cy="62" r="17" '+S+' stroke-width="4.5"/><path d="M33 62 H67 M50 45 V79 M38 50 C46 58 54 58 62 50 M38 74 C46 66 54 66 62 74" '+S+' stroke-width="3"/>',
+    "the-reach":'<rect x="28" y="82" width="44" height="5" rx="2.5" '+F+'/><rect x="47.5" y="42" width="5" height="36" '+F+' opacity=".9"/><path d="M50 16 L54.5 29 L68 29 L57 37 L61 50 L50 42 L39 50 L43 37 L32 29 L45.5 29 Z" '+F+'/>',
+    "the-steal":'<path d="M22 44 C30 34 42 34 50 42 C58 34 70 34 78 44 L74 62 C64 70 56 62 50 56 C44 62 36 70 26 62 Z" '+F+'/><ellipse cx="38" cy="50" rx="7" ry="5" fill="'+K+'"/><ellipse cx="62" cy="50" rx="7" ry="5" fill="'+K+'"/><path d="M32 76 H68" '+S+' stroke-width="4"/>',
+    "homer":'<path d="M22 54 L50 26 L78 54" '+S+' stroke-width="6"/><path d="M30 50 V82 H70 V50" '+S+' stroke-width="5"/><circle cx="50" cy="66" r="9" '+S+' stroke-width="3.5"/><path d="M41 66 H59 M50 57 V75" '+S+' stroke-width="2.5"/>',
+    "nursery":'<circle cx="50" cy="70" r="11" '+S+' stroke-width="5"/><ellipse cx="50" cy="50" rx="22" ry="10" '+F+'/><path d="M40 43 C40 28 60 28 60 43" '+F+'/>',
+    "the-sweep":'<path d="M66 22 L48 56" '+S+' stroke-width="6"/><path d="M30 58 L54 56 L62 70 L58 86 L28 84 L26 68 Z" '+F+'/><path d="M34 66 L36 84 M42 62 L44 84 M50 62 L52 84" stroke="'+K+'" stroke-width="2.5" stroke-linecap="round"/>',
+    "the-upset":'<path d="M28 36 H72 M30 40 L34 68 L46 54 L50 74 L54 54 L66 68 L70 40 Z" '+S+' stroke-width="5"/>',
+    "waffle-house":'<rect x="24" y="30" width="52" height="52" rx="9" '+F+'/><g stroke="'+K+'" stroke-width="3.5" stroke-linecap="round"><path d="M37 32 V80 M50 32 V80 M63 32 V80 M26 43 H74 M26 56 H74 M26 69 H74"/></g><rect x="43" y="49" width="14" height="14" rx="2" fill="#FFF0B8"/>'
+  };
   function seal(b,opts){
     opts=opts||{};
-    return '<span class="seal k-'+b.kind+(opts.dim?" dim":"")+(opts.big?" big":"")+'" title="'+esc(opts.title||b.name)+'" aria-label="'+esc(opts.title||b.name)+'">'+
-      '<svg viewBox="0 0 40 40" aria-hidden="true"><path d="M20 2 L36 11 V29 L20 38 L4 29 V11 Z"/></svg><b>'+esc(b.mark)+'</b>'+
+    return '<span class="seal'+(opts.dim?" dim":"")+(opts.big?" big":"")+'" title="'+esc(opts.title||b.name)+'" aria-label="'+esc(opts.title||b.name)+'">'+
+      '<svg viewBox="0 0 100 120" aria-hidden="true"><use href="#bshield"/>'+(ICON[b.id]||'')+'</svg>'+
       (opts.n>1?'<i>'+opts.n+'</i>':'')+'</span>';
   }
 
@@ -5133,6 +5151,32 @@ var Badges=(function(){
       el.classList.remove("none");
       el.innerHTML=list.map(function(x){ return seal(x.b,{n:x.n,dim:!x.cur,title:x.label}); }).join("");
     });
+    Array.prototype.forEach.call(document.querySelectorAll("[data-bcase]"),function(el){ el.innerHTML=caseHtml(el.dataset.bcase); });
+  }
+  /* the team page: every badge this team has earned, with the story behind each */
+  function caseHtml(tid){
+    var rows=[];
+    CAT.forEach(function(b){
+      var list=awardsOf(b.id).filter(function(a){return a.team_id===tid;}); if(!list.length) return;
+      var h=holder(b.id), cur, line;
+      if(b.kind==="legacy"){
+        cur=!!h&&h.team_id===tid;
+        var m=metaOf(b.id);
+        line=cur?("Holding it since "+list[list.length-1].season+(m.claimed?" · final holder, prize claimed":"")):("Held it in "+uniqSeasons(list).join(", ")+" · passed on");
+      } else if(b.kind==="weekly"){
+        cur=true; var bySeason={};
+        list.forEach(function(a){ (bySeason[a.season]=bySeason[a.season]||[]).push(a.note||""); });
+        line=Object.keys(bySeason).sort().map(function(s){ var n=bySeason[s].filter(Boolean); return bySeason[s].length+"× in "+s+(n.length?" ("+n.join(", ")+")":""); }).join(" · ");
+      } else {
+        cur=true;
+        line=list.slice().sort(function(a,c){return a.season<c.season?-1:1;}).map(function(a){ return a.season+(a.note?" · "+a.note:""); }).join(" · ");
+      }
+      rows.push({b:b,cur:cur,line:line,n:b.kind==="weekly"?list.length:1});
+    });
+    if(!rows.length) return '<div class="bc-none">Nothing yet. Every badge starts unclaimed and goes to the first manager who earns it. <button class="back" data-go="badges" style="margin:0;padding:0;font-size:inherit;color:var(--amber)">See the badges →</button></div>';
+    return rows.map(function(r){
+      return '<div class="bc-row'+(r.cur?"":" past")+'">'+seal(r.b,{n:r.n,dim:!r.cur})+'<div><b>'+esc(r.b.name)+'</b><small>'+esc(r.line)+'</small></div></div>';
+    }).join("");
   }
   function homeStrip(){
     var el=$("home-badges"); if(!el) return;
@@ -5200,7 +5244,7 @@ var Badges=(function(){
     fillStrips();
   }
   if(window.Polls&&Polls.onAuth) Polls.onAuth(load);
-  return {onView:onView, load:load, forTeam:forTeam, catalogue:CAT, seal:seal};
+  return {onView:onView, load:load, forTeam:forTeam, catalogue:CAT, seal:seal, caseHtml:caseHtml};
 })();
 window.Badges=Badges;
 
