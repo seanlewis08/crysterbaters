@@ -893,6 +893,20 @@ footer p + p{margin-top:11px}
 .hc-form .field select,.hc-form .field input{font-size:15px;padding:8px 10px}
 .hc-form .hint{flex-basis:100%;font-size:12.5px;color:var(--dim);margin:0}
 .hc-out{flex-basis:100%;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.hc-search{position:relative}
+.hc-search input{width:100%}
+.hc-list{position:absolute;left:0;right:0;top:100%;z-index:5;background:var(--surface);border:1px solid var(--line-2);border-radius:3px;box-shadow:var(--shadow);max-height:280px;overflow:auto;margin-top:4px}
+.hc-list[hidden]{display:none}
+.hc-hit{display:flex;justify-content:space-between;gap:10px;width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--line);padding:9px 12px;cursor:pointer;font:inherit;color:var(--ink)}
+.hc-hit:last-child{border-bottom:0}
+.hc-hit:hover,.hc-hit:focus-visible{background:var(--amber-glow);outline:none}
+.hc-hit b{font-family:var(--disp);font-size:16px;font-weight:700;letter-spacing:.01em}
+.hc-hit span{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);white-space:nowrap}
+.hc-chip{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--amber-dim);background:var(--amber-glow);border-radius:3px;margin-bottom:8px}
+.hc-chip b{font-family:var(--disp);font-size:17px;font-weight:700;flex:1;min-width:0}
+.hc-chip span{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.hc-clear{background:none;border:0;cursor:pointer;color:var(--muted);font-size:14px;padding:2px 4px}
+.hc-clear:hover{color:var(--red)}
 
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
@@ -5428,14 +5442,15 @@ var Court=(function(){
     if(editing&&can){
       var opts='<option value="">Crysterbaters (no team)</option>'+NBA.slice().sort(function(a,b){return a[1]<b[1]?-1:1;}).map(function(r){ return '<option value="'+r[0]+'"'+(p.nba_team===r[0]?" selected":"")+'>'+esc(r[1]+" "+r[2])+'</option>'; }).join("");
       var rows=(window.Players&&Players.rows())||[];
-      var abbr=p.nba_team||"";
-      var plist=rows.slice().sort(function(a,b){ return (a.team===abbr?0:1)-(b.team===abbr?0:1)||(a.name<b.name?-1:1); });
-      var popts='<option value="">No jersey</option>'+plist.map(function(r){ return '<option value="'+esc(r.name)+'" data-num="'+esc(r.num||"")+'" data-team="'+esc(r.team||"")+'"'+(p.jersey_player===r.name?" selected":"")+'>'+esc(r.name)+(r.num?" · #"+r.num:"")+' · '+esc(r.team||"")+'</option>'; }).join("");
-      body='<form class="hc-form" id="hc-form">'+
+      var picked=p.jersey_player?findRow(p.jersey_player):null;
+      var chip=p.jersey_player?'<div class="hc-chip"><b>'+esc(p.jersey_player)+'</b><span>'+esc((p.jersey_num?"#"+p.jersey_num+" · ":"")+(picked&&picked.team?picked.team:""))+'</span><button type="button" class="hc-clear" title="Take the jersey down">✕</button></div>':'';
+      body='<form class="hc-form" id="hc-form" autocomplete="off">'+
         '<div class="field"><label>NBA team</label><select name="nba" id="hc-nba">'+opts+'</select></div>'+
-        '<div class="field"><label>Jersey</label><select name="player" id="hc-player">'+popts+'</select></div>'+
-        '<div class="field" style="flex:0 0 90px;min-width:90px"><label>Number</label><input name="num" id="hc-num" maxlength="2" inputmode="numeric" value="'+esc(p.jersey_num||"")+'" placeholder="—"></div>'+
-        '<p class="hint">'+(rows.length?"Players from the Players page; the number fills in when ESPN has it. Type one if it doesn't.":"Loading players…")+'</p>'+
+        '<div class="field"><label>Jersey</label>'+chip+
+          '<input type="hidden" name="player" id="hc-player" value="'+esc(p.jersey_player||"")+'">'+
+          '<div class="hc-search"><input id="hc-q" placeholder="'+(rows.length?"Type a player\u2019s name\u2026":"Loading players\u2026")+'"'+(rows.length?"":" disabled")+'><div class="hc-list" id="hc-list" hidden></div></div></div>'+
+        '<div class="field" style="flex:0 0 110px;min-width:110px"><label>Number</label><input name="num" id="hc-num" maxlength="2" inputmode="numeric" value="'+esc(p.jersey_num||"")+'" placeholder="\u2014"></div>'+
+        '<p class="hint" id="hc-hint">'+(rows.length?"Pick a player and his current number fills in from ESPN. Change it only if ESPN has it wrong.":"Fetching the player list\u2026")+'</p>'+
         '<div class="hc-out"><button class="btn sm" type="submit">Save</button><button class="btn quiet sm" type="button" id="hc-cancel">Cancel</button><span class="bd-msg" id="hc-msg"></span></div></form>';
     } else {
       var signedIn=!!(window.Polls&&Polls.me());
@@ -5449,6 +5464,26 @@ var Court=(function(){
     }
     return body;
   }
+  function findRow(name){ var rows=(window.Players&&Players.rows())||[]; for(var i=0;i<rows.length;i++) if(rows[i].name===name) return rows[i]; return null; }
+  function normName(s){ return String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z ]/g,""); }
+  function search(q){
+    var rows=(window.Players&&Players.rows())||[], nba=($("hc-nba")||{}).value||"";
+    var toks=normName(q).split(" ").filter(Boolean); if(!toks.length) return [];
+    var hits=rows.filter(function(r){ var n=normName(r.name); return toks.every(function(t){ return n.split(" ").some(function(w){ return w.indexOf(t)===0; })||n.indexOf(t)===0; }); });
+    hits.sort(function(a,b){ var an=normName(a.name).indexOf(toks[0])===0?0:1, bn=normName(b.name).indexOf(toks[0])===0?0:1; return (a.team===nba?0:1)-(b.team===nba?0:1)||an-bn||(b.gp||0)-(a.gp||0); });
+    return hits.slice(0,8);
+  }
+  function showList(q){
+    var el=$("hc-list"); if(!el) return;
+    var hits=search(q);
+    if(!q.trim()||!hits.length){ el.hidden=true; el.innerHTML=""; return; }
+    el.innerHTML=hits.map(function(r){ return '<button type="button" class="hc-hit" data-pick="'+esc(r.name)+'" data-num="'+esc(r.num||"")+'" data-team="'+esc(r.team||"")+'"><b>'+esc(r.name)+'</b><span>'+esc((r.num?"#"+r.num+" · ":"")+(r.team||""))+'</span></button>'; }).join("");
+    el.hidden=false;
+  }
+  function pick(name,num){
+    var p=prefOf(curTid); prefs[curTid]=Object.assign({},p,{nba_team:$("hc-nba").value,jersey_player:name||null,jersey_num:num||null}); paint();
+    var n=$("hc-num"); if(n&&!num) n.focus();
+  }
   function paint(){
     if(!curTid) return;
     var t=byId(curTid); if(!t) return;
@@ -5460,9 +5495,21 @@ var Court=(function(){
       if(e.target.closest("#hc-edit")){ editing=true; if(window.Players) Players.ensure(); paint(); return; }
       if(e.target.closest("#hc-cancel")){ editing=false; paint(); return; }
     });
+    document.addEventListener("input",function(e){ if(e.target.id==="hc-q") showList(e.target.value); });
+    document.addEventListener("focusin",function(e){ if(e.target.id==="hc-q"&&e.target.value) showList(e.target.value); });
+    document.addEventListener("click",function(e){
+      var h=e.target.closest("[data-pick]"); if(h){ pick(h.dataset.pick,h.dataset.num); return; }
+      if(e.target.closest(".hc-clear")){ pick(null,null); return; }
+      if(!e.target.closest(".hc-search")){ var l=$("hc-list"); if(l) l.hidden=true; }
+    });
+    document.addEventListener("keydown",function(e){
+      if(e.target.id!=="hc-q") return;
+      var l=$("hc-list"); if(!l||l.hidden) return;
+      if(e.key==="Enter"){ e.preventDefault(); var f=l.querySelector("[data-pick]"); if(f) pick(f.dataset.pick,f.dataset.num); }
+      if(e.key==="Escape"){ l.hidden=true; }
+    });
     document.addEventListener("change",function(e){
-      if(e.target.id==="hc-player"){ var o=e.target.selectedOptions[0]; if(o&&o.dataset.num) $("hc-num").value=o.dataset.num; }
-      if(e.target.id==="hc-nba"){ /* re-sort the player list to put that team first */ var t=byId(curTid); var p=prefOf(curTid); prefs[curTid]=Object.assign({},p,{nba_team:e.target.value,jersey_player:$("hc-player").value,jersey_num:$("hc-num").value}); paint(); }
+      if(e.target.id==="hc-nba"){ var p=prefOf(curTid); prefs[curTid]=Object.assign({},p,{nba_team:e.target.value,jersey_player:$("hc-player").value,jersey_num:$("hc-num").value}); paint(); }
     });
     document.addEventListener("submit",function(e){
       var f=e.target.closest("#hc-form"); if(!f) return; e.preventDefault();
