@@ -1055,7 +1055,7 @@ footer p + p{margin-top:11px}
 
 <div class="ticker">
   <div class="ticker-in">
-    <span><span class="livedot"></span>Yahoo <b>not connected</b> — API pending</span>
+    <span><span class="livedot"></span>Yahoo <b id="tkr-yahoo">API approved</b> — commissioner view first</span>
     <span>Draft <b id="tkr-draft">day vote open</b></span>
     <span>Keepers due <b id="tkr-keep">week before the draft</b></span>
     <span>Season opens <b>Oct 20</b></span>
@@ -1079,7 +1079,7 @@ footer p + p{margin-top:11px}
       <div><dt>Draft</dt><dd class="hot" id="tile-draft">Picking a day<small id="cd-draft">Oct 11–19 · mark when you're free</small></dd><button class="back" data-go="sched" id="tile-sched-link" style="margin:6px 0 0;padding:0;font-size:11px;color:var(--amber)">Draft Day page →</button></div>
       <div><dt>Keepers due</dt><dd id="tile-keep">Week before<small id="cd-keep">the draft, once it's set</small></dd></div>
       <div><dt>Season opens</dt><dd>Oct 20<small id="cd-season">—</small></dd></div>
-      <div><dt>Yahoo</dt><dd>Pending<small>API access under review</small></dd></div>
+      <div><dt>Yahoo</dt><dd>Approved<small>live view on the Manager page</small></dd></div>
     </div>
 
     <div class="champstrip">
@@ -1575,6 +1575,11 @@ footer p + p{margin-top:11px}
         </div>
       </div>
 
+      <div class="sec-head" style="margin-top:34px"><h2 style="font-size:24px">Yahoo</h2><span class="eyebrow cool" id="yh-eyebrow">Your team, live</span></div>
+      <div class="rulebar"></div>
+      <p class="lede">Read straight from Yahoo every time this page opens; nothing from it is saved anywhere. The sign-in asks for read-only access and stays in your own browser. This is the commissioner-only first step: your roster and games played this week against the cap.</p>
+      <div class="panel" id="yh-panel" style="margin-top:16px"><div class="empty">Checking Yahoo…</div></div>
+
       <div class="sec-head" style="margin-top:34px"><h2 style="font-size:24px">Record a past poll</h2><span class="eyebrow cool">From the group chat</span></div>
       <div class="rulebar"></div>
       <p class="lede">Polls that happened on WhatsApp can live in the Poll History too. One choice per line: the choice, the vote count, and who voted, separated by <code>|</code>.</p>
@@ -1910,6 +1915,7 @@ footer p + p{margin-top:11px}
   <footer>
     <p>Standings, managers and league settings read from Yahoo league 33689. All ten locked rosters and their keeper flags are in. Keeper math reconciles against all 101 recorded picks of the 2024 draft board.</p>
     <p>Gaps remaining sit in the old ESPN records: 2012 has no champion recorded, and 2014 is filed as Cory with a question mark.</p>
+    <p><a href="https://sports.yahoo.com/fantasy/" target="_blank" rel="noopener" style="color:var(--muted)">Fantasy data provided by Yahoo Fantasy</a></p>
   </footer>
 </div>
 
@@ -3075,14 +3081,14 @@ var Polls=(function(){
     me=u; profile=null; profiles=[]; claimed=[]; isCommish=false; polls=[]; votes=[]; tallies={};
     if(!me){
       $("newpoll").hidden=true; renderAcct(); refresh(); tellAuth();
-      if(location.hash==="#manager") go("home");
+      if(/^#manager(\?|$)/.test(location.hash)) go("home");
       store.claimedList().then(function(c){ claimed=c; renderSignup(); }).catch(function(){});
       return;
     }
     store.session().then(function(s){
       profile=s.profile; profiles=s.profiles; claimed=s.claimed; isCommish=s.commissioner;
       renderAcct(); refresh(); tellAuth();
-      if(location.hash==="#manager") go(isCommish?"manager":"home",!isCommish?false:true);
+      if(/^#manager(\?|$)/.test(location.hash)) go(isCommish?"manager":"home",!isCommish?false:true);
     }).catch(fail);
   }
 
@@ -5531,6 +5537,48 @@ var Court=(function(){
 })();
 window.Court=Court;
 
+
+/* ---------- Yahoo: the commissioner's own team, live, nothing stored ---------- */
+var Yahoo=(function(){
+  var $=function(id){return document.getElementById(id);};
+  var started=false, busy=false;
+  function panel(html){ var el=$("yh-panel"); if(el) el.innerHTML=html; }
+  function load(){
+    if(busy) return; busy=true;
+    var qs=/[?&]yahoo=([^&]+)/.exec(location.hash||""), note="";
+    if(qs){ var v=decodeURIComponent(qs[1]); if(v!=="connected") note='<div class="notice warn" style="margin:16px 16px 0;border-left-color:var(--red)">'+esc(v)+'</div>'; try{ history.replaceState(null,"","#manager"); }catch(e){} }
+    fetch("/api/yahoo/team",{credentials:"same-origin",cache:"no-store"}).then(function(r){ return r.json().then(function(j){ return {ok:r.ok,status:r.status,j:j}; }); }).then(function(x){
+      busy=false;
+      if(x.status===401){ panel(note+connectHtml()); return; }
+      if(!x.ok){ panel(note+'<div class="notice warn" style="margin:16px;border-left-color:var(--red)">'+esc(x.j.error||"Yahoo didn\u2019t answer.")+(x.j.detail?' '+esc(x.j.detail):'')+'</div>'+connectHtml(true)); return; }
+      panel(note+teamHtml(x.j));
+    }).catch(function(){ busy=false; panel('<div class="empty">The Yahoo connection only works on crysterbaters.com, not in this preview.</div>'); });
+  }
+  function connectHtml(again){
+    return '<div style="padding:18px 16px;display:flex;gap:14px;align-items:center;flex-wrap:wrap"><span style="flex:1;font-size:14.5px;color:var(--muted)">'+(again?"Sign in to Yahoo again to reconnect.":"Connect your Yahoo account to see your team here. Yahoo will ask you to approve read-only access for this site.")+'</span><a class="btn sm" href="/api/yahoo/login">Connect Yahoo</a></div>';
+  }
+  function teamHtml(d){
+    var rows=d.players.map(function(p){
+      var bench=/^(BN|IL|IL\+|IR|NA)$/.test(p.pos||"");
+      return '<tr'+(bench?' style="color:var(--dim)"':'')+'><td class="num sub">'+esc(p.pos||"")+'</td><td class="name" style="font-size:15px">'+esc(p.name||"")+(p.status?' <span class="pill q" style="margin-left:6px">'+esc(p.status)+'</span>':'')+'</td><td class="mgr">'+esc(p.team||"")+'</td><td class="num">'+p.gp+'</td></tr>';
+    }).join("");
+    var over=d.games.active>d.games.cap, left=d.games.cap-d.games.active;
+    return '<div class="panel-hd" style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap"><span class="eyebrow">'+esc(d.team.name)+' · week '+d.league.week+' · '+esc(d.league.name)+'</span><span style="display:flex;gap:8px"><button class="btn quiet sm" id="yh-refresh">Refresh</button><button class="btn quiet sm" id="yh-out">Disconnect</button></span></div>'+
+      '<div class="verdict" style="padding:18px 16px 4px"><span class="big" style="color:'+(over?"var(--red)":"var(--ink)")+'">'+d.games.active+'<small style="font-size:18px;color:var(--dim)"> / '+d.games.cap+'</small></span><span style="font-size:14.5px;color:var(--muted)">games played by your active lineup this week'+(over?' · <b style="color:var(--red)">over the cap by '+(d.games.active-d.games.cap)+'</b>':' · '+left+' left')+'. Bench and IL played '+d.games.bench+' more that don\u2019t count.</span></div>'+
+      '<div class="tablewrap" style="border:0;border-radius:0"><table><thead><tr><th class="num">Slot</th><th>Player</th><th>NBA</th><th class="num">GP</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
+      '<p class="sub" style="padding:10px 16px 14px;margin:0">Fetched '+new Date(d.fetched).toLocaleTimeString([], {hour:"numeric",minute:"2-digit"})+' · <a href="https://sports.yahoo.com/fantasy/" target="_blank" rel="noopener">'+esc(d.attribution)+'</a></p>';
+  }
+  function bind(){
+    document.addEventListener("click",function(e){
+      if(e.target.closest("#yh-refresh")){ panel('<div class="empty">Asking Yahoo…</div>'); load(); }
+      if(e.target.closest("#yh-out")){ fetch("/api/yahoo/logout",{credentials:"same-origin"}).then(load,load); }
+    });
+  }
+  function onView(v){ if(v!=="manager") return; if(!started){ started=true; bind(); } load(); }
+  return {onView:onView};
+})();
+window.Yahoo=Yahoo;
+
 /* ---------- routing ---------- */
 var views={home:"v-home",teams:"v-teams",team:"v-team",players:"v-players",plot:"v-plot",draft:"v-draft",cap:"v-cap",keepers:"v-keepers",polls:"v-polls",pollhist:"v-pollhist",agenda:"v-agenda",sched:"v-sched",dues:"v-dues",badges:"v-badges",signup:"v-signup",manager:"v-manager",history:"v-history",rules:"v-rules"};
 var curTeam=null;
@@ -5544,6 +5592,7 @@ function go(v,silent){
   if(window.Players) Players.onView(v);
   if(window.Plot) Plot.onView(v);
   if(window.Badges) Badges.onView(v);
+  if(window.Yahoo) Yahoo.onView(v);
   Array.prototype.forEach.call(document.querySelectorAll("#nav button"),function(b){
     if(b.dataset.go===navKey){b.setAttribute("aria-current","page");}else{b.removeAttribute("aria-current");}
   });
