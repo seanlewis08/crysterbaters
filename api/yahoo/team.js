@@ -106,6 +106,7 @@ module.exports = async (req, res) => {
       games: { active: active, cap: 30, bench: players.filter(p => BENCH[p.pos]).reduce((a, p) => a + p.gp, 0) },
       players: players,
       days: days,
+      raw: q.get("raw") === "1" ? JSON.stringify((roster.roster && (roster.roster.players || (roster.roster["0"] && roster.roster["0"].players)) || [])[0] || roster).slice(0, 3000) : undefined,
       warn: warn,
       fetched: new Date().toISOString(),
       attribution: "Fantasy data provided by Yahoo Fantasy"
