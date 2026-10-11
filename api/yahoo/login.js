@@ -8,7 +8,7 @@ module.exports = async (req, res) => {
     u.searchParams.set("client_id", L.env("YAHOO_CLIENT_ID"));
     u.searchParams.set("redirect_uri", L.redirectUri(req));
     u.searchParams.set("response_type", "code");
-    u.searchParams.set("scope", L.SCOPE);
+    if (L.SCOPE) u.searchParams.set("scope", L.SCOPE);
     u.searchParams.set("state", state);
     u.searchParams.set("language", "en-us");
     res.statusCode = 302; res.setHeader("Location", u.toString()); res.end();

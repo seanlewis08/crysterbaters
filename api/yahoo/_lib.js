@@ -10,7 +10,10 @@ const API = "https://fantasysports.yahooapis.com/fantasy/v2";
 const COOKIE = "cb_yahoo";
 const STATE = "cb_yahoo_state";
 const LEAGUE_ID = "33689";
-const SCOPE = "fspt-r";   // read only, on purpose
+// Yahoo refuses a scope narrower than the app's own permission ("invalid scope"), and the app
+// is registered with Fantasy Sports Read/Write, so the scope is left to the app's settings
+// unless YAHOO_SCOPE is set. This code only ever reads.
+const SCOPE = process.env.YAHOO_SCOPE || "";
 
 function env(name) {
   const v = process.env[name];
