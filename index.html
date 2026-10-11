@@ -5595,7 +5595,7 @@ var Yahoo=(function(){
     var st=d.standing, mu=d.matchup, lu=d.lineup||{};
     var facts=[];
     if(st&&st.rank) facts.push('<div class="kv"><dt>Record</dt><dd>'+st.wins+'-'+st.losses+'-'+st.ties+' · '+ordinal(st.rank)+'</dd></div>');
-    if(mu&&mu.opponent) facts.push('<div class="kv"><dt>Week '+mu.week+'</dt><dd>vs '+esc(mu.opponent)+(mu.cats?' · '+mu.won+'-'+mu.lost+(mu.tied?'-'+mu.tied:'')+(mu.status==="postevent"?" final":""):'')+'</dd></div>');
+    if(mu&&mu.opponent) facts.push('<div class="kv"><dt>Week '+mu.week+'</dt><dd>vs '+esc(mu.opponent)+(mu.status==="preevent"?' · not started':(mu.cats?' · '+mu.won+'-'+mu.lost+(mu.tied?'-'+mu.tied:'')+(mu.status==="postevent"?" final":""):''))+'</dd></div>');
     if(d.team.faab!=null) facts.push('<div class="kv"><dt>FAAB</dt><dd>$'+d.team.faab+'</dd></div>');
     facts.push('<div class="kv"><dt>Moves</dt><dd>'+d.team.moves+(d.team.trades?' · '+d.team.trades+' trades':'')+'</dd></div>');
     var lineup=pre?'':('<div class="kv"><dt>Lineup</dt><dd>'+lu.active+' active · '+lu.bench+' bench · '+lu.il+' IL'+(lu.injuredActive?' · <b style="color:var(--red)">'+lu.injuredActive+' hurt in lineup</b>':'')+'</dd></div>');
