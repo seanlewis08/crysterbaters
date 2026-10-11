@@ -10,10 +10,10 @@ const API = "https://fantasysports.yahooapis.com/fantasy/v2";
 const COOKIE = "cb_yahoo";
 const STATE = "cb_yahoo_state";
 const LEAGUE_ID = "33689";
-// The scope has to match the app's registered permission exactly: the app is registered with
-// Fantasy Sports Read/Write (fspt-w), and Yahoo answered "invalid scope" to the narrower fspt-r
-// and "invalid redirect uri" to no scope at all. This code only ever reads.
-const SCOPE = process.env.YAHOO_SCOPE || "fspt-w";
+// The scope has to match the app's registered permission exactly (Yahoo answers "invalid scope"
+// otherwise). The app is registered with Fantasy Sports - Read, so fspt-r; set YAHOO_SCOPE in
+// Vercel only if the app's permission ever changes. This code only ever reads.
+const SCOPE = process.env.YAHOO_SCOPE || "fspt-r";
 
 function env(name) {
   const v = process.env[name];
