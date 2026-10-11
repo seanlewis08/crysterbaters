@@ -77,20 +77,37 @@ module.exports = async (req, res) => {
       const d0 = new Date(matchup.start + "T12:00:00Z"), d1 = new Date(matchup.end + "T12:00:00Z");
       const dates = [];
       for (let d = new Date(d0); d <= d1; d.setUTCDate(d.getUTCDate() + 1)) dates.push(d.toISOString().slice(0, 10));
+      // the league context only returns the scoring categories (no GP), so each day's lineup
+      // comes from the roster and "did he play" from the game-wide player stats for that date
       const got = await Promise.all(dates.map(date =>
-        L.yahoo(s, "/team/" + key + "/roster;date=" + date + "/players/stats;type=date;date=" + date)
+        L.yahoo(s, "/team/" + key + "/roster;date=" + date + "/players")
           .then(j => L.fold(j).fantasy_content.team).catch(e => ({ _err: e.message }))));
-      got.forEach((t, i) => {
-        if (t._err) { days.push({ date: dates[i], error: t._err }); return; }
+      let rawDay = null;
+      for (let i = 0; i < got.length; i++) {
+        const t = got[i];
+        if (t._err) { days.push({ date: dates[i], error: t._err }); continue; }
         const r = t.roster || {};
         const ps = list(r.players || (r["0"] && r["0"].players)).map(p => {
           const pl = p.player || p;
-          const stats = list(pl.player_stats && pl.player_stats.stats).map(x => x.stat || x);
-          const gp = stats.find(x => String(x.stat_id) === "0");
-          return { name: pl.name && pl.name.full, team: pl.editorial_team_abbr, pos: pl.selected_position && pl.selected_position.position, status: pl.status || "", gp: gp ? Number(gp.value) || 0 : 0 };
+          return { key: pl.player_key, name: pl.name && pl.name.full, team: pl.editorial_team_abbr, pos: pl.selected_position && pl.selected_position.position, status: pl.status || "", gp: 0 };
         });
-        days.push({ date: dates[i], active: ps.filter(p => !BENCH[p.pos]).reduce((a, p) => a + p.gp, 0), bench: ps.filter(p => BENCH[p.pos]).reduce((a, p) => a + p.gp, 0), players: ps });
-      });
+        let dayErr = "";
+        if (ps.length) {
+          try {
+            const st = L.fold(await L.yahoo(s, "/players;player_keys=" + ps.map(p => p.key).join(",") + "/stats;type=date;date=" + dates[i])).fantasy_content;
+            if (q.get("raw") === "1" && !rawDay) rawDay = JSON.stringify(st).slice(0, 3000);
+            const byKey = {};
+            list(st.players).map(x => x.player || x).forEach(pl => {
+              const stats = list(pl.player_stats && pl.player_stats.stats).map(x => x.stat || x);
+              const gp = stats.find(x => String(x.stat_id) === "0");
+              byKey[pl.player_key] = gp ? (Number(gp.value) || 0) : 0;
+            });
+            ps.forEach(p => { p.gp = byKey[p.key] || 0; });
+          } catch (e) { dayErr = e.message; }
+        }
+        days.push({ date: dates[i], active: ps.filter(p => !BENCH[p.pos]).reduce((a, p) => a + p.gp, 0), bench: ps.filter(p => BENCH[p.pos]).reduce((a, p) => a + p.gp, 0), players: ps, error: dayErr || undefined });
+      }
+      if (rawDay) warn.push("rawDay: " + rawDay);
     }
 
     L.json(res, 200, {
