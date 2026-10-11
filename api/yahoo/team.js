@@ -60,7 +60,7 @@ module.exports = async (req, res) => {
         const opp = sides.find(x => x.team_key !== key) || {};
         const winners = list(m.stat_winners).map(x => x.stat_winner || x);
         const won = winners.filter(x => x.winner_team_key === key).length, tied = winners.filter(x => String(x.is_tied) === "1").length;
-        matchup = { week: Number(m.week) || week, status: m.status || "", opponent: opp.name || "", opponentKey: opp.team_key || "", won: won, lost: winners.length - won - tied, tied: tied, cats: winners.length };
+        matchup = { week: Number(m.week) || week, status: m.status || "", start: m.week_start || "", end: m.week_end || "", opponent: opp.name || "", opponentKey: opp.team_key || "", won: won, lost: winners.length - won - tied, tied: tied, cats: winners.length };
       }
     } catch (e) { warn.push("matchup: " + e.message); }
 

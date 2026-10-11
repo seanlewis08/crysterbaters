@@ -197,6 +197,12 @@ section:first-child{margin-top:34px}
 
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:4px;box-shadow:var(--shadow)}
 
+.yh-days{display:flex;gap:6px;padding:12px 16px 8px;flex-wrap:wrap}
+.yh-day{flex:1 1 0;min-width:52px;text-align:center;border:1px solid var(--line);border-radius:3px;padding:7px 4px;background:var(--surface-2)}
+.yh-day.past{opacity:.45}
+.yh-day.today{border-color:var(--amber);background:var(--amber-glow)}
+.yh-dl{display:block;font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
+.yh-dn{display:block;font-family:var(--disp);font-size:22px;font-weight:800;line-height:1.1;margin-top:2px}
 .pill{display:inline-block;font-family:var(--mono);font-size:9.5px;font-weight:600;letter-spacing:.11em;text-transform:uppercase;padding:3px 8px;border-radius:2px;white-space:nowrap;border:1px solid}
 .pill.ok{color:var(--green);border-color:rgba(63,207,142,.4);background:rgba(63,207,142,.09)}
 .pill.warn{color:var(--amber);border-color:var(--amber-dim);background:var(--amber-glow)}
@@ -5588,7 +5594,7 @@ var Yahoo=(function(){
     var pre=!d.players.length;
     var rows=d.players.map(function(p){
       var bench=BENCH.test(p.pos||""), c=(showKeepers&&p.name)?costFor(p.name):null;
-      return '<tr'+(bench?' style="color:var(--dim)"':'')+'><td class="num sub">'+esc(p.pos||"")+'</td><td class="name" style="font-size:15px">'+esc(p.name||"")+status(p)+'</td><td class="mgr">'+esc(p.team||"")+'</td><td class="num">'+p.gp+'</td>'+
+      return '<tr'+(bench?' style="color:var(--dim)"':'')+'><td class="num sub">'+esc(p.pos||"")+'</td><td class="name" style="font-size:15px">'+esc(p.name||"")+status(p)+'</td><td class="mgr">'+esc(p.team||"")+'</td><td class="num">'+p.gp+'</td><td class="num sub" data-left="'+esc(p.team||"")+'"'+(bench?' data-bench="1"':'')+'>·</td>'+
         (showKeepers?'<td class="num">'+(c?(c.dead?'<span class="sub">not keepable</span>':'RD '+c.cost):'')+'</td>':'')+'</tr>';
     }).join("");
     var over=d.games.active>d.games.cap, left=d.games.cap-d.games.active;
@@ -5602,8 +5608,9 @@ var Yahoo=(function(){
     return '<div class="panel-hd" style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap"><span class="eyebrow">Live from Yahoo · '+esc(d.team.name)+' · week '+d.league.week+'</span><span style="display:flex;gap:8px"><button class="btn quiet sm" id="yh-refresh">Refresh</button><button class="btn quiet sm" id="yh-out">Disconnect</button></span></div>'+
       '<div class="verdict" style="padding:18px 16px 4px"><span class="big" style="color:'+(over?"var(--red)":"var(--ink)")+'">'+d.games.active+'<small style="font-size:18px;color:var(--dim)"> / '+d.games.cap+'</small></span><span style="font-size:14.5px;color:var(--muted)">games played by your active lineup this week'+(over?' · <b style="color:var(--red)">over the cap by '+(d.games.active-d.games.cap)+'</b>':' · '+left+' left')+(d.games.bench?'. Bench and IL played '+d.games.bench+' more that don’t count.':'')+'</span></div>'+
       '<div style="padding:8px 16px 14px;display:flex;flex-direction:column;gap:8px">'+facts.join("")+lineup+'</div>'+
+      (pre?'':'<div id="yh-sched" class="yh-sched"><div class="empty" style="padding:10px 16px">Checking the NBA schedule for the rest of the week…</div></div>')+
       (pre?'<div class="empty" style="padding:14px 16px 18px">No roster yet — it fills in after the draft'+(d.league.start?' (season starts '+esc(d.league.start)+')':'')+'.</div>'
-          :'<div class="tablewrap" style="border:0;border-radius:0"><table><thead><tr><th class="num">Slot</th><th>Player</th><th>NBA</th><th class="num">GP</th>'+(showKeepers?'<th class="num">Keep cost</th>':'')+'</tr></thead><tbody>'+rows+'</tbody></table></div>')+
+          :'<div class="tablewrap" style="border:0;border-radius:0"><table><thead><tr><th class="num">Slot</th><th>Player</th><th>NBA</th><th class="num">GP</th><th class="num" title="Games still to come this week">Left</th>'+(showKeepers?'<th class="num">Keep cost</th>':'')+'</tr></thead><tbody>'+rows+'</tbody></table></div>')+
       '<p class="sub" style="padding:10px 16px 14px;margin:0">Fetched '+new Date(d.fetched).toLocaleTimeString([], {hour:"numeric",minute:"2-digit"})+' · read live, nothing saved · <a href="https://sports.yahoo.com/fantasy/" target="_blank" rel="noopener">'+esc(d.attribution)+'</a></p>';
   }
   function panel(id, html){ var el=$(id); if(el) el.innerHTML=html; }
@@ -5614,7 +5621,7 @@ var Yahoo=(function(){
     load(!!flag, function(x){
       if(x.status===401){ panel("yh-panel", note+connectHtml("manager")); return; }
       if(!x.ok){ panel("yh-panel", note+noticeHtml(x.j.error+(x.j.detail?' '+x.j.detail:''))+connectHtml("manager",true)); return; }
-      panel("yh-panel", note+teamHtml(x.j,true));
+      panel("yh-panel", note+teamHtml(x.j,true)); schedule(x.j);
     });
   }
   /* Team page: only the page of the team this Yahoo login owns gets the live panel */
@@ -5626,7 +5633,7 @@ var Yahoo=(function(){
       if(x.status===401){ host.hidden=!isMine; if(isMine) host.innerHTML='<div class="panel-hd"><span class="eyebrow">Live from Yahoo</span></div>'+note+connectHtml("team/"+id); return; }
       if(!x.ok){ host.hidden=!isMine; if(isMine) host.innerHTML='<div class="panel-hd"><span class="eyebrow">Live from Yahoo</span></div>'+note+noticeHtml(x.j.error+(x.j.detail?' '+x.j.detail:''))+connectHtml("team/"+id,true); return; }
       var st=siteTeamFor(x.j);
-      if(st&&st.id===id){ host.hidden=false; host.innerHTML=note+teamHtml(x.j,true); return; }
+      if(st&&st.id===id){ host.hidden=false; host.innerHTML=note+teamHtml(x.j,true); schedule(x.j); return; }
       if(isMine){ host.hidden=false; host.innerHTML='<div class="panel-hd"><span class="eyebrow">Live from Yahoo</span></div><div class="empty" style="padding:16px">Your Yahoo login owns <b>'+esc(x.j.team.name)+'</b>'+(st?', which is <a href="#team/'+st.id+'">its own page</a>':', which doesn’t match a team here yet')+'.</div>'; return; }
       host.hidden=true;
     });
@@ -5640,6 +5647,67 @@ var Yahoo=(function(){
   function rerun(force){ if(force) last=0; if(curTeam&&$("yh-team")&&document.getElementById("v-team").classList.contains("on")) team(curTeam); else manager(); }
   function onView(v){ if(!started){ started=true; bind(); } if(v==="manager") manager(); }
   function onTeam(id){ if(!started){ started=true; bind(); } team(id); }
+  /* ---- this week's remaining games for the current starters, from ESPN's public schedule ----
+     Yahoo's GP counts what the lineup has already played; ESPN says what is still to come. The
+     projection assumes the lineup stays as it is, which is exactly the question on a Sunday. */
+  var ALIAS={GSW:"GS",NOP:"NO",NYK:"NY",SAS:"SA",UTA:"UTAH",WAS:"WSH",PHO:"PHX",NY:"NY",GS:"GS",NO:"NO",SA:"SA"};
+  function espnAbbr(a){ a=String(a||"").toUpperCase(); return ALIAS[a]||a; }
+  function etParts(iso){ var o={}; ET.formatToParts(new Date(iso)).forEach(function(p){o[p.type]=p.value;}); return o.year+"-"+o.month+"-"+o.day; }
+  function weekRange(d){
+    var mu=d.matchup||{};
+    if(mu.start&&mu.end) return [mu.start,mu.end];
+    /* fallback: Yahoo weeks run Monday–Sunday after week 1, which starts on the season's first day */
+    var w=d.league.week||1, a=parseYmd(d.league.start||ymd(new Date()));
+    if(w>1){ var dow=(a.getDay()+6)%7; a.setDate(a.getDate()-dow+7*(w-1)); }
+    var b=new Date(a); var bd=(b.getDay()+6)%7; b.setDate(b.getDate()+(6-bd));
+    return [ymd(a),ymd(b)];
+  }
+  function capFor(week, fallback){ try{ var w=CAP&&CAP.weeks&&CAP.weeks[week-1]; if(w&&w.set!=null&&w.set!=="") return Number(w.set)||fallback; }catch(e){} return fallback; }
+  function schedule(d){
+    var host=$("yh-sched"); if(!host||!d.players.length) return;
+    var r=weekRange(d), today=etParts(new Date().toISOString());
+    fetch("https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates="+r[0].replace(/-/g,"")+"-"+r[1].replace(/-/g,"")+"&limit=1000")
+      .then(function(res){ if(!res.ok) throw new Error("ESPN answered "+res.status); return res.json(); })
+      .then(function(j){
+        /* games per team per ET day; a game counts as "to come" until it has started */
+        var byTeam={}, seen={};
+        (j.events||[]).forEach(function(ev){
+          if(seen[ev.id]) return; seen[ev.id]=1;
+          if(ev.season&&ev.season.type!==2) return;
+          var day=etParts(ev.date), st=ev.status&&ev.status.type||{}, started=!!(st.state&&st.state!=="pre");
+          ((ev.competitions||[])[0]||{}).competitors.forEach(function(c){
+            var ab=espnAbbr(c.team&&c.team.abbreviation); (byTeam[ab]=byTeam[ab]||[]).push({day:day,started:started});
+          });
+        });
+        var starters=d.players.filter(function(p){ return !BENCH.test(p.pos||""); });
+        var days=[], cur=parseYmd(r[0]), end=parseYmd(r[1]);
+        while(cur<=end){ days.push(ymd(cur)); cur.setDate(cur.getDate()+1); }
+        var perDay={}; days.forEach(function(x){ perDay[x]=0; });
+        var left=0;
+        starters.forEach(function(p){
+          var g=(byTeam[espnAbbr(p.team)]||[]), n=0;
+          g.forEach(function(x){ if(!x.started){ n++; if(perDay[x.day]!=null) perDay[x.day]++; } });
+          p._left=n; left+=n;
+        });
+        /* fill the Left column */
+        Array.prototype.forEach.call(document.querySelectorAll('#yh-team [data-left], #yh-panel [data-left]'),function(td){
+          if(td.dataset.bench) { td.textContent="–"; return; }
+          var g=(byTeam[espnAbbr(td.dataset.left)]||[]).filter(function(x){return !x.started;}).length;
+          td.textContent=g; td.className="num"+(g?"":" sub");
+        });
+        var cap=capFor(d.league.week, d.games.cap), played=d.games.active, proj=played+left, over=proj-cap;
+        var strip=days.map(function(x){
+          var dt=parseYmd(x), lbl=dt.toLocaleDateString(undefined,{weekday:"short"}), past=x<today, isToday=x===today;
+          return '<div class="yh-day'+(past?' past':'')+(isToday?' today':'')+'"><span class="yh-dl">'+lbl+'</span><span class="yh-dn">'+(past?'·':perDay[x])+'</span></div>';
+        }).join("");
+        var verdict = over>0
+          ? '<b style="color:var(--red)">'+proj+' projected — '+over+' over the cap of '+cap+'.</b> Sit '+over+' starter'+(over>1?'s':'')+' on a game day before the week ends.'
+          : '<b style="color:var(--green)">'+proj+' projected</b> — '+(cap-proj)+' under the cap of '+cap+(cap-proj<=1?'. No room to add a streamer.':'. Room for '+(cap-proj)+' more.');
+        host.innerHTML='<div class="panel-hd" style="border-top:1px solid var(--line)"><span class="eyebrow">Rest of the week · starters with a game</span></div>'+
+          '<div class="yh-days">'+strip+'</div>'+
+          '<p style="margin:0;padding:4px 16px 14px;font-size:14.5px;color:var(--muted)">'+played+' played + '+left+' still to come for the current lineup = '+verdict+'</p>';
+      }).catch(function(e){ host.innerHTML='<div class="empty" style="padding:10px 16px">Couldn’t read the NBA schedule ('+esc(e&&e.message||"no answer")+'); the games-left projection is off for now.</div>'; });
+  }
   return {onView:onView, onTeam:onTeam, teamFor:siteTeamFor};
 })();
 window.Yahoo=Yahoo;
