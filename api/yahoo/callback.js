@@ -8,7 +8,7 @@ module.exports = async (req, res) => {
     if (err) throw new Error("Yahoo said: " + (u.searchParams.get("error_description") || err));
     if (!code || !state || state !== c[L.STATE]) throw new Error("Sign-in didn't match the request it started from. Try again.");
     const s = await L.tokenRequest(req, { grant_type: "authorization_code", code: code });
-    L.setCookie(res, L.COOKIE, L.seal(s));
+    L.setCookie(res, L.COOKIE, L.sessionCookie(s));
     res.statusCode = 302; res.setHeader("Location", "/#manager?yahoo=connected"); res.end();
   } catch (e) {
     res.statusCode = 302; res.setHeader("Location", "/#manager?yahoo=" + encodeURIComponent(e.message)); res.end();

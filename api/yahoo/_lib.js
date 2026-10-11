@@ -66,15 +66,25 @@ async function tokenRequest(req, body) {
   if (!r.ok || !j.access_token) throw new Error("Yahoo token: " + (j.error_description || j.error || r.status));
   return { at: j.access_token, rt: j.refresh_token, exp: Date.now() + (j.expires_in || 3600) * 1000 - 60000 };
 }
-/* a valid access token from the cookie, refreshing when it has expired; null when not connected */
+/* What goes in the cookie. Yahoo's access tokens run to a few thousand characters, and a
+   browser silently drops any cookie over 4 KB, so the cookie keeps the access token only
+   when the whole thing stays comfortably small; otherwise just the (short) refresh token,
+   and each request trades it for a fresh access token. */
+const COOKIE_MAX = 3800;
+function sessionCookie(s) {
+  let sealed = seal({ at: s.at, rt: s.rt, exp: s.exp });
+  if (sealed.length > COOKIE_MAX) sealed = seal({ rt: s.rt });
+  return sealed;
+}
+/* a valid access token from the cookie, refreshing when missing or expired; null when not connected */
 async function session(req, res) {
   const c = cookies(req)[COOKIE];
   if (!c) return null;
   let s = open(c);
   if (!s || !s.rt) return null;
-  if (!s.at || Date.now() > s.exp) {
+  if (!s.at || Date.now() > (s.exp || 0)) {
     s = await tokenRequest(req, { grant_type: "refresh_token", refresh_token: s.rt });
-    setCookie(res, COOKIE, seal(s));
+    setCookie(res, COOKIE, sessionCookie(s));
   }
   return s;
 }
@@ -111,4 +121,4 @@ function fold(v) {
 }
 function json(res, status, body) { res.statusCode = status; res.setHeader("Content-Type", "application/json; charset=utf-8"); res.setHeader("Cache-Control", "no-store"); res.end(JSON.stringify(body)); }
 
-module.exports = { AUTH, COOKIE, STATE, LEAGUE_ID, SCOPE, env, origin, redirectUri, seal, open, cookies, setCookie, clearCookie, tokenRequest, session, yahoo, fold, json };
+module.exports = { AUTH, COOKIE, STATE, LEAGUE_ID, SCOPE, env, origin, redirectUri, seal, open, cookies, setCookie, clearCookie, tokenRequest, session, sessionCookie, yahoo, fold, json };
