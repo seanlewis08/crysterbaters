@@ -14,7 +14,15 @@ module.exports = async (req, res) => {
       const t = teams.map(x => x.team).find(x => (x.team_key || "").indexOf(".l." + L.LEAGUE_ID + ".") > 0);
       if (t) { team = t; game = gg; return true; } return false;
     });
-    if (!team) return L.json(res, 404, { error: "no_team", detail: "This Yahoo account has no team in league " + L.LEAGUE_ID + "." });
+    if (!team) {
+      // say what Yahoo did return (this login's own seasons and team keys) so a renewed league's new ID is easy to spot
+      const seen = (games || []).map(g => {
+        const gg = (g && g.game) || {};
+        const ts = (Array.isArray(gg.teams) ? gg.teams : []).map(x => x && x.team ? (x.team.team_key + " " + (x.team.name || "")) : JSON.stringify(x).slice(0, 80));
+        return (gg.season || "?") + ": " + (ts.join(", ") || "no teams");
+      });
+      return L.json(res, 404, { error: "no_team", detail: "This Yahoo account has no team in league " + L.LEAGUE_ID + ". Yahoo returned — " + (seen.join(" | ") || "no NBA seasons") });
+    }
     const lk = team.team_key.replace(/\.t\.\d+$/, "");
     const league = L.fold((await L.yahoo(s, "/league/" + lk)).fantasy_content.league);
     const week = league.current_week || 1;
