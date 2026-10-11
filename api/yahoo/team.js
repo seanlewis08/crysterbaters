@@ -5,7 +5,7 @@ const BENCH = { BN: 1, IL: 1, "IL+": 1, IR: 1, NA: 1 };
 module.exports = async (req, res) => {
   try {
     const s = await L.session(req, res);
-    if (!s) return L.json(res, 401, { error: "not_connected" });
+    if (!s) return L.json(res, 401, { error: "not_connected", why: res.cbWhy || "", v: 2 });
     // every NBA team this login owns, newest season first
     const games = L.fold((await L.yahoo(s, "/users;use_login=1/games;game_codes=nba/teams")).fantasy_content.users)[0].user.games;
     let team = null, game = null;

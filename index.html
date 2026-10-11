@@ -5541,10 +5541,11 @@ window.Court=Court;
 /* ---------- Yahoo: the commissioner's own team, live, nothing stored ---------- */
 var Yahoo=(function(){
   var $=function(id){return document.getElementById(id);};
-  var started=false, busy=false;
+  var started=false, busy=false, last=0;
   function panel(html){ var el=$("yh-panel"); if(el) el.innerHTML=html; }
-  function load(){
-    if(busy) return; busy=true;
+  /* auth-state changes re-enter the manager view several times in a row; ask Yahoo once */
+  function load(force){
+    if(busy) return; if(!force&&Date.now()-last<15000) return; last=Date.now(); busy=true;
     var qs=/[?&]yahoo=([^&]+)/.exec(location.hash||""), note="";
     if(qs){ var v=decodeURIComponent(qs[1]); if(v!=="connected") note='<div class="notice warn" style="margin:16px 16px 0;border-left-color:var(--red)">'+esc(v)+'</div>'; try{ history.replaceState(null,"","#manager"); }catch(e){} }
     fetch("/api/yahoo/team",{credentials:"same-origin",cache:"no-store"}).then(function(r){ return r.json().then(function(j){ return {ok:r.ok,status:r.status,j:j}; }); }).then(function(x){
@@ -5570,8 +5571,8 @@ var Yahoo=(function(){
   }
   function bind(){
     document.addEventListener("click",function(e){
-      if(e.target.closest("#yh-refresh")){ panel('<div class="empty">Asking Yahoo…</div>'); load(); }
-      if(e.target.closest("#yh-out")){ fetch("/api/yahoo/logout",{credentials:"same-origin"}).then(load,load); }
+      if(e.target.closest("#yh-refresh")){ panel('<div class="empty">Asking Yahoo…</div>'); load(true); }
+      if(e.target.closest("#yh-out")){ fetch("/api/yahoo/logout",{credentials:"same-origin"}).then(function(){ load(true); },function(){ load(true); }); }
     });
   }
   function onView(v){ if(v!=="manager") return; if(!started){ started=true; bind(); } load(); }

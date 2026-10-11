@@ -64,7 +64,8 @@ async function tokenRequest(req, body) {
   });
   const j = await r.json().catch(() => ({}));
   if (!r.ok || !j.access_token) throw new Error("Yahoo token: " + (j.error_description || j.error || r.status));
-  return { at: j.access_token, rt: j.refresh_token, exp: Date.now() + (j.expires_in || 3600) * 1000 - 60000 };
+  // a refresh response may omit refresh_token; keep the one we already had
+  return { at: j.access_token, rt: j.refresh_token || body.refresh_token || "", exp: Date.now() + (j.expires_in || 3600) * 1000 - 60000 };
 }
 /* What goes in the cookie. Yahoo's access tokens run to a few thousand characters, and a
    browser silently drops any cookie over 4 KB, so the cookie keeps the access token only
@@ -79,9 +80,10 @@ function sessionCookie(s) {
 /* a valid access token from the cookie, refreshing when missing or expired; null when not connected */
 async function session(req, res) {
   const c = cookies(req)[COOKIE];
-  if (!c) return null;
+  if (!c) { res.cbWhy = "no_cookie"; return null; }
   let s = open(c);
-  if (!s || !s.rt) return null;
+  if (!s) { res.cbWhy = "cookie_unreadable"; return null; }
+  if (!s.rt) { res.cbWhy = "no_refresh_token"; return null; }
   if (!s.at || Date.now() > (s.exp || 0)) {
     s = await tokenRequest(req, { grant_type: "refresh_token", refresh_token: s.rt });
     setCookie(res, COOKIE, sessionCookie(s));
