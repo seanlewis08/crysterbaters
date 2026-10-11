@@ -5631,7 +5631,7 @@ var Yahoo=(function(){
     var pre=!d.players.length;
     var rows=d.players.map(function(p){
       var bench=BENCH.test(p.pos||""), c=(showKeepers&&p.name)?costFor(p.name):null;
-      return '<tr'+(bench?' style="color:var(--dim)"':'')+'><td class="num sub">'+esc(p.pos||"")+'</td><td class="name" style="font-size:15px">'+esc(p.name||"")+status(p)+'</td><td class="mgr">'+esc(p.team||"")+'</td><td class="num">'+p.gp+'</td><td class="num sub" data-left="'+esc(p.team||"")+'"'+(bench?' data-bench="1"':'')+'>·</td>'+
+      return '<tr'+(bench?' style="color:var(--dim)"':'')+'><td class="num sub">'+esc(p.pos||"")+'</td><td class="name" style="font-size:15px">'+esc(p.name||"")+status(p)+'</td><td class="mgr">'+esc(p.team||"")+'</td><td class="num">'+p.gp+'</td><td class="num sub" data-left="'+esc(p.team||"")+'" data-name="'+esc(p.name||"")+'"'+(bench?' data-bench="1"':'')+'>·</td>'+
         (showKeepers?'<td class="num">'+(c?(c.dead?'<span class="sub">not keepable</span>':'RD '+c.cost):'')+'</td>':'')+'</tr>';
     }).join("");
     var over=d.games.active>d.games.cap, left=d.games.cap-d.games.active;
@@ -5721,33 +5721,40 @@ var Yahoo=(function(){
             var ab=espnAbbr(c.team&&c.team.abbreviation); (byTeam[ab]=byTeam[ab]||[]).push({day:day,started:started});
           });
         });
-        var starters=d.players.filter(function(p){ return !BENCH.test(p.pos||""); });
         var days=[], cur=parseYmd(r[0]), end=parseYmd(r[1]);
         while(cur<=end){ days.push(ymd(cur)); cur.setDate(cur.getDate()+1); }
-        var perDay={}; days.forEach(function(x){ perDay[x]=0; });
-        var left=0;
-        starters.forEach(function(p){
-          var g=(byTeam[espnAbbr(p.team)]||[]), n=0;
-          g.forEach(function(x){ if(!x.started){ n++; if(perDay[x.day]!=null) perDay[x.day]++; } });
-          p._left=n; left+=n;
+        /* Yahoo's lineup for each day (past days: what counted; today and later: as set now).
+           Without it, fall back to today's lineup for every day. */
+        var byDate={}; (d.days||[]).forEach(function(x){ byDate[x.date]=x; });
+        function lineupFor(day){ var x=byDate[day]; return x&&x.players&&x.players.length?x.players:d.players; }
+        var perDay={}, playedDay={}, left=0, leftBy={};
+        days.forEach(function(day){
+          var x=byDate[day]; playedDay[day]=x?x.active:null;
+          var n=0;
+          lineupFor(day).forEach(function(p){
+            if(BENCH.test(p.pos||"")) return;
+            var toCome=(byTeam[espnAbbr(p.team)]||[]).filter(function(g){ return g.day===day&&!g.started; }).length;
+            if(toCome){ n+=toCome; leftBy[p.name]=(leftBy[p.name]||0)+toCome; }
+          });
+          perDay[day]=n; left+=n;
         });
-        /* fill the Left column */
+        /* fill the Left column: games still to come while this player sits in an active slot that day */
         Array.prototype.forEach.call(document.querySelectorAll('#yh-team [data-left], #yh-panel [data-left]'),function(td){
-          if(td.dataset.bench) { td.textContent="–"; return; }
-          var g=(byTeam[espnAbbr(td.dataset.left)]||[]).filter(function(x){return !x.started;}).length;
-          td.textContent=g; td.className="num"+(g?"":" sub");
+          var g=leftBy[td.dataset.name]||0;
+          td.textContent=g||(td.dataset.bench?"–":"0"); td.className="num"+(g?"":" sub");
         });
         var aligned=capAligned(d), cap=aligned?capFor(d.league.week, d.games.cap):d.games.cap, played=d.games.active, proj=played+left, over=proj-cap;
         var capNoteTxt=aligned?(capShared?'':' <span class="sub">(cap from this browser\u2019s Games Cap table; the shared one isn\u2019t published yet)</span>')
                               :' <span class="sub">(the Games Cap table starts '+esc(CAP&&CAP.start||"?")+', which doesn\u2019t line up with Yahoo\u2019s season start '+esc(d.league.start||"?")+', so the default 30 is used)</span>';
         var strip=days.map(function(x){
           var dt=parseYmd(x), lbl=dt.toLocaleDateString(undefined,{weekday:"short"}), past=x<today, isToday=x===today;
-          return '<div class="yh-day'+(past?' past':'')+(isToday?' today':'')+'"><span class="yh-dl">'+lbl+'</span><span class="yh-dn">'+(past?'·':perDay[x])+'</span></div>';
+          var done=playedDay[x], val=past?(done==null?'·':done):(isToday&&done?done+'+'+perDay[x]:perDay[x]);
+          return '<div class="yh-day'+(past?' past':'')+(isToday?' today':'')+'" title="'+(past?'counted':(isToday?'played so far + still to come':'starters with a game, lineup as set'))+'"><span class="yh-dl">'+lbl+'</span><span class="yh-dn">'+val+'</span></div>';
         }).join("");
         var verdict = over>0
           ? '<b style="color:var(--red)">'+proj+' projected — '+over+' over the cap of '+cap+'.</b> Sit '+over+' starter'+(over>1?'s':'')+' on a game day before the week ends.'
           : '<b style="color:var(--green)">'+proj+' projected</b> — '+(cap-proj)+' under the cap of '+cap+(cap-proj<=1?'. No room to add a streamer.':'. Room for '+(cap-proj)+' more.');
-        host.innerHTML='<div class="panel-hd" style="border-top:1px solid var(--line)"><span class="eyebrow">Rest of the week · starters with a game</span></div>'+
+        host.innerHTML='<div class="panel-hd" style="border-top:1px solid var(--line)"><span class="eyebrow">This week by day · counted so far, then starters with a game as the lineups are set</span></div>'+
           '<div class="yh-days">'+strip+'</div>'+
           '<p style="margin:0;padding:4px 16px 14px;font-size:14.5px;color:var(--muted)">'+played+' played + '+left+' still to come for the current lineup = '+verdict+capNoteTxt+'</p>';
       }).catch(function(e){ host.innerHTML='<div class="empty" style="padding:10px 16px">Couldn’t read the NBA schedule ('+esc(e&&e.message||"no answer")+'); the games-left projection is off for now.</div>'; });

@@ -10,7 +10,7 @@ module.exports = async (req, res) => {
     // ?season=2025&week=10 looks at a past week (the league keeps its ID across seasons; if not,
     // the one team this login had that season is taken); ?days=1 adds the lineup for each day
     const q = new URL(req.url, L.origin(req)).searchParams;
-    const wantSeason = q.get("season") || "", wantWeek = Number(q.get("week")) || 0, wantDays = q.get("days") === "1";
+    const wantSeason = q.get("season") || "", wantWeek = Number(q.get("week")) || 0, wantDays = q.get("days") !== "0";
     // every NBA team this login owns, newest season first
     const games = L.fold((await L.yahoo(s, "/users;use_login=1/games;game_codes=nba/teams")).fantasy_content.users)[0].user.games;
     let team = null, game = null;
@@ -42,13 +42,13 @@ module.exports = async (req, res) => {
       const gp = stats.find(x => String(x.stat_id) === "0");
       const elig = list(pl.eligible_positions).map(x => (x && x.position) || x).filter(x => typeof x === "string");
       return {
-        name: pl.name && pl.name.full, team: pl.editorial_team_abbr, pos: pl.selected_position && pl.selected_position.position,
+        key: pl.player_key, name: pl.name && pl.name.full, team: pl.editorial_team_abbr, pos: pl.selected_position && pl.selected_position.position,
         elig: elig, status: pl.status || "", note: pl.injury_note || pl.status_full || "",
         gp: gp ? Number(gp.value) || 0 : 0
       };
     });
     const activeP = players.filter(p => !BENCH[p.pos]), benchP = players.filter(p => p.pos === "BN"), ilP = players.filter(p => BENCH[p.pos] && p.pos !== "BN");
-    const active = activeP.reduce((a, p) => a + p.gp, 0);
+    const gamesOut = { active: activeP.reduce((a, p) => a + p.gp, 0), cap: 30, bench: players.filter(p => BENCH[p.pos]).reduce((a, p) => a + p.gp, 0) };
 
     // standings and this week's matchup are extras: a hiccup there must not hide the roster
     let standing = null, matchup = null, warn = [];
@@ -108,6 +108,12 @@ module.exports = async (req, res) => {
         days.push({ date: dates[i], active: ps.filter(p => !BENCH[p.pos]).reduce((a, p) => a + p.gp, 0), bench: ps.filter(p => BENCH[p.pos]).reduce((a, p) => a + p.gp, 0), players: ps, error: dayErr || undefined });
       }
       if (rawDay) warn.push("rawDay: " + rawDay);
+      // the week's games played come from the days (the league context carries no GP stat)
+      const gpByKey = {};
+      days.forEach(d => (d.players || []).forEach(p => { gpByKey[p.key] = (gpByKey[p.key] || 0) + p.gp; }));
+      players.forEach(p => { p.gp = gpByKey[p.key] || 0; });
+      gamesOut.active = days.reduce((a, d) => a + (d.active || 0), 0);
+      gamesOut.bench = days.reduce((a, d) => a + (d.bench || 0), 0);
     }
 
     L.json(res, 200, {
@@ -120,7 +126,7 @@ module.exports = async (req, res) => {
       },
       standing: standing, matchup: matchup,
       lineup: { active: activeP.length, bench: benchP.length, il: ilP.length, injuredActive: activeP.filter(p => p.status).length },
-      games: { active: active, cap: 30, bench: players.filter(p => BENCH[p.pos]).reduce((a, p) => a + p.gp, 0) },
+      games: gamesOut,
       players: players,
       days: days,
       raw: q.get("raw") === "1" ? JSON.stringify((roster.roster && (roster.roster.players || (roster.roster["0"] && roster.roster["0"].players)) || [])[0] || roster).slice(0, 3000) : undefined,
