@@ -98,7 +98,11 @@ async function yahoo(s, path) {
     headers: { "Authorization": "Bearer " + s.at, "Accept": "application/json" }
   });
   if (r.status === 401) throw Object.assign(new Error("Yahoo session expired"), { code: 401 });
-  if (!r.ok) throw new Error("Yahoo " + r.status + " on " + path);
+  if (!r.ok) {
+    // pass Yahoo's own reason through (it explains 403s); never includes the token
+    const t = (await r.text().catch(() => "")).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, 300);
+    throw new Error("Yahoo " + r.status + " on " + path + (t ? " — " + t : ""));
+  }
   return r.json();
 }
 /* Yahoo's JSON nests arrays-of-single-key-objects everywhere, sometimes an array whose first
