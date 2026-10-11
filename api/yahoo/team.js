@@ -7,12 +7,17 @@ module.exports = async (req, res) => {
   try {
     const s = await L.session(req, res);
     if (!s) return L.json(res, 401, { error: "not_connected", why: res.cbWhy || "", v: 2 });
+    // ?season=2025&week=10 looks at a past week (the league keeps its ID across seasons; if not,
+    // the one team this login had that season is taken); ?days=1 adds the lineup for each day
+    const q = new URL(req.url, L.origin(req)).searchParams;
+    const wantSeason = q.get("season") || "", wantWeek = Number(q.get("week")) || 0, wantDays = q.get("days") === "1";
     // every NBA team this login owns, newest season first
     const games = L.fold((await L.yahoo(s, "/users;use_login=1/games;game_codes=nba/teams")).fantasy_content.users)[0].user.games;
     let team = null, game = null;
     list(games).slice().reverse().some(g => {
-      const gg = g.game; const teams = list(gg.teams);
-      const t = teams.map(x => x.team).find(x => x && (x.team_key || "").indexOf(".l." + L.LEAGUE_ID + ".") > 0);
+      const gg = g.game; const teams = list(gg.teams).map(x => x.team).filter(Boolean);
+      if (wantSeason && String(gg.season) !== wantSeason) return false;
+      const t = teams.find(x => (x.team_key || "").indexOf(".l." + L.LEAGUE_ID + ".") > 0) || (wantSeason && teams.length === 1 ? teams[0] : null);
       if (t) { team = t; game = gg; return true; } return false;
     });
     if (!team) {
@@ -26,7 +31,7 @@ module.exports = async (req, res) => {
     }
     const key = team.team_key, lk = key.replace(/\.t\.\d+$/, "");
     const league = L.fold((await L.yahoo(s, "/league/" + lk)).fantasy_content.league);
-    const week = Number(league.current_week) || 1;
+    const week = wantWeek || Number(league.current_week) || 1;
 
     // roster with this week's games played
     const roster = L.fold((await L.yahoo(s, "/team/" + key + "/roster;week=" + week + "/players/stats;type=week;week=" + week)).fantasy_content.team);
@@ -64,6 +69,30 @@ module.exports = async (req, res) => {
       }
     } catch (e) { warn.push("matchup: " + e.message); }
 
+    // the lineup Yahoo holds for each day of the week, with that day's games played: past days are
+    // what actually counted, today and later are the lineups as set now
+    let days = null;
+    if (wantDays && matchup && matchup.start && matchup.end) {
+      days = [];
+      const d0 = new Date(matchup.start + "T12:00:00Z"), d1 = new Date(matchup.end + "T12:00:00Z");
+      const dates = [];
+      for (let d = new Date(d0); d <= d1; d.setUTCDate(d.getUTCDate() + 1)) dates.push(d.toISOString().slice(0, 10));
+      const got = await Promise.all(dates.map(date =>
+        L.yahoo(s, "/team/" + key + "/roster;date=" + date + "/players/stats;type=date;date=" + date)
+          .then(j => L.fold(j).fantasy_content.team).catch(e => ({ _err: e.message }))));
+      got.forEach((t, i) => {
+        if (t._err) { days.push({ date: dates[i], error: t._err }); return; }
+        const r = t.roster || {};
+        const ps = list(r.players || (r["0"] && r["0"].players)).map(p => {
+          const pl = p.player || p;
+          const stats = list(pl.player_stats && pl.player_stats.stats).map(x => x.stat || x);
+          const gp = stats.find(x => String(x.stat_id) === "0");
+          return { name: pl.name && pl.name.full, team: pl.editorial_team_abbr, pos: pl.selected_position && pl.selected_position.position, status: pl.status || "", gp: gp ? Number(gp.value) || 0 : 0 };
+        });
+        days.push({ date: dates[i], active: ps.filter(p => !BENCH[p.pos]).reduce((a, p) => a + p.gp, 0), bench: ps.filter(p => BENCH[p.pos]).reduce((a, p) => a + p.gp, 0), players: ps });
+      });
+    }
+
     L.json(res, 200, {
       league: { id: L.LEAGUE_ID, name: league.name, week: week, season: game.season, start: league.start_date, end: league.end_date, draft: league.draft_status || "" },
       team: {
@@ -76,6 +105,7 @@ module.exports = async (req, res) => {
       lineup: { active: activeP.length, bench: benchP.length, il: ilP.length, injuredActive: activeP.filter(p => p.status).length },
       games: { active: active, cap: 30, bench: players.filter(p => BENCH[p.pos]).reduce((a, p) => a + p.gp, 0) },
       players: players,
+      days: days,
       warn: warn,
       fetched: new Date().toISOString(),
       attribution: "Fantasy data provided by Yahoo Fantasy"
