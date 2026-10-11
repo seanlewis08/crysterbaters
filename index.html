@@ -197,6 +197,8 @@ section:first-child{margin-top:34px}
 
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:4px;box-shadow:var(--shadow)}
 
+.kp-bar{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 16px 12px;border-top:1px solid var(--line);flex-wrap:wrap}
+.kp-box{width:16px;height:16px;accent-color:var(--amber);cursor:pointer}
 .yh-days{display:flex;gap:6px;padding:12px 16px 8px;flex-wrap:wrap}
 .yh-day{flex:1 1 0;min-width:52px;text-align:center;border:1px solid var(--line);border-radius:3px;padding:7px 4px;background:var(--surface-2)}
 .yh-day.past{opacity:.45}
@@ -1573,6 +1575,7 @@ footer p + p{margin-top:11px}
           <div class="field" style="flex:0 0 auto;justify-content:flex-end"><button class="btn sm" id="code-save">Save code</button></div>
           <span id="code-msg" style="align-self:flex-end;font-size:13px;color:var(--muted)"></span>
         </div>
+        <label style="display:flex;gap:10px;align-items:center;padding:4px 16px 14px;font-size:13.5px;cursor:pointer"><input type="checkbox" id="se-lock"> <span><b>Lock keeper declarations</b> — managers pick up to two keepers on their own team page until you tick this; you can still change anyone's.</span></label>
         <div class="tablewrap" style="border:0;border-radius:0;box-shadow:none">
           <table>
             <thead><tr><th>Team</th><th>Manager</th><th>Claimed by</th><th>Username</th><th></th></tr></thead>
@@ -2121,11 +2124,35 @@ function keepersFor(t){
   });
 }
 
+/* ---------- keeper declarations (shared) ----------
+   Managers pick their keepers on their team page; rows live in keeper_picks. A team with a
+   row overrides the keepers typed into T[] above; a team without one keeps them. */
+var KEEPER_SEASON="2026-27", KEEPERS_LOCKED=false, KEEPER_ROWS={};
+function keeperRoundOf(name){ var hit=DRAFTED[norm(name)]; return hit?hit.round:13; }   /* undrafted = notional 13th-rounder → RD 11 */
+function applyKeepers(rows){
+  KEEPER_ROWS={};
+  (rows||[]).forEach(function(row){ if(row.season===KEEPER_SEASON) KEEPER_ROWS[row.team_id]=row; });
+  T.forEach(function(t){
+    var row=KEEPER_ROWS[t.id]; if(!row||!t.roster) return;
+    var chosen={}; (row.players||[]).forEach(function(n){ chosen[norm(n)]=1; });
+    t.costs={};
+    t.roster.forEach(function(r){ r[3]=chosen[norm(r[1])]?1:0; if(r[3]) t.costs[r[1]]=keeperRoundOf(r[1]); });
+  });
+  rebuildKeeperViews();
+}
+function keeperState(t){
+  var row=KEEPER_ROWS[t.id];
+  return {declared:!!row, when:row?row.updated_at:null, players:keepersFor(t).map(function(k){return k.player;})};
+}
+
 /* ---------- keeper watch ---------- */
 var K=[];
+function rebuildKeeperViews(){
+K=[];
 T.forEach(function(t){keepersFor(t).forEach(function(k){K.push({player:k.player,was:k.was,next:k.round,team:t});});});
 K.sort(function(a,b){return a.next-b.next;});
 document.getElementById("tkr-k").textContent=K.length;
+var hubN=document.querySelector('#hubgrid [data-go="keepers"] .hc-n'); if(hubN) hubN.textContent=K.length;
 document.getElementById("watch").innerHTML=K.map(function(k){
   var l=yearsLeft(k.next);
   var pill=l===0?'<span class="pill gone">Final year</span>':(l===1?'<span class="pill warn">One more</span>':'<span class="pill ok">'+l+' more</span>');
@@ -2229,8 +2256,16 @@ function teamCard(t){
     '</div></button>';
 }
 document.getElementById("teamgrid").innerHTML=T.slice().sort(function(a,b){return ST[a.id].fin-ST[b.id].fin;}).map(teamCard).join("");
+if(typeof renderKeeperLadders==="function") renderKeeperLadders();
+if(window.Badges&&Badges.onView) Badges.onView("teams");
+if(window.Players&&Players.rebuildOwners) Players.rebuildOwners();
+if(typeof renderBoard==="function"&&typeof trades!=="undefined"&&trades) renderBoard();
+if(curTeam&&document.getElementById("v-team").classList.contains("on")) renderTeam(curTeam);
+}
+rebuildKeeperViews();
 
 /* ---------- keeper ladders ---------- */
+function renderKeeperLadders(){
 document.getElementById("keeperladders").innerHTML=K.map(function(k){
   return '<div class="panel">'+
     '<div class="panel-hd" style="display:flex;justify-content:space-between;gap:10px;align-items:center">'+
@@ -2238,26 +2273,35 @@ document.getElementById("keeperladders").innerHTML=K.map(function(k){
       '<span class="mgr" style="font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)">'+esc(k.team.short)+'</span></div>'+
     '<div style="padding:16px"><div class="chips">'+ladderChips(k.next)+'</div></div></div>';
 }).join("");
+}
+renderKeeperLadders();
 
 /* ---------- team detail ---------- */
 function renderTeam(id){
   curTeam=id;
   var t=byId(id); if(!t) return;
   var s=ST[t.id];
-  var rosterHtml='<div class="tablewrap" style="border:0;border-radius:0"><table><thead><tr><th>Pos</th><th>Player</th><th>NBA</th><th>Drafted 25</th><th class="num">Costs 26–27</th></tr></thead><tbody>'+
+  var me=(window.Polls&&Polls.profile)?Polls.profile():null, isC=!!(window.Polls&&Polls.commish&&Polls.commish());
+  var mine=!!(me&&me.team_id===t.id), canKeep=(isC||(mine&&!KEEPERS_LOCKED)), ks=keeperState(t);
+  var rosterHtml='<div class="tablewrap" style="border:0;border-radius:0"><table><thead><tr>'+(canKeep?'<th class="num" title="Tick up to two">Keep</th>':'')+'<th>Pos</th><th>Player</th><th>NBA</th><th>Drafted 25</th><th class="num">Costs 26–27</th></tr></thead><tbody>'+
     t.roster.map(function(r){
       var k=r[3], nm=r[1], c=costFor(nm);
       var cell;
       if(nm==="(Empty)") cell='<span class="sub">—</span>';
       else if(c.dead) cell='<span class="sub">not keepable</span>';
       else cell='<span style="color:'+(k?"var(--amber)":"var(--muted)")+'">RD '+c.cost+'</span>';
-      return '<tr'+(k?' class="keeprow"':'')+'>'+
+      var box=canKeep?'<td class="num">'+((nm==="(Empty)"||c.dead)?'':'<input type="checkbox" class="kp-box" data-player="'+esc(nm)+'"'+(k?' checked':'')+'>')+'</td>':'';
+      return '<tr'+(k?' class="keeprow"':'')+'>'+box+
         '<td class="num sub">'+r[0]+'</td>'+
         '<td class="name" style="font-size:15px">'+esc(nm)+(k?'<span class="kbadge">K</span>':'')+'</td>'+
         '<td class="mgr">'+esc(r[2])+'</td>'+
         '<td class="sub">'+(nm==="(Empty)"?"—":esc(c.source))+'</td>'+
         '<td class="num">'+cell+'</td></tr>';
-    }).join("")+'</tbody></table></div>';
+    }).join("")+'</tbody></table></div>'+
+    (canKeep
+      ? '<div class="kp-bar"><span id="kp-msg" class="sub">'+(ks.declared?'Declared '+new Date(ks.when).toLocaleDateString(undefined,{month:"short",day:"numeric"})+(isC&&!mine?' · you\u2019re editing as commissioner':''):(mine?'Not declared yet \u2014 the keepers shown are last season\u2019s list; tick yours and save.':'Not declared yet'))+(KEEPERS_LOCKED?' · declarations are locked':'')+'</span><button class="btn sm" id="kp-save" disabled>Save keepers</button></div>'
+      : (ks.declared?'<p class="sub" style="margin:0;padding:10px 16px 12px">Keepers declared '+new Date(ks.when).toLocaleDateString(undefined,{month:"short",day:"numeric"})+'.'+(KEEPERS_LOCKED?' Declarations are locked.':'')+'</p>'
+                    :'<p class="sub" style="margin:0;padding:10px 16px 12px">'+(KEEPERS_LOCKED?'Keeper declarations are locked.':(mine?'Sign in to declare your keepers here.':'Not declared yet \u2014 showing last season\u2019s list.'))+'</p>'));
 
   var keepers=keepersFor(t);
   var ladders = keepers.length
@@ -2293,6 +2337,27 @@ function renderTeam(id){
   if(window.Court) Court.onTeam(id);
   if(window.Yahoo) Yahoo.onTeam(id);
 }
+/* keeper editor: at most two ticks; Save writes the shared row and every keeper view follows */
+document.addEventListener("change",function(e){
+  var box=e.target.closest(".kp-box"); if(!box) return;
+  var boxes=Array.prototype.slice.call(document.querySelectorAll("#teamdetail .kp-box")), on=boxes.filter(function(b){return b.checked;});
+  var msg=document.getElementById("kp-msg"), save=document.getElementById("kp-save");
+  if(on.length>2){ box.checked=false; if(msg) msg.textContent="Two keepers at most."; return; }
+  var t=byId(curTeam), chosen=on.map(function(b){return b.dataset.player;});
+  var rounds=chosen.map(keeperRoundOf), same=rounds.length===2&&rounds[0]===rounds[1];
+  if(msg) msg.textContent=chosen.length?chosen.map(function(n,i){ var c=keeperRoundOf(n)-2-(same&&i===1?1:0); return n+" (RD "+c+")"; }).join(" · ")+(same?" · same round, so the second costs one more":""):"No keepers \u2014 all twelve picks";
+  if(save) save.disabled=false;
+});
+document.addEventListener("click",function(e){
+  var btn=e.target.closest("#kp-save"); if(!btn) return;
+  var t=byId(curTeam); if(!t) return;
+  var chosen=Array.prototype.slice.call(document.querySelectorAll("#teamdetail .kp-box")).filter(function(b){return b.checked;}).map(function(b){return b.dataset.player;});
+  var msg=document.getElementById("kp-msg"); btn.disabled=true; if(msg) msg.textContent="Saving\u2026";
+  Polls.store().keepersSet(t.id,chosen).then(function(){
+    return Polls.store().keepersLoad();
+  }).then(function(rows){ applyKeepers(rows); renderTeam(t.id); var m=document.getElementById("kp-msg"); if(m) m.textContent="Saved \u2014 "+(chosen.length?chosen.join(" and "):"no keepers")+"."; })
+  .catch(function(e){ btn.disabled=false; if(msg) msg.textContent="Couldn\u2019t save: "+(e&&e.message||e); });
+});
 
 /* ---------- history ---------- */
 document.getElementById("history").innerHTML=HISTORY.map(function(h){
@@ -2851,7 +2916,7 @@ var Polls=(function(){
       releaseTeam:function(team_id){ db.profiles=db.profiles.filter(function(p){return p.team_id!==team_id;}); save(); return Promise.resolve(); },
       getCode:function(){ return Promise.resolve(db.code); },
       setCode:function(c){ db.code=c; save(); return Promise.resolve(); },
-      flags:function(){ return Promise.resolve({show_draft_day:db.showSched!==false}); },
+      flags:function(){ return Promise.resolve({show_draft_day:db.showSched!==false,keepers_locked:!!db.keepersLocked}); },
       setShowSched:function(on){ if(!commish()) return Promise.reject(new Error("Commissioner only.")); db.showSched=!!on; save(); return Promise.resolve(); },
       load:function(){
         var u=db.me&&db.me.id;
@@ -2895,6 +2960,10 @@ var Polls=(function(){
       badgeAward:function(a){ if(!commish()) return Promise.reject(new Error("Commissioner only.")); if(!db.badges) db.badges={meta:[],awards:[]}; db.badges.awards.push({id:"b"+Date.now(),badge_id:a.badge_id,team_id:a.team_id,season:a.season,note:a.note||null,awarded_by:db.me.id,awarded_at:new Date().toISOString()}); save(); return Promise.resolve(); },
       badgeRevoke:function(id){ if(!commish()) return Promise.reject(new Error("Commissioner only.")); if(!db.badges) return Promise.resolve(); db.badges.awards=db.badges.awards.filter(function(x){return x.id!==id;}); save(); return Promise.resolve(); },
       badgeMeta:function(badge_id,o){ if(!commish()) return Promise.reject(new Error("Commissioner only.")); if(!db.badges) db.badges={meta:[],awards:[]}; var m=db.badges.meta.filter(function(x){return x.badge_id===badge_id;})[0]; if(!m){ m={badge_id:badge_id}; db.badges.meta.push(m); } m.prize=o.prize||null; m.claimed=!!o.claimed; m.updated_at=new Date().toISOString(); save(); return Promise.resolve(); },
+      /* keepers */
+      keepersLoad:function(){ return Promise.resolve((db.keepers||[]).slice()); },
+      keepersSet:function(team_id,players){ var p=myProf(); if(!(commish()||(p&&p.team_id===team_id&&!db.keepersLocked))) return Promise.reject(new Error(db.keepersLocked?"Keeper declarations are locked.":"That's not your team.")); if(!db.keepers) db.keepers=[]; var row=db.keepers.filter(function(x){return x.team_id===team_id&&x.season===KEEPER_SEASON;})[0]; if(!row){ row={team_id:team_id,season:KEEPER_SEASON}; db.keepers.push(row); } row.players=players.slice(0,2); row.updated_by=db.me.id; row.updated_at=new Date().toISOString(); save(); return Promise.resolve(); },
+      setKeepersLocked:function(on){ if(!commish()) return Promise.reject(new Error("Commissioner only.")); db.keepersLocked=!!on; save(); return Promise.resolve(); },
       /* games cap, shared */
       capLoad:function(){ return Promise.resolve(db.cap?JSON.parse(JSON.stringify(db.cap)):null); },
       capSave:function(data){ if(!commish()) return Promise.reject(new Error("Commissioner only.")); db.cap=JSON.parse(JSON.stringify(data)); save(); return Promise.resolve(); },
@@ -3001,7 +3070,7 @@ var Polls=(function(){
       releaseTeam:function(team_id){ return client.rpc("release_team",{p_team_id:team_id}).then(chk); },
       getCode:function(){ return client.from("league_settings").select("invite_code").eq("id",1).maybeSingle().then(function(r){ chk(r); return r.data?r.data.invite_code:""; }); },
       setCode:function(c){ return client.rpc("set_invite_code",{p_code:c}).then(chk); },
-      flags:function(){ return client.from("site_flags").select("show_draft_day").maybeSingle().then(function(r){ chk(r); return {show_draft_day:!r.data||r.data.show_draft_day!==false}; }); },
+      flags:function(){ return client.from("site_flags").select("show_draft_day,keepers_locked").maybeSingle().then(function(r){ chk(r); return {show_draft_day:!r.data||r.data.show_draft_day!==false,keepers_locked:!!(r.data&&r.data.keepers_locked)}; }); },
       setShowSched:function(on){ return client.rpc("set_show_draft_day",{p_on:!!on}).then(chk); },
       load:function(){
         return Promise.all([
@@ -3070,6 +3139,10 @@ var Polls=(function(){
       badgeAward:function(a){ return client.from("badge_awards").insert({badge_id:a.badge_id,team_id:a.team_id,season:a.season,note:a.note||null}).then(chk); },
       badgeRevoke:function(id){ return client.from("badge_awards").delete().eq("id",id).then(chk); },
       badgeMeta:function(badge_id,o){ return client.from("badge_meta").upsert({badge_id:badge_id,prize:o.prize||null,claimed:!!o.claimed,updated_at:new Date().toISOString()},{onConflict:"badge_id"}).then(chk); },
+      /* keepers */
+      keepersLoad:function(){ return client.from("keeper_picks").select("team_id,season,players,updated_at").then(function(r){ chk(r); return r.data||[]; }); },
+      keepersSet:function(team_id,players){ return client.from("keeper_picks").upsert({team_id:team_id,season:KEEPER_SEASON,players:players.slice(0,2),updated_at:new Date().toISOString()},{onConflict:"team_id,season"}).then(chk); },
+      setKeepersLocked:function(on){ return client.rpc("set_keepers_locked",{p_on:!!on}).then(chk); },
       /* games cap, shared */
       capLoad:function(){ return client.from("cap_table").select("data,updated_at").eq("id","current").maybeSingle().then(function(r){ chk(r); return r.data?r.data.data:null; }); },
       capSave:function(data){ return client.from("cap_table").upsert({id:"current",data:data,updated_at:new Date().toISOString()},{onConflict:"id"}).then(chk); },
@@ -3126,6 +3199,7 @@ var Polls=(function(){
     me=u; profile=null; profiles=[]; claimed=[]; isCommish=false; polls=[]; votes=[]; tallies={};
     if(!me){
       $("newpoll").hidden=true; renderAcct(); refresh(); tellAuth();
+      if(curTeam&&$("v-team").classList.contains("on")) renderTeam(curTeam);
       if(/^#manager(\?|$)/.test(location.hash)) go("home");
       store.claimedList().then(function(c){ claimed=c; renderSignup(); }).catch(function(){});
       return;
@@ -3133,6 +3207,7 @@ var Polls=(function(){
     store.session().then(function(s){
       profile=s.profile; profiles=s.profiles; claimed=s.claimed; isCommish=s.commissioner;
       renderAcct(); refresh(); tellAuth();
+      if(curTeam&&$("v-team").classList.contains("on")) renderTeam(curTeam);   /* the Keep column depends on who is signed in */
       if(/^#manager(\?|$)/.test(location.hash)) go(isCommish?"manager":"home",!isCommish?false:true);
     }).catch(fail);
   }
@@ -3421,6 +3496,10 @@ var Polls=(function(){
       dispTz=b.dataset.sctz||""; try{ if(dispTz) localStorage.setItem("cb-sched-tz",dispTz); else localStorage.removeItem("cb-sched-tz"); }catch(x){}
       $("sc-eyebrow").textContent="Signed in as "+nameFor(me.id,me.email)+" · times in "+tzShort()+(dispTz?"":" (your clock)");
       renderSched();
+    });
+    $("se-lock").addEventListener("change",function(){
+      var on=this.checked;
+      store.setKeepersLocked(on).then(function(){ KEEPERS_LOCKED=on; say("code-msg",on?"Keeper declarations locked.":"Managers can declare keepers again.",true); }).catch(function(e){ $("se-lock").checked=!on; say("code-msg",msgOf(e)); });
     });
     $("se-show").addEventListener("change",function(){
       var on=this.checked;
@@ -3773,11 +3852,13 @@ var Polls=(function(){
   /* ----- boot ----- */
   var showSched=true;
   function applyFlags(f){
+    KEEPERS_LOCKED=!!(f&&f.keepers_locked);
+    var lk=$("se-lock"); if(lk) lk.checked=KEEPERS_LOCKED;
     showSched=!f||f.show_draft_day!==false;
     ["nav-sched","hc-sched","tile-sched-link"].forEach(function(id){ var el=$(id); if(el) el.hidden=!showSched; });
     var cb=$("se-show"); if(cb) cb.checked=showSched;
   }
-  function loadFlags(){ store.flags().then(applyFlags).catch(function(){}); }
+  function loadFlags(){ store.flags().then(applyFlags).catch(function(){}); if(store.keepersLoad) store.keepersLoad().then(applyKeepers).catch(function(){}); }
   function start(){
     var recovery=/type=recovery/.test(location.hash);
     loadFlags();
@@ -3840,7 +3921,8 @@ var Players=(function(){
   /* ----- owners from the locked rosters ----- */
   function norm(n){ return n.normalize("NFKD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[.'’]/g,"").replace(/[^a-z ]/g,"").split(" ").filter(function(w){return w&&["jr","sr","ii","iii","iv"].indexOf(w)<0;}).join(" "); }
   var OWN={};
-  T.forEach(function(t){ (t.roster||[]).forEach(function(r){ OWN[norm(r[1])]={t:t.short,id:t.id,k:!!r[3],cost:(t.costs||{})[r[1]]||0}; }); });
+  function buildOwn(){ OWN={}; T.forEach(function(t){ (t.roster||[]).forEach(function(r){ OWN[norm(r[1])]={t:t.short,id:t.id,k:!!r[3],cost:(t.costs||{})[r[1]]||0}; }); }); }
+  buildOwn();
 
   /* ----- columns ----- */
   var COLS=[
@@ -4165,6 +4247,7 @@ var Players=(function(){
   if("requestIdleCallback" in window) requestIdleCallback(warm,{timeout:4000}); else setTimeout(warm,2500);
   return {
     onView:onView,
+    rebuildOwners:function(){ buildOwn(); rows.forEach(function(r){ r.own=OWN[r.key]||null; }); if(rows.length&&document.getElementById("v-players").classList.contains("on")) render(); },
     ensure:warm,                                  /* start the load if nothing has yet */
     sub:function(cb){ subs.push(cb); },           /* called whenever rows are rebuilt */
     rows:function(){ return rows; },

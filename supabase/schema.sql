@@ -669,3 +669,44 @@ drop policy if exists cap_table_update on public.cap_table;
 create policy cap_table_update on public.cap_table for update to authenticated using (public.is_commissioner()) with check (public.is_commissioner());
 grant select on public.cap_table to anon, authenticated;
 grant insert, update on public.cap_table to authenticated;
+
+-- ---------------------------------------------------------------------------
+-- Keeper declarations. Each manager picks up to two keepers on their own team
+-- page; the commissioner can change anyone's and can lock declarations (from
+-- the Manager page) once they're final. Anyone can read. Until a team has a
+-- row, the site shows the keepers typed into index.html.
+-- ---------------------------------------------------------------------------
+create table if not exists public.keeper_picks (
+  team_id     text not null check (team_id ~ '^[a-z0-9]{2,20}$'),
+  season      text not null default '2026-27' check (season ~ '^[0-9]{4}-[0-9]{2}$'),
+  players     jsonb not null default '[]'::jsonb check (jsonb_typeof(players) = 'array' and jsonb_array_length(players) <= 2),
+  updated_by  uuid default auth.uid() references auth.users (id) on delete set null,
+  updated_at  timestamptz not null default now(),
+  primary key (team_id, season)
+);
+alter table public.league_settings add column if not exists keepers_locked boolean not null default false;
+create or replace view public.site_flags
+with (security_invoker = false) as
+  select show_draft_day, keepers_locked from public.league_settings where id = 1;
+create or replace function public.set_keepers_locked(p_on boolean)
+returns void language plpgsql security definer set search_path = public as $$
+begin
+  if not public.is_commissioner() then raise exception 'Commissioner only.'; end if;
+  update public.league_settings set keepers_locked = coalesce(p_on, false) where id = 1;
+end $$;
+create or replace function public.keepers_editable(p_team_id text)
+returns boolean language sql stable security definer set search_path = public as $$
+  select public.is_commissioner()
+      or (public.owns_team(p_team_id) and not (select keepers_locked from public.league_settings where id = 1));
+$$;
+alter table public.keeper_picks enable row level security;
+drop policy if exists keeper_picks_read on public.keeper_picks;
+create policy keeper_picks_read on public.keeper_picks for select to anon, authenticated using (true);
+drop policy if exists keeper_picks_write on public.keeper_picks;
+create policy keeper_picks_write on public.keeper_picks for insert to authenticated with check (public.keepers_editable(team_id));
+drop policy if exists keeper_picks_update on public.keeper_picks;
+create policy keeper_picks_update on public.keeper_picks for update to authenticated using (public.keepers_editable(team_id)) with check (public.keepers_editable(team_id));
+grant select on public.keeper_picks to anon, authenticated;
+grant insert, update on public.keeper_picks to authenticated;
+grant execute on function public.set_keepers_locked(boolean) to authenticated;
+grant execute on function public.keepers_editable(text) to authenticated;
