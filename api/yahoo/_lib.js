@@ -110,7 +110,8 @@ async function yahoo(s, path) {
    come as {"0":…,"1":…,count:n}. Fold all of that into plain objects and arrays. */
 function fold(v) {
   if (Array.isArray(v)) {
-    const parts = v.map(fold);
+    // Yahoo pads records with empty [] entries and a trailing null; they carry nothing
+    const parts = v.map(fold).filter(x => x != null && !(Array.isArray(x) && x.length === 0));
     if (parts.length && parts.every(x => x && typeof x === "object" && !Array.isArray(x))) {
       // merge only when the pieces carry different keys ([{team_key},{name}]); a repeated key
       // ([{stat},{stat},…]) is a real list and stays one
