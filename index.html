@@ -5546,11 +5546,11 @@ var Yahoo=(function(){
   /* auth-state changes re-enter the manager view several times in a row; ask Yahoo once */
   function load(force){
     if(busy) return; if(!force&&Date.now()-last<15000) return; last=Date.now(); busy=true;
-    var qs=/[?&]yahoo=([^&]+)/.exec(location.hash||""), note="";
-    if(qs){ var v=decodeURIComponent(qs[1]); if(v!=="connected") note='<div class="notice warn" style="margin:16px 16px 0;border-left-color:var(--red)">'+esc(v)+'</div>'; try{ history.replaceState(null,"","#manager"); }catch(e){} }
+    var qs=/[?&]yahoo=([^&]+)/.exec(location.hash||""), note="", flag="";
+    if(qs){ var v=decodeURIComponent(qs[1]); flag=v==="connected"?"sign-in completed, cookie "+((/[?&]n=(\d+)/.exec(location.hash)||[])[1]||"?")+" chars":"sign-in failed"; if(v!=="connected") note='<div class="notice warn" style="margin:16px 16px 0;border-left-color:var(--red)">'+esc(v)+'</div>'; try{ history.replaceState(null,"","#manager"); }catch(e){} }
     fetch("/api/yahoo/team",{credentials:"same-origin",cache:"no-store"}).then(function(r){ return r.json().then(function(j){ return {ok:r.ok,status:r.status,j:j}; }); }).then(function(x){
       busy=false;
-      if(x.status===401){ panel(note+connectHtml()); return; }
+      if(x.status===401){ panel(note+connectHtml()+(flag||x.j.why?'<p class="sub" style="margin:0;padding:0 16px 12px">'+esc((flag?flag+" · ":"")+"browser sent "+(x.j.why==="no_cookie"?"no cookie":x.j.why||"a cookie"))+'</p>':"")); return; }
       if(!x.ok){ panel(note+'<div class="notice warn" style="margin:16px;border-left-color:var(--red)">'+esc(x.j.error||"Yahoo didn\u2019t answer.")+(x.j.detail?' '+esc(x.j.detail):'')+'</div>'+connectHtml(true)); return; }
       panel(note+teamHtml(x.j));
     }).catch(function(){ busy=false; panel('<div class="empty">The Yahoo connection only works on crysterbaters.com, not in this preview.</div>'); });

@@ -9,8 +9,9 @@ module.exports = async (req, res) => {
     if (!code || !state || state !== c[L.STATE]) throw new Error("Sign-in didn't match the request it started from. Try again.");
     const s = await L.tokenRequest(req, { grant_type: "authorization_code", code: code });
     if (!s.rt) throw new Error("Yahoo signed you in but sent no refresh token, so the connection can't be kept (access token " + String(s.at || "").length + " chars).");
-    L.setCookie(res, L.COOKIE, L.sessionCookie(s));
-    res.statusCode = 302; res.setHeader("Location", "/#manager?yahoo=connected"); res.end();
+    const ck = L.sessionCookie(s);
+    L.setCookie(res, L.COOKIE, ck);
+    res.statusCode = 302; res.setHeader("Location", "/#manager?yahoo=connected&n=" + ck.length); res.end();
   } catch (e) {
     res.statusCode = 302; res.setHeader("Location", "/#manager?yahoo=" + encodeURIComponent(e.message)); res.end();
   }
