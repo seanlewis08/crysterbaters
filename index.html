@@ -1055,7 +1055,7 @@ footer p + p{margin-top:11px}
 
 <div class="ticker">
   <div class="ticker-in">
-    <span><span class="livedot"></span>Yahoo <b id="tkr-yahoo">API approved</b> — commissioner view first</span>
+    <span><span class="livedot"></span>Yahoo <b id="tkr-yahoo">live</b> — connect on your team page</span>
     <span>Draft <b id="tkr-draft">day vote open</b></span>
     <span>Keepers due <b id="tkr-keep">week before the draft</b></span>
     <span>Season opens <b>Oct 20</b></span>
@@ -1079,7 +1079,7 @@ footer p + p{margin-top:11px}
       <div><dt>Draft</dt><dd class="hot" id="tile-draft">Picking a day<small id="cd-draft">Oct 11–19 · mark when you're free</small></dd><button class="back" data-go="sched" id="tile-sched-link" style="margin:6px 0 0;padding:0;font-size:11px;color:var(--amber)">Draft Day page →</button></div>
       <div><dt>Keepers due</dt><dd id="tile-keep">Week before<small id="cd-keep">the draft, once it's set</small></dd></div>
       <div><dt>Season opens</dt><dd>Oct 20<small id="cd-season">—</small></dd></div>
-      <div><dt>Yahoo</dt><dd>Approved<small>live view on the Manager page</small></dd></div>
+      <div><dt>Yahoo</dt><dd>Live<small>connect on your team page</small></dd></div>
     </div>
 
     <div class="champstrip">
@@ -1577,7 +1577,7 @@ footer p + p{margin-top:11px}
 
       <div class="sec-head" style="margin-top:34px"><h2 style="font-size:24px">Yahoo</h2><span class="eyebrow cool" id="yh-eyebrow">Your team, live</span></div>
       <div class="rulebar"></div>
-      <p class="lede">Read straight from Yahoo every time this page opens; nothing from it is saved anywhere. The sign-in asks for read-only access and stays in your own browser. This is the commissioner-only first step: your roster and games played this week against the cap.</p>
+      <p class="lede">Read straight from Yahoo every time this page opens; nothing from it is saved anywhere. The sign-in asks for read-only access and stays in your own browser. Every member gets the same on their own team page: connect once there and it shows your roster, lineup, injuries, games played against the cap, record and this week’s matchup.</p>
       <div class="panel" id="yh-panel" style="margin-top:16px"><div class="empty">Checking Yahoo…</div></div>
 
       <div class="sec-head" style="margin-top:34px"><h2 style="font-size:24px">Record a past poll</h2><span class="eyebrow cool">From the group chat</span></div>
@@ -2268,6 +2268,7 @@ function renderTeam(id){
   document.getElementById("teamdetail").innerHTML =
     '<div id="team-hero"></div>'+
     '<div class="detail-cols">'+
+      '<div class="panel" id="yh-team" style="grid-column:span 2;min-width:0" hidden></div>'+
       '<div class="panel" style="grid-column:span 2;min-width:0">'+
         '<div class="panel-hd"><span class="eyebrow">Locked roster · 2025–26</span></div>'+rosterHtml+'</div>'+
       '<div style="display:flex;flex-direction:column;gap:16px">'+
@@ -2284,6 +2285,7 @@ function renderTeam(id){
       '</div>'+
     '</div>';
   if(window.Court) Court.onTeam(id);
+  if(window.Yahoo) Yahoo.onTeam(id);
 }
 
 /* ---------- history ---------- */
@@ -5538,45 +5540,107 @@ var Court=(function(){
 window.Court=Court;
 
 
-/* ---------- Yahoo: the commissioner's own team, live, nothing stored ---------- */
+/* ---------- Yahoo: each member's own team, live, nothing stored ----------
+   One fetch feeds both the Manager page and the team page of whoever is signed in to
+   Yahoo. The team page shows the live panel only when the Yahoo team that account owns
+   IS that page's team (matched by name), so nobody sees anyone else's roster through
+   someone else's login. */
 var Yahoo=(function(){
   var $=function(id){return document.getElementById(id);};
-  var started=false, busy=false, last=0;
-  function panel(html){ var el=$("yh-panel"); if(el) el.innerHTML=html; }
-  /* auth-state changes re-enter the manager view several times in a row; ask Yahoo once */
-  function load(force){
-    if(busy) return; if(!force&&Date.now()-last<15000) return; last=Date.now(); busy=true;
-    var qs=/[?&]yahoo=([^&]+)/.exec(location.hash||""), note="", flag="";
-    if(qs){ var v=decodeURIComponent(qs[1]); flag=v==="connected"?"sign-in completed, cookie "+((/[?&]n=(\d+)/.exec(location.hash)||[])[1]||"?")+" chars":"sign-in failed"; if(v!=="connected") note='<div class="notice warn" style="margin:16px 16px 0;border-left-color:var(--red)">'+esc(v)+'</div>'; try{ history.replaceState(null,"","#manager"); }catch(e){} }
-    fetch("/api/yahoo/team",{credentials:"same-origin",cache:"no-store"}).then(function(r){ return r.json().then(function(j){ return {ok:r.ok,status:r.status,j:j}; }); }).then(function(x){
-      busy=false;
-      if(x.status===401){ panel(note+connectHtml()+(flag||x.j.why?'<p class="sub" style="margin:0;padding:0 16px 12px">'+esc((flag?flag+" · ":"")+"browser sent "+(x.j.why==="no_cookie"?"no cookie":x.j.why||"a cookie"))+'</p>':"")); return; }
-      if(!x.ok){ panel(note+'<div class="notice warn" style="margin:16px;border-left-color:var(--red)">'+esc(x.j.error||"Yahoo didn\u2019t answer.")+(x.j.detail?' '+esc(x.j.detail):'')+'</div>'+connectHtml(true)); return; }
-      panel(note+teamHtml(x.j));
-    }).catch(function(){ busy=false; panel('<div class="empty">The Yahoo connection only works on crysterbaters.com, not in this preview.</div>'); });
+  var started=false, busy=false, last=0, cur=null, waiting=[];
+  var BENCH=/^(BN|IL|IL\+|IR|NA)$/;
+  function nrm(s){ return String(s||"").normalize("NFKD").replace(/[̀-ͯ]/g,"").toLowerCase().replace(/[^a-z0-9]/g,""); }
+  function siteTeamFor(d){
+    if(!d||!d.team) return null;
+    var want=nrm(d.team.name);
+    for(var i=0;i<T.length;i++){ if(nrm(T[i].name)===want) return T[i]; }
+    return null;
   }
-  function connectHtml(again){
-    return '<div style="padding:18px 16px;display:flex;gap:14px;align-items:center;flex-wrap:wrap"><span style="flex:1;font-size:14.5px;color:var(--muted)">'+(again?"Sign in to Yahoo again to reconnect.":"Connect your Yahoo account to see your team here. Yahoo will ask you to approve read-only access for this site.")+'</span><a class="btn sm" href="/api/yahoo/login">Connect Yahoo</a></div>';
+  function mine(){ var p=(window.Polls&&Polls.profile)?Polls.profile():null; return p&&p.team_id||null; }
+  function flagFromHash(){
+    var qs=/[?&]yahoo=([^&]+)/.exec(location.hash||""); if(!qs) return "";
+    var v=decodeURIComponent(qs[1]);
+    try{ history.replaceState(null,"",location.hash.replace(/\?.*$/,"")); }catch(e){}
+    return v;
   }
-  function teamHtml(d){
+  /* fetch once, hand the same answer to every panel that asked */
+  function load(force, cb){
+    if(cb) waiting.push(cb);
+    if(busy) return;
+    if(!force&&cur&&Date.now()-last<15000){ flush(); return; }
+    busy=true; last=Date.now();
+    fetch("/api/yahoo/team",{credentials:"same-origin",cache:"no-store"}).then(function(r){ return r.json().then(function(j){ return {ok:r.ok,status:r.status,j:j}; }); })
+      .then(function(x){ busy=false; cur=x; flush(); })
+      .catch(function(){ busy=false; cur={ok:false,status:0,j:{error:"The Yahoo connection only works on crysterbaters.com, not in this preview."}}; flush(); });
+  }
+  function flush(){ var w=waiting; waiting=[]; w.forEach(function(cb){ try{ cb(cur); }catch(e){} }); }
+
+  function noticeHtml(msg){ return '<div class="notice warn" style="margin:16px 16px 0;border-left-color:var(--red)">'+esc(msg)+'</div>'; }
+  function connectHtml(back, again){
+    return '<div style="padding:18px 16px;display:flex;gap:14px;align-items:center;flex-wrap:wrap"><span style="flex:1;font-size:14.5px;color:var(--muted)">'+(again?"Sign in to Yahoo again to reconnect.":"Connect your Yahoo account to see your live roster, lineup and games played here. Yahoo asks you to approve read-only access; nothing is stored.")+'</span><a class="btn sm" href="/api/yahoo/login?back='+encodeURIComponent(back)+'">Connect Yahoo</a></div>';
+  }
+  function status(p){
+    if(!p.status) return "";
+    var t=p.note||p.status;
+    return ' <span class="pill '+(/^(O|OFS|INJ|SUSP)$/.test(p.status)?"gone":"warn")+'" style="margin-left:6px" title="'+esc(t)+'">'+esc(p.status)+'</span>';
+  }
+  function teamHtml(d, showKeepers){
+    var pre=!d.players.length;
     var rows=d.players.map(function(p){
-      var bench=/^(BN|IL|IL\+|IR|NA)$/.test(p.pos||"");
-      return '<tr'+(bench?' style="color:var(--dim)"':'')+'><td class="num sub">'+esc(p.pos||"")+'</td><td class="name" style="font-size:15px">'+esc(p.name||"")+(p.status?' <span class="pill q" style="margin-left:6px">'+esc(p.status)+'</span>':'')+'</td><td class="mgr">'+esc(p.team||"")+'</td><td class="num">'+p.gp+'</td></tr>';
+      var bench=BENCH.test(p.pos||""), c=(showKeepers&&p.name)?costFor(p.name):null;
+      return '<tr'+(bench?' style="color:var(--dim)"':'')+'><td class="num sub">'+esc(p.pos||"")+'</td><td class="name" style="font-size:15px">'+esc(p.name||"")+status(p)+'</td><td class="mgr">'+esc(p.team||"")+'</td><td class="num">'+p.gp+'</td>'+
+        (showKeepers?'<td class="num">'+(c?(c.dead?'<span class="sub">not keepable</span>':'RD '+c.cost):'')+'</td>':'')+'</tr>';
     }).join("");
     var over=d.games.active>d.games.cap, left=d.games.cap-d.games.active;
-    return '<div class="panel-hd" style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap"><span class="eyebrow">'+esc(d.team.name)+' · week '+d.league.week+' · '+esc(d.league.name)+'</span><span style="display:flex;gap:8px"><button class="btn quiet sm" id="yh-refresh">Refresh</button><button class="btn quiet sm" id="yh-out">Disconnect</button></span></div>'+
-      '<div class="verdict" style="padding:18px 16px 4px"><span class="big" style="color:'+(over?"var(--red)":"var(--ink)")+'">'+d.games.active+'<small style="font-size:18px;color:var(--dim)"> / '+d.games.cap+'</small></span><span style="font-size:14.5px;color:var(--muted)">games played by your active lineup this week'+(over?' · <b style="color:var(--red)">over the cap by '+(d.games.active-d.games.cap)+'</b>':' · '+left+' left')+'. Bench and IL played '+d.games.bench+' more that don\u2019t count.</span></div>'+
-      '<div class="tablewrap" style="border:0;border-radius:0"><table><thead><tr><th class="num">Slot</th><th>Player</th><th>NBA</th><th class="num">GP</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
-      '<p class="sub" style="padding:10px 16px 14px;margin:0">Fetched '+new Date(d.fetched).toLocaleTimeString([], {hour:"numeric",minute:"2-digit"})+' · <a href="https://sports.yahoo.com/fantasy/" target="_blank" rel="noopener">'+esc(d.attribution)+'</a></p>';
+    var st=d.standing, mu=d.matchup, lu=d.lineup||{};
+    var facts=[];
+    if(st&&st.rank) facts.push('<div class="kv"><dt>Record</dt><dd>'+st.wins+'-'+st.losses+'-'+st.ties+' · '+ordinal(st.rank)+'</dd></div>');
+    if(mu&&mu.opponent) facts.push('<div class="kv"><dt>Week '+mu.week+'</dt><dd>vs '+esc(mu.opponent)+(mu.cats?' · '+mu.won+'-'+mu.lost+(mu.tied?'-'+mu.tied:'')+(mu.status==="postevent"?" final":""):'')+'</dd></div>');
+    if(d.team.faab!=null) facts.push('<div class="kv"><dt>FAAB</dt><dd>$'+d.team.faab+'</dd></div>');
+    facts.push('<div class="kv"><dt>Moves</dt><dd>'+d.team.moves+(d.team.trades?' · '+d.team.trades+' trades':'')+'</dd></div>');
+    var lineup=pre?'':('<div class="kv"><dt>Lineup</dt><dd>'+lu.active+' active · '+lu.bench+' bench · '+lu.il+' IL'+(lu.injuredActive?' · <b style="color:var(--red)">'+lu.injuredActive+' hurt in lineup</b>':'')+'</dd></div>');
+    return '<div class="panel-hd" style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap"><span class="eyebrow">Live from Yahoo · '+esc(d.team.name)+' · week '+d.league.week+'</span><span style="display:flex;gap:8px"><button class="btn quiet sm" id="yh-refresh">Refresh</button><button class="btn quiet sm" id="yh-out">Disconnect</button></span></div>'+
+      '<div class="verdict" style="padding:18px 16px 4px"><span class="big" style="color:'+(over?"var(--red)":"var(--ink)")+'">'+d.games.active+'<small style="font-size:18px;color:var(--dim)"> / '+d.games.cap+'</small></span><span style="font-size:14.5px;color:var(--muted)">games played by your active lineup this week'+(over?' · <b style="color:var(--red)">over the cap by '+(d.games.active-d.games.cap)+'</b>':' · '+left+' left')+(d.games.bench?'. Bench and IL played '+d.games.bench+' more that don’t count.':'')+'</span></div>'+
+      '<div style="padding:8px 16px 14px;display:flex;flex-direction:column;gap:8px">'+facts.join("")+lineup+'</div>'+
+      (pre?'<div class="empty" style="padding:14px 16px 18px">No roster yet — it fills in after the draft'+(d.league.start?' (season starts '+esc(d.league.start)+')':'')+'.</div>'
+          :'<div class="tablewrap" style="border:0;border-radius:0"><table><thead><tr><th class="num">Slot</th><th>Player</th><th>NBA</th><th class="num">GP</th>'+(showKeepers?'<th class="num">Keep cost</th>':'')+'</tr></thead><tbody>'+rows+'</tbody></table></div>')+
+      '<p class="sub" style="padding:10px 16px 14px;margin:0">Fetched '+new Date(d.fetched).toLocaleTimeString([], {hour:"numeric",minute:"2-digit"})+' · read live, nothing saved · <a href="https://sports.yahoo.com/fantasy/" target="_blank" rel="noopener">'+esc(d.attribution)+'</a></p>';
+  }
+  function panel(id, html){ var el=$(id); if(el) el.innerHTML=html; }
+
+  /* Manager page: the commissioner's own view */
+  function manager(){
+    var flag=flagFromHash(), note=flag&&flag!=="connected"?noticeHtml(flag):"";
+    load(!!flag, function(x){
+      if(x.status===401){ panel("yh-panel", note+connectHtml("manager")); return; }
+      if(!x.ok){ panel("yh-panel", note+noticeHtml(x.j.error+(x.j.detail?' '+x.j.detail:''))+connectHtml("manager",true)); return; }
+      panel("yh-panel", note+teamHtml(x.j,true));
+    });
+  }
+  /* Team page: only the page of the team this Yahoo login owns gets the live panel */
+  function team(id){
+    var host=$("yh-team"); if(!host) return;
+    var flag=flagFromHash(), note=flag&&flag!=="connected"?noticeHtml(flag):"";
+    var isMine=mine()===id;
+    load(!!flag, function(x){
+      if(x.status===401){ host.hidden=!isMine; if(isMine) host.innerHTML='<div class="panel-hd"><span class="eyebrow">Live from Yahoo</span></div>'+note+connectHtml("team/"+id); return; }
+      if(!x.ok){ host.hidden=!isMine; if(isMine) host.innerHTML='<div class="panel-hd"><span class="eyebrow">Live from Yahoo</span></div>'+note+noticeHtml(x.j.error+(x.j.detail?' '+x.j.detail:''))+connectHtml("team/"+id,true); return; }
+      var st=siteTeamFor(x.j);
+      if(st&&st.id===id){ host.hidden=false; host.innerHTML=note+teamHtml(x.j,true); return; }
+      if(isMine){ host.hidden=false; host.innerHTML='<div class="panel-hd"><span class="eyebrow">Live from Yahoo</span></div><div class="empty" style="padding:16px">Your Yahoo login owns <b>'+esc(x.j.team.name)+'</b>'+(st?', which is <a href="#team/'+st.id+'">its own page</a>':', which doesn’t match a team here yet')+'.</div>'; return; }
+      host.hidden=true;
+    });
   }
   function bind(){
     document.addEventListener("click",function(e){
-      if(e.target.closest("#yh-refresh")){ panel('<div class="empty">Asking Yahoo…</div>'); load(true); }
-      if(e.target.closest("#yh-out")){ fetch("/api/yahoo/logout",{credentials:"same-origin"}).then(function(){ load(true); },function(){ load(true); }); }
+      if(e.target.closest("#yh-refresh")){ var p=e.target.closest(".panel"); if(p) p.innerHTML='<div class="empty">Asking Yahoo…</div>'; cur=null; rerun(true); }
+      if(e.target.closest("#yh-out")){ fetch("/api/yahoo/logout",{credentials:"same-origin"}).then(function(){ cur=null; rerun(true); },function(){ cur=null; rerun(true); }); }
     });
   }
-  function onView(v){ if(v!=="manager") return; if(!started){ started=true; bind(); } load(); }
-  return {onView:onView};
+  function rerun(force){ if(force) last=0; if(curTeam&&$("yh-team")&&document.getElementById("v-team").classList.contains("on")) team(curTeam); else manager(); }
+  function onView(v){ if(!started){ started=true; bind(); } if(v==="manager") manager(); }
+  function onTeam(id){ if(!started){ started=true; bind(); } team(id); }
+  return {onView:onView, onTeam:onTeam, teamFor:siteTeamFor};
 })();
 window.Yahoo=Yahoo;
 
