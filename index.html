@@ -2577,7 +2577,22 @@ var CAP_DEFAULT={start:"2025-10-20",weeks:[
 var CAP_KEY="cb-cap-v2", CAP=null;
 try{ CAP=JSON.parse(localStorage.getItem(CAP_KEY)||"null"); }catch(e){}
 if(!CAP||!CAP.weeks) CAP=JSON.parse(JSON.stringify(CAP_DEFAULT));
-function capSave(){ try{ localStorage.setItem(CAP_KEY,JSON.stringify(CAP)); }catch(e){} }
+var capPushTimer=null, capShared=false;
+function capSave(){
+  try{ localStorage.setItem(CAP_KEY,JSON.stringify(CAP)); }catch(e){}
+  /* the shared row is the one that counts: push it when the commissioner edits */
+  if(window.Polls&&Polls.store&&Polls.store()&&Polls.commish()){
+    clearTimeout(capPushTimer);
+    capPushTimer=setTimeout(function(){
+      Polls.store().capSave(CAP).then(function(){ capShared=true; capNote("Saved for everyone \u00b7 "+new Date().toLocaleTimeString([], {hour:"numeric",minute:"2-digit"}),"var(--green)"); })
+        .catch(function(e){ capNote("Couldn\u2019t save the shared table: "+(e&&e.message||e),"var(--red)"); });
+    },700);
+  }
+}
+function capNote(msg,color){ var el=document.getElementById("cmsg"); if(el){ el.style.color=color||"var(--muted)"; el.textContent=msg; } }
+function capLock(locked){
+  Array.prototype.forEach.call(document.querySelectorAll("#v-cap .capin, #cstart, #cweeks, #cfetch, #creset"),function(el){ el.disabled=!!locked; });
+}
 
 var nEl2=document.getElementById("cnormal"),bEl=document.getElementById("cbase"),
     gEl=document.getElementById("cgames"),oEl=document.getElementById("cout"),
@@ -2634,6 +2649,22 @@ document.getElementById("creset").addEventListener("click",function(){
 });
 [nEl2,bEl,gEl].forEach(function(el){el.addEventListener("input",renderCap);});
 renderCap();
+
+/* The shared copy wins over whatever this browser remembered; only the commissioner can edit. */
+function capSync(){
+  if(!window.Polls||!Polls.onAuth) return;
+  Polls.onAuth(function(){
+    var st=Polls.store(); if(!st||!st.capLoad) return;
+    st.capLoad().then(function(data){
+      if(data&&data.weeks){ CAP=data; capShared=true; try{ localStorage.setItem(CAP_KEY,JSON.stringify(CAP)); }catch(e){} renderCap(); }
+      var isC=Polls.commish();
+      capLock(!isC);
+      if(!isC) capNote(data&&data.weeks?"Set by the commissioner \u00b7 read only":"The commissioner hasn\u2019t published this season\u2019s table yet.");
+      else if(!(data&&data.weeks)) capNote("Not shared yet \u2014 any edit here publishes the table for everyone.");
+      else capNote("Shared table \u00b7 edits save for everyone.","var(--green)");
+    }).catch(function(e){ capNote("Couldn\u2019t read the shared table: "+(e&&e.message||e),"var(--red)"); });
+  });
+}
 
 /* Count regular-season games per week from ESPN's public NBA schedule. */
 var ET=new Intl.DateTimeFormat("en-US",{timeZone:"America/New_York",year:"numeric",month:"2-digit",day:"2-digit"});
@@ -2864,6 +2895,9 @@ var Polls=(function(){
       badgeAward:function(a){ if(!commish()) return Promise.reject(new Error("Commissioner only.")); if(!db.badges) db.badges={meta:[],awards:[]}; db.badges.awards.push({id:"b"+Date.now(),badge_id:a.badge_id,team_id:a.team_id,season:a.season,note:a.note||null,awarded_by:db.me.id,awarded_at:new Date().toISOString()}); save(); return Promise.resolve(); },
       badgeRevoke:function(id){ if(!commish()) return Promise.reject(new Error("Commissioner only.")); if(!db.badges) return Promise.resolve(); db.badges.awards=db.badges.awards.filter(function(x){return x.id!==id;}); save(); return Promise.resolve(); },
       badgeMeta:function(badge_id,o){ if(!commish()) return Promise.reject(new Error("Commissioner only.")); if(!db.badges) db.badges={meta:[],awards:[]}; var m=db.badges.meta.filter(function(x){return x.badge_id===badge_id;})[0]; if(!m){ m={badge_id:badge_id}; db.badges.meta.push(m); } m.prize=o.prize||null; m.claimed=!!o.claimed; m.updated_at=new Date().toISOString(); save(); return Promise.resolve(); },
+      /* games cap, shared */
+      capLoad:function(){ return Promise.resolve(db.cap?JSON.parse(JSON.stringify(db.cap)):null); },
+      capSave:function(data){ if(!commish()) return Promise.reject(new Error("Commissioner only.")); db.cap=JSON.parse(JSON.stringify(data)); save(); return Promise.resolve(); },
       /* home courts */
       prefsLoad:function(){ return Promise.resolve((db.prefs||[]).slice()); },
       prefsSet:function(team_id,o){ var p=myProf(); if(!(commish()||(p&&p.team_id===team_id))) return Promise.reject(new Error("That's not your team.")); if(!db.prefs) db.prefs=[]; var row=db.prefs.filter(function(x){return x.team_id===team_id;})[0]; if(!row){ row={team_id:team_id}; db.prefs.push(row); } row.nba_team=o.nba_team||null; row.jersey_player=o.jersey_player||null; row.jersey_num=o.jersey_num||null; row.jersey_team=o.jersey_team||null; row.updated_by=db.me.id; row.updated_at=new Date().toISOString(); save(); return Promise.resolve(); },
@@ -3036,6 +3070,9 @@ var Polls=(function(){
       badgeAward:function(a){ return client.from("badge_awards").insert({badge_id:a.badge_id,team_id:a.team_id,season:a.season,note:a.note||null}).then(chk); },
       badgeRevoke:function(id){ return client.from("badge_awards").delete().eq("id",id).then(chk); },
       badgeMeta:function(badge_id,o){ return client.from("badge_meta").upsert({badge_id:badge_id,prize:o.prize||null,claimed:!!o.claimed,updated_at:new Date().toISOString()},{onConflict:"badge_id"}).then(chk); },
+      /* games cap, shared */
+      capLoad:function(){ return client.from("cap_table").select("data,updated_at").eq("id","current").maybeSingle().then(function(r){ chk(r); return r.data?r.data.data:null; }); },
+      capSave:function(data){ return client.from("cap_table").upsert({id:"current",data:data,updated_at:new Date().toISOString()},{onConflict:"id"}).then(chk); },
       /* home courts */
       prefsLoad:function(){ return client.from("team_prefs").select("team_id,nba_team,jersey_player,jersey_num,jersey_team,updated_at").then(function(r){ chk(r); return r.data||[]; }); },
       prefsSet:function(team_id,o){ return client.from("team_prefs").upsert({team_id:team_id,nba_team:o.nba_team||null,jersey_player:o.jersey_player||null,jersey_num:o.jersey_num||null,jersey_team:o.jersey_team||null,updated_at:new Date().toISOString()},{onConflict:"team_id"}).then(chk); },
@@ -5663,6 +5700,11 @@ var Yahoo=(function(){
     return [ymd(a),ymd(b)];
   }
   function capFor(week, fallback){ try{ var w=CAP&&CAP.weeks&&CAP.weeks[week-1]; if(w&&w.set!=null&&w.set!=="") return Number(w.set)||fallback; }catch(e){} return fallback; }
+  /* the Games Cap table counts weeks from its own Monday; Yahoo's week 1 starts on opening day.
+     They line up when that Monday is within the six days before Yahoo's start date. */
+  function capAligned(d){
+    try{ var a=parseYmd(CAP.start), b=parseYmd(d.league.start); var diff=(b-a)/86400000; return diff>=0&&diff<7; }catch(e){ return false; }
+  }
   function schedule(d){
     var host=$("yh-sched"); if(!host||!d.players.length) return;
     var r=weekRange(d), today=etParts(new Date().toISOString());
@@ -5695,7 +5737,9 @@ var Yahoo=(function(){
           var g=(byTeam[espnAbbr(td.dataset.left)]||[]).filter(function(x){return !x.started;}).length;
           td.textContent=g; td.className="num"+(g?"":" sub");
         });
-        var cap=capFor(d.league.week, d.games.cap), played=d.games.active, proj=played+left, over=proj-cap;
+        var aligned=capAligned(d), cap=aligned?capFor(d.league.week, d.games.cap):d.games.cap, played=d.games.active, proj=played+left, over=proj-cap;
+        var capNoteTxt=aligned?(capShared?'':' <span class="sub">(cap from this browser\u2019s Games Cap table; the shared one isn\u2019t published yet)</span>')
+                              :' <span class="sub">(the Games Cap table starts '+esc(CAP&&CAP.start||"?")+', which doesn\u2019t line up with Yahoo\u2019s season start '+esc(d.league.start||"?")+', so the default 30 is used)</span>';
         var strip=days.map(function(x){
           var dt=parseYmd(x), lbl=dt.toLocaleDateString(undefined,{weekday:"short"}), past=x<today, isToday=x===today;
           return '<div class="yh-day'+(past?' past':'')+(isToday?' today':'')+'"><span class="yh-dl">'+lbl+'</span><span class="yh-dn">'+(past?'·':perDay[x])+'</span></div>';
@@ -5705,12 +5749,13 @@ var Yahoo=(function(){
           : '<b style="color:var(--green)">'+proj+' projected</b> — '+(cap-proj)+' under the cap of '+cap+(cap-proj<=1?'. No room to add a streamer.':'. Room for '+(cap-proj)+' more.');
         host.innerHTML='<div class="panel-hd" style="border-top:1px solid var(--line)"><span class="eyebrow">Rest of the week · starters with a game</span></div>'+
           '<div class="yh-days">'+strip+'</div>'+
-          '<p style="margin:0;padding:4px 16px 14px;font-size:14.5px;color:var(--muted)">'+played+' played + '+left+' still to come for the current lineup = '+verdict+'</p>';
+          '<p style="margin:0;padding:4px 16px 14px;font-size:14.5px;color:var(--muted)">'+played+' played + '+left+' still to come for the current lineup = '+verdict+capNoteTxt+'</p>';
       }).catch(function(e){ host.innerHTML='<div class="empty" style="padding:10px 16px">Couldn’t read the NBA schedule ('+esc(e&&e.message||"no answer")+'); the games-left projection is off for now.</div>'; });
   }
   return {onView:onView, onTeam:onTeam, teamFor:siteTeamFor};
 })();
 window.Yahoo=Yahoo;
+if(typeof capSync==="function") capSync();
 
 /* ---------- routing ---------- */
 var views={home:"v-home",teams:"v-teams",team:"v-team",players:"v-players",plot:"v-plot",draft:"v-draft",cap:"v-cap",keepers:"v-keepers",polls:"v-polls",pollhist:"v-pollhist",agenda:"v-agenda",sched:"v-sched",dues:"v-dues",badges:"v-badges",signup:"v-signup",manager:"v-manager",history:"v-history",rules:"v-rules"};

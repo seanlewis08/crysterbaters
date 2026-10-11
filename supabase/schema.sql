@@ -648,3 +648,24 @@ create policy team_prefs_update on public.team_prefs for update to authenticated
 grant select on public.team_prefs to anon, authenticated;
 grant insert, update on public.team_prefs to authenticated;
 grant execute on function public.owns_team(text) to authenticated;
+
+-- ---------------------------------------------------------------------------
+-- Games cap table, shared. One row holds the whole Games Cap page (start Monday,
+-- per-week game counts, caps and notes) so every member and the Yahoo panel read
+-- the same caps. Anyone can read; only the commissioner writes.
+-- ---------------------------------------------------------------------------
+create table if not exists public.cap_table (
+  id          text primary key default 'current' check (id = 'current'),
+  data        jsonb not null,
+  updated_by  uuid default auth.uid() references auth.users (id) on delete set null,
+  updated_at  timestamptz not null default now()
+);
+alter table public.cap_table enable row level security;
+drop policy if exists cap_table_read on public.cap_table;
+create policy cap_table_read on public.cap_table for select to anon, authenticated using (true);
+drop policy if exists cap_table_write on public.cap_table;
+create policy cap_table_write on public.cap_table for insert to authenticated with check (public.is_commissioner());
+drop policy if exists cap_table_update on public.cap_table;
+create policy cap_table_update on public.cap_table for update to authenticated using (public.is_commissioner()) with check (public.is_commissioner());
+grant select on public.cap_table to anon, authenticated;
+grant insert, update on public.cap_table to authenticated;
