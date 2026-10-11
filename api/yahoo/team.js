@@ -21,7 +21,8 @@ module.exports = async (req, res) => {
         const ts = (Array.isArray(gg.teams) ? gg.teams : []).map(x => x && x.team ? (x.team.team_key + " " + (x.team.name || "")) : JSON.stringify(x).slice(0, 80));
         return (gg.season || "?") + ": " + (ts.join(", ") || "no teams");
       });
-      return L.json(res, 404, { error: "no_team", detail: "This Yahoo account has no team in league " + L.LEAGUE_ID + ". Yahoo returned — " + (seen.join(" | ") || "no NBA seasons") });
+      const last = (games || [])[(games || []).length - 1];
+      return L.json(res, 404, { error: "no_team", detail: "This Yahoo account has no team in league " + L.LEAGUE_ID + ". Yahoo returned — " + (seen.join(" | ") || "no NBA seasons"), raw: JSON.stringify(last || null).slice(0, 2500) });
     }
     const lk = team.team_key.replace(/\.t\.\d+$/, "");
     const league = L.fold((await L.yahoo(s, "/league/" + lk)).fantasy_content.league);
