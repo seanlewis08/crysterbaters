@@ -1633,7 +1633,7 @@ footer p + p{margin-top:11px}
         <div class="field" style="flex:0 1 96px"><label for="pl-minmin">Min MPG</label><input id="pl-minmin" type="number" min="0" step="1" inputmode="numeric" placeholder="0"></div>
         <div class="field"><label for="pl-mode">Stats</label><select id="pl-mode"><option value="pg">Per game</option><option value="tot">Totals</option><option value="z">Z-scores</option></select></div>
         <div class="field"><label for="pl-season">Season</label><select id="pl-season"></select></div>
-        <div class="field" style="flex:0 0 auto;justify-content:flex-end"><button class="btn quiet sm" id="pl-clear">Clear</button></div>
+        <div class="field" style="flex:0 0 auto;justify-content:flex-end;flex-direction:row;gap:8px"><button class="btn quiet sm" id="pl-clear">Clear</button><button class="btn sm" id="pl-csv" title="Every player in the list as shown, every column, as a .csv">Download CSV</button></div>
       </div>
 
       <div class="tablewrap pltable" id="pl-wrap">
@@ -4109,6 +4109,39 @@ var Players=(function(){
     ["team","pos","owner","mode"].forEach(function(k){ $("pl-"+k).addEventListener("change",function(){ f[k]=this.value; render(); }); });
     ["mingp","minmin"].forEach(function(k){ var el=$("pl-"+k); function upd(){ var v=Math.max(0,parseFloat(el.value)||0); if(v===f[k]) return; f[k]=v; render(); } el.addEventListener("input",function(){ clearTimeout(timer); timer=setTimeout(upd,120); }); el.addEventListener("change",upd); });
     $("pl-season").addEventListener("change",function(){ season=+this.value; userSeason=true; build(); render(); });
+    /* CSV of the list as filtered and sorted, in the current stats mode, with the columns the
+       table shows plus the fields behind the name cell and a few extras from the snapshot */
+    function csvText(){
+      var strip=function(h){ return String(h).replace(/<[^>]+>/g,"").replace(/&amp;/g,"&").replace(/&lt;/g,"<").replace(/\u2014/g,"").trim(); };
+      var q=function(v){ v=v==null?"":String(v); return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; };
+      var extra=[["Team",function(r){return r.team;}],["Eligible",function(r){return r.elig||"";}],["Rank",function(r){return r.rank||"";}],["No.",function(r){return r.num||"";}],
+                 ["Keeper",function(r){return r.own&&r.own.k?"K":"";}],["Keeper cost",function(r){return r.own&&r.own.cost?"RD "+r.own.cost:"";}],
+                 ["OREB",function(r){return r.oreb==null?"":(+r.oreb).toFixed(1);}],["DREB",function(r){return r.dreb==null?"":(+r.dreb).toFixed(1);}],["GS",function(r){return r.gs==null?"":r.gs;}],["PF",function(r){return r.gp?(+r.pf).toFixed(1):"";}],["TECH",function(r){return r.tech||0;}],["TD",function(r){return r.td||0;}],["Guaranteed $",function(r){return r.gtd||"";}]];
+      var head=COLS.map(function(c){return c.h;}).concat(extra.map(function(e){return e[0];}));
+      head[head.indexOf("Salary")]="Salary $"; head[head.indexOf("% Cap")]="% of cap";
+      var lines=[head.map(q).join(",")];
+      view.forEach(function(r){
+        var cells=COLS.map(function(c){
+          if(c.k==="name") return r.name;
+          if(c.k==="owner") return r.own?r.own.t:"";
+          var v=colGet(c)(r);
+          if(c.k==="val"&&r.gp===0) return "";
+          if(c.k==="salary") return r.salary||"";
+          if(c.k==="cappct") return r.salary?(v*100).toFixed(1):"";
+          return strip(colFmt(c,v,r));
+        }).concat(extra.map(function(e){ var v=e[1](r); return v==null?"":v; }));
+        lines.push(cells.map(q).join(","));
+      });
+      return lines.join("\r\n");
+    }
+    $("pl-csv").addEventListener("click",function(){
+      if(!rows.length) return;
+      var lv=live[season], label=(lv?lv.label:(season-1)+"-"+String(season).slice(2)).replace(/[^0-9a-z-]/gi,"");
+      var name="crysterbaters-players-"+label+"-"+({pg:"per-game",tot:"totals",z:"z-scores"}[f.mode]||f.mode)+(view.length===rows.length?"":"-filtered")+"-"+new Date().toISOString().slice(0,10)+".csv";
+      var blob=new Blob(["\ufeff"+csvText()],{type:"text/csv;charset=utf-8"});
+      var a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click();
+      setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); },1000);
+    });
     $("pl-clear").addEventListener("click",function(){ f={q:"",team:"",pos:"",owner:"",mode:f.mode,mingp:0,minmin:0}; $("pl-q").value=""; $("pl-team").value=""; $("pl-pos").value=""; $("pl-owner").value=""; $("pl-mingp").value=""; $("pl-minmin").value=""; sortKey="val"; sortAsc=false; render(); $("pl-q").focus(); });
     $("pl-wrap").addEventListener("scroll",function(){ if(ticking) return; ticking=true; requestAnimationFrame(function(){ ticking=false; renderBody(); }); },{passive:true});
     window.addEventListener("resize",function(){ if(view.length) renderBody(true); });
