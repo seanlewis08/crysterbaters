@@ -28,9 +28,12 @@ on conflict (id) do nothing;   -- keeps whatever code Sean has set since
 -- tab once the season starts). Readable by everyone through the site_flags
 -- view below; only the commissioner can change them.
 alter table public.league_settings add column if not exists show_draft_day boolean not null default true;
-create or replace view public.site_flags
+alter table public.league_settings add column if not exists keepers_locked boolean not null default false;
+-- (re)built from scratch so re-running works whatever shape the view had before
+drop view if exists public.site_flags;
+create view public.site_flags
 with (security_invoker = false) as
-  select show_draft_day from public.league_settings where id = 1;
+  select show_draft_day, keepers_locked from public.league_settings where id = 1;
 
 create or replace function public.set_show_draft_day(p_on boolean)
 returns void language plpgsql security definer set search_path = public as $$
@@ -684,10 +687,7 @@ create table if not exists public.keeper_picks (
   updated_at  timestamptz not null default now(),
   primary key (team_id, season)
 );
-alter table public.league_settings add column if not exists keepers_locked boolean not null default false;
-create or replace view public.site_flags
-with (security_invoker = false) as
-  select show_draft_day, keepers_locked from public.league_settings where id = 1;
+-- (keepers_locked and the widened site_flags view are defined up top with the other settings)
 create or replace function public.set_keepers_locked(p_on boolean)
 returns void language plpgsql security definer set search_path = public as $$
 begin
