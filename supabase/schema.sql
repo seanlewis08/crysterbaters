@@ -747,3 +747,72 @@ end $$;
 grant select on public.keeper_requests to anon, authenticated;
 grant insert, delete on public.keeper_requests to authenticated;
 grant execute on function public.keeper_request_decide(uuid, text, text) to authenticated;
+
+-- ----------------------------------------------------------------------
+-- 12. Issues: bug reports, ideas and questions about the site, GitHub-style.
+--     Members open them and comment; the commissioner (or the person who
+--     opened one) moves it between open / in progress / closed.
+-- ----------------------------------------------------------------------
+create table if not exists public.issues (
+  id               uuid primary key default gen_random_uuid(),
+  num              bigint generated always as identity unique,
+  title            text not null check (length(title) between 3 and 140),
+  body             text check (body is null or length(body) <= 4000),
+  kind             text not null default 'bug' check (kind in ('bug','idea','question','other')),
+  status           text not null default 'open' check (status in ('open','in_progress','closed')),
+  created_by       uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  created_by_email text not null default coalesce(auth.jwt() ->> 'email', ''),
+  created_at       timestamptz not null default now(),
+  updated_at       timestamptz not null default now(),
+  closed_at        timestamptz
+);
+create table if not exists public.issue_comments (
+  id               uuid primary key default gen_random_uuid(),
+  issue_id         uuid not null references public.issues (id) on delete cascade,
+  body             text not null check (length(body) between 1 and 4000),
+  created_by       uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  created_by_email text not null default coalesce(auth.jwt() ->> 'email', ''),
+  created_at       timestamptz not null default now()
+);
+create index if not exists issue_comments_issue on public.issue_comments (issue_id, created_at);
+
+alter table public.issues         enable row level security;
+alter table public.issue_comments enable row level security;
+drop policy if exists issues_read on public.issues;
+create policy issues_read on public.issues for select to authenticated using (public.is_member());
+drop policy if exists issues_add on public.issues;
+create policy issues_add on public.issues for insert to authenticated with check (public.is_member() and created_by = auth.uid());
+drop policy if exists issues_update on public.issues;
+create policy issues_update on public.issues for update to authenticated
+  using (public.is_member() and (created_by = auth.uid() or public.is_commissioner()))
+  with check (public.is_member());
+drop policy if exists issues_delete on public.issues;
+create policy issues_delete on public.issues for delete to authenticated
+  using (public.is_member() and (created_by = auth.uid() or public.is_commissioner()));
+drop policy if exists issue_comments_read on public.issue_comments;
+create policy issue_comments_read on public.issue_comments for select to authenticated using (public.is_member());
+drop policy if exists issue_comments_add on public.issue_comments;
+create policy issue_comments_add on public.issue_comments for insert to authenticated with check (public.is_member() and created_by = auth.uid());
+drop policy if exists issue_comments_delete on public.issue_comments;
+create policy issue_comments_delete on public.issue_comments for delete to authenticated
+  using (public.is_member() and (created_by = auth.uid() or public.is_commissioner()));
+
+-- Changing status stamps updated_at / closed_at; a comment bumps the issue.
+create or replace function public.issue_set_status(p_id uuid, p_status text)
+returns void language plpgsql security definer set search_path = public as $$
+begin
+  if p_status not in ('open','in_progress','closed') then raise exception 'Bad status.'; end if;
+  if not exists (select 1 from public.issues where id = p_id and (created_by = auth.uid() or public.is_commissioner())) then
+    raise exception 'Only the commissioner or whoever opened it can change that.';
+  end if;
+  update public.issues set status = p_status, updated_at = now(), closed_at = case when p_status = 'closed' then now() else null end where id = p_id;
+end $$;
+create or replace function public.issue_touch() returns trigger language plpgsql security definer set search_path = public as $$
+begin update public.issues set updated_at = now() where id = new.issue_id; return new; end $$;
+drop trigger if exists issue_comments_touch on public.issue_comments;
+create trigger issue_comments_touch after insert on public.issue_comments for each row execute function public.issue_touch();
+
+grant select, insert, update, delete on public.issues to authenticated;
+grant select, insert, delete on public.issue_comments to authenticated;
+grant execute on function public.issue_set_status(uuid, text) to authenticated;
+revoke all on public.issues, public.issue_comments from anon;

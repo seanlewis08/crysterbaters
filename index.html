@@ -216,6 +216,28 @@ section:first-child{margin-top:34px}
 .pill.warn{color:var(--amber);border-color:var(--amber-dim);background:var(--amber-glow)}
 .pill.gone{color:var(--red);border-color:rgba(255,81,71,.4);background:var(--red-glow)}
 .pill.q{color:var(--muted);border-color:var(--line-2);background:var(--surface-2)}
+.pill.prog{color:var(--blue);border-color:rgba(27,63,122,.35);background:rgba(27,63,122,.08)}
+.isrow{display:flex;gap:14px;align-items:flex-start;padding:14px 18px;border-bottom:1px solid var(--line);cursor:pointer;background:var(--surface)}
+.isrow:last-child{border-bottom:0}
+.isrow:hover{background:var(--surface-2)}
+.isrow .isdot{width:12px;height:12px;border-radius:50%;flex-shrink:0;margin-top:5px;border:2px solid var(--green);background:transparent}
+.isrow .isdot.in_progress{border-color:var(--amber);background:var(--amber)}
+.isrow .isdot.closed{border-color:var(--line-2);background:var(--line-2)}
+.isrow h3{margin:0;font-size:16px;font-weight:600;line-height:1.3}
+.isrow h3 .num{color:var(--dim);font-family:var(--mono);font-size:13px;font-weight:500;margin-right:6px}
+.isrow .ismeta{margin-top:4px;font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
+.isrow .iscount{margin-left:auto;flex-shrink:0;font-family:var(--mono);font-size:11px;color:var(--dim);white-space:nowrap}
+.seg{display:inline-flex;border:1px solid var(--line-2);border-radius:4px;overflow:hidden}
+.seg button{font:inherit;font-size:12.5px;padding:6px 11px;background:var(--surface);color:var(--muted);border:0;cursor:pointer;border-right:1px solid var(--line)}
+.seg button:last-child{border-right:0}
+.seg button.on{background:var(--amber);color:#fff}
+.iscomment{display:flex;gap:12px;padding:14px 18px;border-top:1px solid var(--line)}
+.iscomment .av{width:32px;height:32px;border-radius:50%;background:var(--surface-2);border:1px solid var(--line-2);display:flex;align-items:center;justify-content:center;font-family:var(--display);font-weight:700;font-size:13px;flex-shrink:0;color:var(--muted)}
+.iscomment .av.c{background:var(--amber-glow);border-color:var(--amber-dim);color:var(--amber)}
+.iscomment .cbody{flex:1;min-width:0}
+.iscomment .cwho{font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin-bottom:4px}
+.iscomment .ctext{font-size:15px;white-space:pre-wrap;word-wrap:break-word}
+.iscomment.event{padding:8px 18px;font-size:13px;color:var(--dim);font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase}
 .dot{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:8px;vertical-align:middle}
 
 .kbadge{
@@ -1032,6 +1054,7 @@ footer p + p{margin-top:11px}
       <button data-go="cap">Games Cap</button>
       <button data-go="keepers">Keepers</button>
       <button data-go="polls">Polls</button>
+      <button data-go="issues">Issues</button>
       <button data-go="dues">Dues</button>
       <button data-go="badges">Badges</button>
       <button data-go="history">History</button>
@@ -1543,6 +1566,53 @@ footer p + p{margin-top:11px}
           <div class="sec-head" style="margin-top:34px"><h2 style="font-size:24px">Decided</h2><span class="eyebrow cool" id="ag-done-count"></span></div>
           <div class="rulebar"></div>
           <div class="polls" id="ag-done"></div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ================= ISSUES ================= -->
+  <div class="view" id="v-issues">
+    <section>
+      <div class="sec-head"><h2>Issues</h2><span class="eyebrow cool" id="is-eyebrow">Members only</span></div>
+      <div class="rulebar"></div>
+      <div id="is-notice"></div>
+      <p class="lede">Something on the site broken, wrong, or missing? Open an issue. Sean gets an email, replies here, and moves it from open to in progress to closed — and you get an email when he does.</p>
+
+      <div id="is-locked" class="calc signin" style="margin-top:18px">
+        <p style="padding:18px 20px 6px;font-size:15px;color:var(--muted)">Sign in to see what's been reported and add your own.</p>
+        <div class="calc-out" style="display:flex;gap:10px;flex-wrap:wrap;padding-top:8px">
+          <button class="btn" data-signin>Sign in</button>
+          <button class="btn quiet" data-go="signup">Claim your team</button>
+        </div>
+      </div>
+      <div id="is-noteam" hidden><div class="notice warn" style="margin-top:18px;display:flex;gap:14px;align-items:center;flex-wrap:wrap"><span style="flex:1">You're signed in but haven't claimed a team yet.</span><button class="btn sm" data-go="signup">Claim your team</button></div></div>
+
+      <div id="is-body" hidden>
+        <div id="is-list-wrap">
+          <div class="ptools" style="align-items:center">
+            <button class="btn" id="is-new-btn">+ New issue</button>
+            <div class="seg" id="is-filter"><button class="on" data-f="open">Open</button><button data-f="in_progress">In progress</button><button data-f="closed">Closed</button><button data-f="all">All</button></div>
+            <span class="spacer"></span>
+            <span class="eyebrow cool" id="is-count"></span>
+          </div>
+          <div class="calc newpoll" id="is-new" hidden>
+            <div class="calc-in">
+              <div class="field wide"><label for="is-title">Title</label><input id="is-title" maxlength="140" placeholder="Keeper cost shows RD 11 for a drafted player"></div>
+              <div class="field"><label for="is-kind">Kind</label><select id="is-kind"><option value="bug">Bug — something's wrong</option><option value="idea">Idea — something to add</option><option value="question">Question</option><option value="other">Other</option></select></div>
+              <div class="field wide"><label for="is-details">Details</label><textarea id="is-details" maxlength="4000" placeholder="What you did, what you saw, what you expected. A screenshot description helps."></textarea></div>
+            </div>
+            <div class="calc-out">
+              <button class="btn" id="is-save">Open issue</button>
+              <button class="btn quiet" id="is-cancel">Cancel</button>
+              <span id="is-msg" style="font-size:13.5px;color:var(--red)"></span>
+            </div>
+          </div>
+          <div class="poll" id="is-list" style="margin-top:14px"></div>
+        </div>
+        <div id="is-thread-wrap" hidden>
+          <button class="back" id="is-back">← All issues</button>
+          <div id="is-thread"></div>
         </div>
       </div>
     </section>
@@ -2206,6 +2276,7 @@ document.getElementById("watch").innerHTML=K.map(function(k){
     {go:"polls",   n:"—",        lbl:"Open",     h:"Polls",      p:"Put a question to the league and vote on everyone else's. Managers only — sign in first.", id:"hc-polls"},
     {go:"sched",   n:"—",        lbl:"Free",     h:"Draft Day",  p:"Mark the hours you could draft and watch the best slot rise out of everyone's calendars.", id:"hc-sched"},
     {go:"agenda",  n:"—",        lbl:"Open",     h:"Open Items", p:"What the league still has to decide. Raise one, argue about it, then put it to a vote.", id:"hc-agenda"},
+    {go:"issues",  n:"—",        lbl:"Open",     h:"Issues",     p:"Something on the site broken or missing? Open an issue, Sean gets an email, and you can follow it from open to closed.", id:"hc-issues"},
     {go:"dues",    n:"—",        lbl:"Paid",     h:"Dues",       p:"What the buy-in is, where to send it, and who has settled up. Pick Venmo, Zelle or Cash App and mark yours sent.", id:"hc-dues"},
     {go:"badges",  n:"—",        lbl:"Claimed",  h:"Badges",     p:"The trophy case. Seventeen badges the league can earn, from Father Time to Waffle House, each with a prize once Sean sets one.", id:"hc-badges"},
     {go:"history", n:"14",       lbl:"Seasons",  h:"History",    p:"Every champion since 2012. Four managers tied at two titles, two still hunting their first."},
@@ -2974,6 +3045,7 @@ var Polls=(function(){
     SEED_POLLS.forEach(function(sp){ if(!db.polls.some(function(p){return p.id===sp.id;})) db.polls.push(sp); });
     if(!db.agenda) db.agenda=SEED_AGENDA.map(function(a){ return JSON.parse(JSON.stringify(a)); });
     if(!db.agendaVotes) db.agendaVotes=[];
+    if(!db.issues) db.issues=[]; if(!db.issueComments) db.issueComments=[];
     if(!db.sched) db.sched={events:[{id:"ev-2026",title:"2026 Draft",dates:["2026-10-11","2026-10-12","2026-10-13","2026-10-14","2026-10-15","2026-10-16","2026-10-17","2026-10-18","2026-10-19"],start_hour:9,end_hour:22,tz:"America/Los_Angeles",status:"open",chosen:null,created_at:"2026-09-11T00:00:00Z"}],marks:[]};
     function save(){ try{ localStorage.setItem(KEY,JSON.stringify(db)); }catch(e){} }
     function findPoll(id){ return db.polls.filter(function(p){return p.id===id;})[0]; }
@@ -3084,6 +3156,13 @@ var Polls=(function(){
       agendaAdd:function(a){ db.agenda.unshift({id:"a"+Date.now(),title:a.title,details:a.details||null,status:"open",outcome:null,created_by:db.me.id,created_by_email:db.me.email,created_at:new Date().toISOString(),decided_at:null}); save(); return Promise.resolve(); },
       agendaDecide:function(id,outcome){ var a=db.agenda.filter(function(x){return x.id===id;})[0]; if(a){ a.status=outcome==null?"open":"decided"; a.outcome=outcome; a.decided_at=outcome==null?null:new Date().toISOString(); } save(); return Promise.resolve(); },
       agendaDelete:function(id){ db.agenda=db.agenda.filter(function(x){return x.id!==id;}); db.agendaVotes=db.agendaVotes.filter(function(v){return v.item_id!==id;}); save(); return Promise.resolve(); },
+      issuesLoad:function(){ return Promise.resolve({issues:db.issues.slice(),comments:db.issueComments.slice()}); },
+      issueAdd:function(a){ var it={id:"is-"+Date.now(),num:db.issues.length+1,title:a.title,body:a.body||null,kind:a.kind||"bug",status:"open",created_by:db.me.id,created_by_email:db.me.email,created_at:new Date().toISOString(),updated_at:new Date().toISOString(),closed_at:null}; db.issues.unshift(it); save(); return Promise.resolve(it); },
+      issueComment:function(id,body){ var c={id:"ic-"+Date.now(),issue_id:id,body:body,created_by:db.me.id,created_by_email:db.me.email,created_at:new Date().toISOString()}; db.issueComments.push(c); var it=db.issues.filter(function(x){return x.id===id;})[0]; if(it) it.updated_at=c.created_at; save(); return Promise.resolve(c); },
+      issueStatus:function(id,st){ var it=db.issues.filter(function(x){return x.id===id;})[0]; if(!it) return Promise.reject(new Error("Gone.")); if(!(it.created_by===db.me.id||commish())) return Promise.reject(new Error("Only the commissioner or whoever opened it can change that.")); it.status=st; it.updated_at=new Date().toISOString(); it.closed_at=st==="closed"?it.updated_at:null; save(); return Promise.resolve(); },
+      issueDelete:function(id){ db.issues=db.issues.filter(function(x){return x.id!==id;}); db.issueComments=db.issueComments.filter(function(c){return c.issue_id!==id;}); save(); return Promise.resolve(); },
+      issueCommentDelete:function(id){ db.issueComments=db.issueComments.filter(function(c){return c.id!==id;}); save(); return Promise.resolve(); },
+      issueNotify:function(){ return Promise.resolve({preview:true}); },
       recordPoll:function(p){
         if(!commish()) return Promise.reject(new Error("Commissioner only."));
         p.id="p"+Date.now(); p.created_by=db.me.id; p.created_by_email=db.me.email; p.closed=true; p.imported=true; p.visibility="named";
@@ -3255,6 +3334,21 @@ var Polls=(function(){
       agendaAdd:function(a){ return client.from("agenda").insert({title:a.title,details:a.details||null}).then(chk); },
       agendaDecide:function(id,outcome){ return client.from("agenda").update(outcome==null?{status:"open",outcome:null,decided_at:null}:{status:"decided",outcome:outcome,decided_at:new Date().toISOString()}).eq("id",id).then(chk); },
       agendaDelete:function(id){ return client.from("agenda").delete().eq("id",id).then(chk); },
+      issuesLoad:function(){
+        return Promise.all([client.from("issues").select("*").order("updated_at",{ascending:false}), client.from("issue_comments").select("*").order("created_at")])
+          .then(function(rs){ chk(rs[0]); chk(rs[1]); return {issues:rs[0].data||[],comments:rs[1].data||[]}; });
+      },
+      issueAdd:function(a){ return client.from("issues").insert({title:a.title,body:a.body||null,kind:a.kind||"bug"}).select().single().then(function(r){ chk(r); return r.data; }); },
+      issueComment:function(id,body){ return client.from("issue_comments").insert({issue_id:id,body:body}).select().single().then(function(r){ chk(r); return r.data; }); },
+      issueStatus:function(id,st){ return client.rpc("issue_set_status",{p_id:id,p_status:st}).then(chk); },
+      issueDelete:function(id){ return client.from("issues").delete().eq("id",id).then(chk); },
+      issueCommentDelete:function(id){ return client.from("issue_comments").delete().eq("id",id).then(chk); },
+      /* the mail goes out from a Vercel function that checks the caller's session against the database */
+      issueNotify:function(payload){
+        return client.auth.getSession().then(function(r){ var t=r.data.session&&r.data.session.access_token; if(!t) throw new Error("Not signed in.");
+          return fetch("/api/issues/notify",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+t},body:JSON.stringify(payload)}); })
+          .then(function(r){ return r.json().catch(function(){return {};}).then(function(j){ if(!r.ok) throw new Error(j.error||("mail "+r.status)); return j; }); });
+      },
       recordPoll:function(p){
         return client.from("polls").insert({question:p.question,options:p.options,visibility:"named",closed:true,imported:true,asked_on:p.asked_on,created_at:p.created_at,results:p.results}).then(chk);
       },
@@ -3327,6 +3421,7 @@ var Polls=(function(){
     renderSignup();
     duesRefresh();
     agendaRefresh();
+    issuesRefresh();
     schedRefresh();
     if(isCommish) renderCommish();
     if(!member){ renderList(); return; }
@@ -3694,6 +3789,82 @@ var Polls=(function(){
     if((b=e.target.closest("[data-topoll]"))){ var it=agenda.filter(function(x){return x.id===b.dataset.topoll;})[0]; go("polls"); if(it){ $("newpoll").hidden=false; $("np-q").value=it.title.replace(/\?*$/,"")+"?"; setTimeout(function(){ $("np-opts").focus(); },50); } return; }
   });
 
+  /* ----- issues: GitHub-style, members report, the commissioner answers ----- */
+  var issues=[], issueComments=[], issuesLoaded=false, issueFilter="open", curIssue=null, issuePending=null;
+  var IS_LABEL={open:"Open",in_progress:"In progress",closed:"Closed"}, IS_PILL={open:"ok",in_progress:"prog",closed:"q"}, IS_KIND={bug:"Bug",idea:"Idea",question:"Question",other:"Other"};
+  function fmtAgo(iso){ var m=(new Date()-new Date(iso))/60000; if(m<1) return "just now"; if(m<60) return Math.round(m)+" min ago"; if(m<36*60) return Math.round(m/60)+" h ago"; return fmtDate(iso); }
+  function issueNotice(html,cls){ $("is-notice").innerHTML=html?'<div class="notice '+(cls||"")+'">'+html+'</div>':""; }
+  function issuesRefresh(force){
+    var signed=!!me, member=signed&&!!profile;
+    $("is-locked").hidden=signed; $("is-noteam").hidden=!(signed&&!profile); $("is-body").hidden=!member;
+    $("is-eyebrow").textContent=member?"Signed in as "+nameFor(me.id,me.email):"Members only";
+    var hc=document.querySelector("#hc-issues .hc-n");
+    if(!member){ issues=[]; issueComments=[]; issuesLoaded=false; if(hc) hc.textContent="—"; return; }
+    if(issuesLoaded&&!force&&!$("v-issues").classList.contains("on")) return;
+    store.issuesLoad().then(function(a){ issues=a.issues; issueComments=a.comments; issuesLoaded=true; renderIssues(); }).catch(function(e){ issueNotice(esc(msgOf(e)),"bad"); });
+  }
+  function issueById(id){ return issues.filter(function(x){return x.id===id;})[0]||null; }
+  function commentsFor(id){ return issueComments.filter(function(c){return c.issue_id===id;}); }
+  function isCommishUser(uid,email){ var pr=profFor(uid); if(pr&&pr.team_id==="jalenba") return true; return !!email&&/^seanlewis08@gmail\.com$/i.test(email); }
+  function issueRow(it){
+    var n=commentsFor(it.id).length, by=nameFor(it.created_by,it.created_by_email);
+    return '<div class="isrow" data-issue="'+esc(it.id)+'"><span class="isdot '+esc(it.status)+'" title="'+IS_LABEL[it.status]+'"></span>'+
+      '<div style="min-width:0;flex:1"><h3><span class="num">#'+it.num+'</span>'+esc(it.title)+'</h3><div class="ismeta">'+esc(IS_KIND[it.kind]||it.kind)+' · '+esc(IS_LABEL[it.status])+' · opened by '+esc(by)+' '+fmtDate(it.created_at)+(it.updated_at!==it.created_at?' · updated '+fmtDate(it.updated_at):'')+'</div></div>'+
+      '<span class="iscount">'+(n?n+(n===1?" reply":" replies"):"")+'</span></div>';
+  }
+  function renderIssues(){
+    var hc=document.querySelector("#hc-issues .hc-n"), open=issues.filter(function(x){return x.status!=="closed";}).length;
+    if(hc) hc.textContent=String(open);
+    if(curIssue){ renderIssueThread(); return; }
+    $("is-list-wrap").hidden=false; $("is-thread-wrap").hidden=true;
+    Array.prototype.forEach.call($("is-filter").querySelectorAll("button"),function(b){ b.classList.toggle("on",b.dataset.f===issueFilter); });
+    var list=issues.filter(function(x){ return issueFilter==="all"||x.status===issueFilter; });
+    list.sort(function(a,b){ return a.updated_at<b.updated_at?1:-1; });
+    $("is-list").innerHTML=list.length?list.map(issueRow).join(""):'<div class="empty">'+(issueFilter==="open"?"Nothing open. The site is perfect, apparently.":"Nothing here.")+'</div>';
+    var c={open:0,in_progress:0,closed:0}; issues.forEach(function(x){ c[x.status]=(c[x.status]||0)+1; });
+    $("is-count").textContent=c.open+" open · "+c.in_progress+" in progress · "+c.closed+" closed";
+  }
+  function renderIssueThread(){
+    var it=issueById(curIssue); if(!it){ curIssue=null; renderIssues(); return; }
+    $("is-list-wrap").hidden=true; $("is-thread-wrap").hidden=false;
+    var mine=!!me&&it.created_by===me.id, canSet=mine||isCommish, by=nameFor(it.created_by,it.created_by_email);
+    var h='<article class="poll" style="margin-top:14px">';
+    h+='<div class="poll-head"><h3><span style="color:var(--dim);font-family:var(--mono);font-size:15px;font-weight:500;margin-right:8px">#'+it.num+'</span>'+esc(it.title)+'</h3>'+
+      '<div class="poll-meta"><span class="pill '+IS_PILL[it.status]+'">'+IS_LABEL[it.status]+'</span><span>'+esc(IS_KIND[it.kind]||it.kind)+'</span><span>Opened by '+esc(by)+' · '+fmtDate(it.created_at)+'</span>'+(it.closed_at?'<span>Closed '+fmtDate(it.closed_at)+'</span>':'')+'</div></div>';
+    h+='<div class="iscomment"><div class="av'+(isCommishUser(it.created_by,it.created_by_email)?" c":"")+'">'+esc(by.charAt(0).toUpperCase())+'</div><div class="cbody"><div class="cwho">'+esc(by)+' · '+fmtAgo(it.created_at)+'</div><div class="ctext">'+(it.body?esc(it.body):'<span style="color:var(--dim)">No details given.</span>')+'</div></div></div>';
+    commentsFor(it.id).forEach(function(c){ var w=nameFor(c.created_by,c.created_by_email), cm=isCommishUser(c.created_by,c.created_by_email);
+      h+='<div class="iscomment"><div class="av'+(cm?" c":"")+'">'+esc(w.charAt(0).toUpperCase())+'</div><div class="cbody"><div class="cwho">'+esc(w)+(cm?' · commissioner':'')+' · '+fmtAgo(c.created_at)+(me&&(c.created_by===me.id||isCommish)?' · <button class="back" data-icdel="'+esc(c.id)+'" style="margin:0;padding:0;font:inherit;color:var(--dim)">delete</button>':'')+'</div><div class="ctext">'+esc(c.body)+'</div></div></div>'; });
+    h+='<div class="iscomment" style="background:var(--surface-2)"><div class="av'+(isCommish?" c":"")+'">'+esc((nameFor(me.id,me.email)).charAt(0).toUpperCase())+'</div><div class="cbody"><div class="field wide" style="margin:0"><textarea id="is-reply" maxlength="4000" placeholder="'+(isCommish?"Reply as commissioner…":"Add to the thread…")+'" style="min-height:80px"></textarea></div>'+
+      '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px"><button class="btn sm" id="is-send">Comment</button>'+
+      (canSet?(it.status!=="closed"?'<button class="btn quiet sm" data-isstatus="closed">Close issue</button>':'<button class="btn quiet sm" data-isstatus="open">Reopen</button>'):'')+
+      (isCommish?(it.status==="open"?'<button class="btn quiet sm" data-isstatus="in_progress">Mark in progress</button>':(it.status==="in_progress"?'<button class="btn quiet sm" data-isstatus="open">Back to open</button>':'')):'')+
+      '<span id="is-reply-msg" style="font-size:13px;color:var(--red)"></span></div></div></div>';
+    h+='<div class="poll-foot"><span>'+(isCommish?"You get an email for every new issue and reply; the reporter gets one for yours.":"Sean gets an email for this; you'll get one when he replies.")+'</span><span class="spacer"></span>'+(canSet?'<button class="btn danger sm" data-isdel="'+esc(it.id)+'">Delete</button>':'')+'</div></article>';
+    $("is-thread").innerHTML=h;
+  }
+  function openIssue(id){ curIssue=id||null; if(issuesLoaded) renderIssues(); try{ var r="#issues"+(id?"/"+id:""); if(location.hash!==r) history.replaceState(null,"",r); }catch(e){} }
+  function notifyQuiet(payload){ store.issueNotify(payload).catch(function(e){ console.warn("issue mail:",msgOf(e)); issueNotice("Saved, but the email didn't go out ("+esc(msgOf(e))+").","warn"); }); }
+  $("is-new-btn").addEventListener("click",function(){ var f=$("is-new"); f.hidden=!f.hidden; if(!f.hidden) $("is-title").focus(); });
+  $("is-cancel").addEventListener("click",function(){ $("is-new").hidden=true; });
+  $("is-back").addEventListener("click",function(){ openIssue(null); });
+  $("is-filter").addEventListener("click",function(e){ var b=e.target.closest("button[data-f]"); if(!b) return; issueFilter=b.dataset.f; renderIssues(); });
+  $("is-save").addEventListener("click",function(){
+    var t=$("is-title").value.trim(), d=$("is-details").value.trim(), k=$("is-kind").value;
+    if(t.length<3){ say("is-msg","Give it a title."); return; }
+    $("is-save").disabled=true; say("is-msg","");
+    store.issueAdd({title:t,body:d,kind:k}).then(function(it){ $("is-save").disabled=false; $("is-title").value=""; $("is-details").value=""; $("is-new").hidden=true; issueNotice(""); if(it&&it.id){ notifyQuiet({kind:"new",issue:it.id}); issues.unshift(it); openIssue(it.id); } issuesRefresh(true); })
+      .catch(function(e){ $("is-save").disabled=false; say("is-msg",msgOf(e)); });
+  });
+  $("is-list").addEventListener("click",function(e){ var r=e.target.closest("[data-issue]"); if(r) openIssue(r.dataset.issue); });
+  $("is-thread").addEventListener("click",function(e){
+    var b;
+    if((b=e.target.closest("#is-send"))){ var txt=$("is-reply").value.trim(); if(!txt){ $("is-reply").focus(); return; } b.disabled=true; say("is-reply-msg","");
+      store.issueComment(curIssue,txt).then(function(c){ if(c&&c.id) notifyQuiet({kind:"comment",issue:curIssue,comment:c.id}); issuesRefresh(true); }).catch(function(err){ b.disabled=false; say("is-reply-msg",msgOf(err)); }); return; }
+    if((b=e.target.closest("[data-isstatus]"))){ b.disabled=true; store.issueStatus(curIssue,b.dataset.isstatus).then(function(){ issuesRefresh(true); }).catch(function(err){ b.disabled=false; say("is-reply-msg",msgOf(err)); }); return; }
+    if((b=e.target.closest("[data-icdel]"))){ if(!b.dataset.armed){ b.dataset.armed="1"; b.textContent="really delete?"; return; } store.issueCommentDelete(b.dataset.icdel).then(function(){ issuesRefresh(true); }).catch(function(err){ say("is-reply-msg",msgOf(err)); }); return; }
+    if((b=e.target.closest("[data-isdel]"))){ if(!b.dataset.armed){ b.dataset.armed="1"; b.textContent="Really delete?"; return; } store.issueDelete(b.dataset.isdel).then(function(){ openIssue(null); issuesRefresh(true); }).catch(function(err){ say("is-reply-msg",msgOf(err)); }); return; }
+  });
+
   /* ----- dues ----- */
   var dues={seasons:[],payments:[]}, duesLoaded=false, duesBusy=false;
   var METHOD={venmo:"Venmo",zelle:"Zelle",cashapp:"Cash App",cash:"Cash / other",other:"Other"};
@@ -3965,6 +4136,7 @@ var Polls=(function(){
     if(v==="polls"||v==="pollhist") refresh();
     if(v==="dues"){ say("du-msg",""); say("ds-msg",""); duesRefresh(true); }
     if(v==="agenda") agendaRefresh(true);
+    if(v==="issues"){ if(!/^#issues\//.test(location.hash)) curIssue=null; issuesRefresh(true); }
     if(v==="sched") schedRefresh(true);
     if(v==="signup") renderSignup();
     if(v==="manager"){ if(!isCommish){ go("home",true); return; } renderCommish(); }
@@ -4006,7 +4178,7 @@ var Polls=(function(){
     }
   }
   boot();
-  return {refresh:refresh,onView:onView,
+  return {refresh:refresh,onView:onView,openIssue:openIssue,
     store:function(){ return store; }, me:function(){ return me; }, commish:function(){ return isCommish; }, profile:function(){ return profile; },
     who:function(){ var t=profile&&byId(profile.team_id); return profile&&profile.display_name?profile.display_name:(t?t.short:(me?me.email.split("@")[0]:"")); },
     onAuth:function(cb){ authSubs.push(cb); if(store) cb(); }};
@@ -6037,7 +6209,7 @@ window.Yahoo=Yahoo;
 if(typeof capSync==="function") capSync();
 
 /* ---------- routing ---------- */
-var views={home:"v-home",teams:"v-teams",team:"v-team",players:"v-players",plot:"v-plot",draft:"v-draft",cap:"v-cap",keepers:"v-keepers",polls:"v-polls",pollhist:"v-pollhist",agenda:"v-agenda",sched:"v-sched",dues:"v-dues",badges:"v-badges",signup:"v-signup",manager:"v-manager",history:"v-history",rules:"v-rules"};
+var views={home:"v-home",teams:"v-teams",team:"v-team",players:"v-players",plot:"v-plot",draft:"v-draft",cap:"v-cap",keepers:"v-keepers",polls:"v-polls",pollhist:"v-pollhist",agenda:"v-agenda",issues:"v-issues",sched:"v-sched",dues:"v-dues",badges:"v-badges",signup:"v-signup",manager:"v-manager",history:"v-history",rules:"v-rules"};
 var curTeam=null;
 function routeFor(v){ return v==="team"&&curTeam ? "team/"+curTeam : v; }
 function go(v,silent){
@@ -6066,6 +6238,9 @@ function fromHash(silent){
   if(h==="analysis") h="plot";
   var m=/^team\/([a-z0-9]+)$/.exec(h);
   if(m&&byId(m[1])){ renderTeam(m[1]); go("team",silent); return true; }
+  var mi=/^issues\/([A-Za-z0-9-]+)$/.exec(h);
+  if(mi){ go("issues",true); if(window.Polls) Polls.openIssue(mi[1]); return true; }
+  if(h==="issues"&&window.Polls) Polls.openIssue(null);
   if(views[h]){ go(h,silent); return true; }
   return false;
 }
