@@ -9,16 +9,18 @@ module.exports = async (req, res) => {
     const q = new URL(req.url, L.origin(req)).searchParams;
     const pages = Math.min(Number(q.get("pages")) || 12, 20);   // 25 players a page
     const game = q.get("game") || "nba";
+    const sort = q.get("sort") === "OR" ? "OR" : "AR";            // OR = Yahoo's preseason overall rank
     let out = [], raw = null;
     for (let i = 0; i < pages; i++) {
-      const j = await L.yahoo(s, "/game/" + game + "/players;start=" + (i * 25) + ";count=25;sort=AR/draft_analysis");
+      const j = await L.yahoo(s, "/game/" + game + "/players;start=" + (i * 25) + ";count=25;sort=" + sort + ";out=ranks,draft_analysis");
       if (q.get("raw") === "1" && !raw) raw = JSON.stringify(j).slice(0, 2500);
       const f = L.fold(j).fantasy_content.game;
       const ps = list(f.players || (f["0"] && f["0"].players) || (f[1] && f[1].players)).map(x => x.player || x);
       if (!ps.length) break;
       ps.forEach(pl => {
         const da = pl.draft_analysis || {};
-        out.push({ name: pl.name && pl.name.full, team: pl.editorial_team_abbr, pos: pl.display_position, pick: Number(da.average_pick) || null, round: Number(da.average_round) || null, cost: Number(da.average_cost) || null, drafted: Number(da.percent_drafted) || null });
+        const orank = list(pl.player_ranks).map(x => x.player_rank || x).find(x => x.rank_type === "OR");
+        out.push({ key: pl.player_key, name: pl.name && pl.name.full, team: pl.editorial_team_abbr, pos: pl.display_position, orank: orank ? Number(orank.rank_value) || null : null, pick: Number(da.average_pick) || null, round: Number(da.average_round) || null, cost: Number(da.average_cost) || null, drafted: Number(da.percent_drafted) || null });
       });
       if (ps.length < 25) break;
     }
