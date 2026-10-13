@@ -600,6 +600,7 @@ td input.capin:focus-visible{outline:1px solid var(--amber);border-color:var(--a
 .pltable thead th:first-child{z-index:4;background:var(--surface-2)}
 .pltable tbody tr:nth-child(even) .pl-name{background:#F8F3E8}
 .pltable tbody tr:hover td{background:var(--amber-glow)}
+.pltable tbody tr:hover .pl-name{background:#F6EADD}   /* opaque: the sticky name cell must hide the cells scrolled under it */
 .pltable .pl-name{display:flex;align-items:center;gap:9px;min-width:210px;border-right:1px solid var(--line)}
 .pltable .pl-name img{width:30px;height:22px;object-fit:cover;object-position:top;border-radius:3px;background:var(--surface-2);flex-shrink:0}
 .pltable .pl-name .nm{display:flex;flex-direction:column;line-height:1.05}
@@ -1656,6 +1657,7 @@ footer p + p{margin-top:11px}
         <span id="pl-count"></span>
         <span class="spacer"></span>
         <span class="sub" id="pl-src"></span>
+        <span class="sub" id="pl-adp-note"></span>
       </div>
       <p class="sub" style="margin-top:10px"><b>Value</b> is the sum of z-scores across our eleven categories (FG%, FT%, 3PTM, 3PT%, PTS, REB, AST, ST, BLK, A/T, DD), per game, measured against the top 200 players by minutes — the Basketball Monster way. A player needs ten games (a fifth of the season early on) to be ranked. Switch Stats to <b>Z-scores</b> and every category column becomes that player's z-score against whoever is currently listed — filter to free agents, or one position, and the numbers re-centre on that group. <b>FPTS</b> is Yahoo's default points formula (PTS 1, REB 1.2, AST 1.5, STL 3, BLK 3, TO −1). <b>Owner</b> is whoever had him when rosters locked; K marks a flagged keeper. Salaries are this season's figure from Basketball-Reference (ESPN where they lack one); stats are ESPN's.</p>
     </section>
@@ -4011,7 +4013,7 @@ var Players=(function(){
   function plays(r,pos){ return !pos||(r.pgs&&r.pgs.indexOf(pos)>=0); }
   var snap=null, live={}, season=null, opened=false, userSeason=false, capSeason=2027, rows=[], view=[], sortKey="val", sortAsc=false, booted=false, started=false;
   var subs=[];
-  function fire(){ subs.forEach(function(cb){ try{ cb(); }catch(e){} }); }
+  function fire(){ subs.forEach(function(cb){ try{ cb(); }catch(e){} }); if(rows.length&&!ADP.espn&&!ADP.at) loadAdp(); else if(rows.length&&(ADP.espn||ADP.yahoo)&&rows[0].adpE===undefined) applyAdp(); }
   var f={q:"",team:"",pos:"",owner:"",mode:"pg",mingp:0,minmin:0}, qual=10;
   var $=function(id){return document.getElementById(id);};
 
@@ -4044,6 +4046,8 @@ var Players=(function(){
     {k:"salary",h:"Salary",w:82,num:true,get:function(r){return r.salary;},fmt:money},
     {k:"cappct",h:"% Cap",w:70,num:true,get:function(r){return r.salary/CAPS[capSeason].cap;},fmt:function(v){return v?(v*100).toFixed(1)+"%":"—";}},
     {k:"yrs",h:"Yrs",num:true,get:function(r){return r.yrs;},fmt:function(v){return v||"—";}},
+    {k:"adpE",h:"ESPN ADP",w:84,num:true,asc:true,get:function(r){return r.adpE==null?9999:r.adpE;},fmt:function(v){return v>=9999?"—":(+v).toFixed(1);}},
+    {k:"adpY",h:"Yahoo ADP",w:90,num:true,asc:true,get:function(r){return r.adpY==null?9999:r.adpY;},fmt:function(v){return v>=9999?"—":(+v).toFixed(1);}},
     {k:"owner",h:"Owner",w:150,get:function(r){return r.own?r.own.t:"";},asc:true}
   ];
   function stat(k){ return function(r){ return f.mode==="tot"?r[k]*r.gp:r[k]; }; }
@@ -4155,6 +4159,39 @@ var Players=(function(){
     Object.keys(years).map(Number).sort(function(a,b){return b-a;}).forEach(function(y){ opts.push('<option value="'+y+'">'+((live[y]&&live[y].label)||(y-1)+"-"+String(y).slice(2))+'</option>'); });
     ss.innerHTML=opts.join(""); ss.value=String(season);
     var hc=document.querySelector("#hc-players .hc-n"); if(hc) hc.textContent=String(rows.length);
+  }
+
+  /* ---- average draft position: ESPN straight from its fantasy feed (browser-readable), Yahoo
+     through the member's own connection (/api/yahoo/adp), nothing stored either way ---- */
+  var ADP={espn:null, yahoo:null, yahooState:"", at:0};
+  function espnAdpUrl(){ return "https://lm-api-reads.fantasy.espn.com/apis/v3/games/fba/seasons/"+capSeason+"/segments/0/leaguedefaults/3?view=kona_player_info"; }
+  function applyAdp(){
+    if(!rows.length) return;
+    var byName={}; if(ADP.yahoo) ADP.yahoo.forEach(function(p){ byName[norm(p.name)]=p.pick; });
+    rows.forEach(function(r){
+      r.adpE=(ADP.espn&&r.id&&ADP.espn[r.id]!=null)?ADP.espn[r.id]:null;
+      r.adpY=ADP.yahoo?(byName[r.key]!=null?byName[r.key]:null):null;
+    });
+    if(document.getElementById("v-players").classList.contains("on")) render();
+  }
+  function loadAdp(){
+    if(Date.now()-ADP.at<3600000) { applyAdp(); return; }
+    ADP.at=Date.now();
+    fetch(espnAdpUrl(),{headers:{"x-fantasy-filter":JSON.stringify({players:{limit:700,sortDraftRanks:{sortPriority:100,sortAsc:true,value:"STANDARD"}}})}})
+      .then(function(r){ return r.ok?r.json():null; }).then(function(j){
+        if(!j||!j.players) return;
+        var m={}; j.players.forEach(function(p){ var pl=p.player||{}, o=pl.ownership||{}; if(pl.id&&o.averageDraftPosition>0) m[pl.id]=o.averageDraftPosition; });
+        ADP.espn=m; applyAdp();
+      }).catch(function(){});
+    fetch("/api/yahoo/adp?pages=14",{credentials:"same-origin",cache:"no-store"})
+      .then(function(r){ if(r.status===401){ ADP.yahooState="not_connected"; return null; } return r.ok?r.json():null; }).then(function(j){
+        if(j&&j.players){ ADP.yahoo=j.players; ADP.yahooState="ok"; applyAdp(); } else if(!ADP.yahooState) ADP.yahooState="error";
+        noteAdp();
+      }).catch(function(){ ADP.yahooState="error"; noteAdp(); });
+  }
+  function noteAdp(){
+    var el=$("pl-adp-note"); if(!el) return;
+    el.textContent=ADP.yahooState==="not_connected"?"Yahoo ADP shows once you\u2019ve connected Yahoo on your team page.":(ADP.yahooState==="error"?"Yahoo ADP isn\u2019t available right now.":"");
   }
 
   /* z-scores across the league's eleven categories, per game, population = top 200 by minutes */
