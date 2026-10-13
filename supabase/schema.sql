@@ -710,3 +710,40 @@ grant select on public.keeper_picks to anon, authenticated;
 grant insert, update on public.keeper_picks to authenticated;
 grant execute on function public.set_keepers_locked(boolean) to authenticated;
 grant execute on function public.keepers_editable(text) to authenticated;
+
+-- ---------------------------------------------------------------------------
+-- Keeper requests. A manager asks for a player who isn't on their locked roster
+-- (a late trade, a waiver claim the snapshot missed); the commissioner approves
+-- or declines from the Manager page. An approved player joins that team's
+-- roster on the site so he can be ticked as a keeper.
+-- ---------------------------------------------------------------------------
+create table if not exists public.keeper_requests (
+  id          uuid primary key default gen_random_uuid(),
+  team_id     text not null check (team_id ~ '^[a-z0-9]{2,20}$'),
+  season      text not null default '2026-27' check (season ~ '^[0-9]{4}-[0-9]{2}$'),
+  player      text not null check (length(player) between 2 and 60),
+  nba_team    text check (nba_team is null or nba_team ~ '^[A-Z]{2,4}$'),
+  note        text check (note is null or length(note) <= 400),
+  status      text not null default 'pending' check (status in ('pending','approved','declined')),
+  reply       text check (reply is null or length(reply) <= 400),
+  created_by  uuid default auth.uid() references auth.users (id) on delete set null,
+  created_at  timestamptz not null default now(),
+  decided_at  timestamptz
+);
+alter table public.keeper_requests enable row level security;
+drop policy if exists keeper_requests_read on public.keeper_requests;
+create policy keeper_requests_read on public.keeper_requests for select to anon, authenticated using (true);
+drop policy if exists keeper_requests_insert on public.keeper_requests;
+create policy keeper_requests_insert on public.keeper_requests for insert to authenticated with check (public.owns_team(team_id) and status = 'pending');
+drop policy if exists keeper_requests_delete on public.keeper_requests;
+create policy keeper_requests_delete on public.keeper_requests for delete to authenticated using (public.owns_team(team_id) and status = 'pending');
+create or replace function public.keeper_request_decide(p_id uuid, p_status text, p_reply text)
+returns void language plpgsql security definer set search_path = public as $$
+begin
+  if not public.is_commissioner() then raise exception 'Commissioner only.'; end if;
+  if p_status not in ('pending','approved','declined') then raise exception 'Bad status.'; end if;
+  update public.keeper_requests set status = p_status, reply = nullif(p_reply, ''), decided_at = case when p_status = 'pending' then null else now() end where id = p_id;
+end $$;
+grant select on public.keeper_requests to anon, authenticated;
+grant insert, delete on public.keeper_requests to authenticated;
+grant execute on function public.keeper_request_decide(uuid, text, text) to authenticated;

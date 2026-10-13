@@ -197,6 +197,11 @@ section:first-child{margin-top:34px}
 
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:4px;box-shadow:var(--shadow)}
 
+.kr-box{padding:12px 16px 14px;border-top:1px solid var(--line);background:var(--surface-2)}
+.kr-head{display:flex;flex-direction:column;gap:3px;margin-bottom:10px;font-size:14px}
+.kr-form{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.kr-form input{font:inherit;font-size:14px;padding:8px 10px;border:1px solid var(--line-2);border-radius:3px;background:var(--surface);color:var(--ink);width:100%}
+.kr-list-own{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-direction:column;gap:6px;font-size:14px}
 .kp-bar{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 16px 12px;border-top:1px solid var(--line);flex-wrap:wrap}
 .kp-box{width:16px;height:16px;accent-color:var(--amber);cursor:pointer}
 .yh-days{display:flex;gap:6px;padding:12px 16px 8px;flex-wrap:wrap}
@@ -1575,6 +1580,8 @@ footer p + p{margin-top:11px}
           <div class="field" style="flex:0 0 auto;justify-content:flex-end"><button class="btn sm" id="code-save">Save code</button></div>
           <span id="code-msg" style="align-self:flex-end;font-size:13px;color:var(--muted)"></span>
         </div>
+        <div class="panel-hd" style="border-top:1px solid var(--line)"><span class="eyebrow">Keeper requests</span></div>
+        <div id="kr-admin"><div class="empty" style="padding:12px 16px">No requests.</div></div>
         <label style="display:flex;gap:10px;align-items:center;padding:4px 16px 14px;font-size:13.5px;cursor:pointer"><input type="checkbox" id="se-lock"> <span><b>Lock keeper declarations</b> — managers pick up to two keepers on their own team page until you tick this; you can still change anyone's.</span></label>
         <div class="tablewrap" style="border:0;border-radius:0;box-shadow:none">
           <table>
@@ -2129,7 +2136,8 @@ function keepersFor(t){
    row overrides the keepers typed into T[] above; a team without one keeps them. */
 var KEEPER_SEASON="2026-27", KEEPERS_LOCKED=false, KEEPER_ROWS={};
 function keeperRoundOf(name){ var hit=DRAFTED[norm(name)]; return hit?hit.round:13; }   /* undrafted = notional 13th-rounder → RD 11 */
-function applyKeepers(rows){
+function applyKeepers(rows, reqs){
+  if(reqs) applyKeeperRequests(reqs);
   KEEPER_ROWS={};
   (rows||[]).forEach(function(row){ if(row.season===KEEPER_SEASON) KEEPER_ROWS[row.team_id]=row; });
   T.forEach(function(t){
@@ -2139,6 +2147,17 @@ function applyKeepers(rows){
     t.roster.forEach(function(r){ r[3]=chosen[norm(r[1])]?1:0; if(r[3]) t.costs[r[1]]=keeperRoundOf(r[1]); });
   });
   rebuildKeeperViews();
+}
+var KEEPER_REQS=[];
+function applyKeeperRequests(reqs){
+  KEEPER_REQS=(reqs||[]).filter(function(r){ return r.season===KEEPER_SEASON; });
+  /* approved players join the team's roster on the site (marked "+") so they can be ticked */
+  T.forEach(function(t){ if(t.roster) t.roster=t.roster.filter(function(r){ return r[0]!=="+"; }); });
+  KEEPER_REQS.filter(function(r){ return r.status==="approved"; }).forEach(function(r){
+    var t=byId(r.team_id); if(!t||!t.roster) return;
+    if(t.roster.some(function(x){ return norm(x[1])===norm(r.player); })) return;
+    t.roster.push(["+", r.player, r.nba_team||"", 0]);
+  });
 }
 function keeperState(t){
   var row=KEEPER_ROWS[t.id];
@@ -2303,6 +2322,16 @@ function renderTeam(id){
       : (ks.declared?'<p class="sub" style="margin:0;padding:10px 16px 12px">Keepers declared '+new Date(ks.when).toLocaleDateString(undefined,{month:"short",day:"numeric"})+'.'+(KEEPERS_LOCKED?' Declarations are locked.':'')+'</p>'
                     :'<p class="sub" style="margin:0;padding:10px 16px 12px">'+(KEEPERS_LOCKED?'Keeper declarations are locked.':(mine?'Sign in to declare your keepers here.':'Not declared yet \u2014 showing last season\u2019s list.'))+'</p>'));
 
+  /* ask the commissioner about a player who isn't on the locked list */
+  var myReqs=KEEPER_REQS.filter(function(r){ return r.team_id===t.id; });
+  var reqHtml=(mine||isC)?'<div class="kr-box">'+
+      '<div class="kr-head"><b>Missing someone?</b><span class="sub">If a player you can keep isn\u2019t on this list (a late trade, a pickup the snapshot missed), ask here. Approved players are added above so you can tick them.</span></div>'+
+      '<div class="kr-form"><div class="hc-search" style="flex:1 1 220px"><input id="kr-q" placeholder="Type a player\u2019s name\u2026" autocomplete="off"><div class="hc-list" id="kr-list" hidden></div></div>'+
+      '<input id="kr-note" placeholder="Why (optional) \u2014 e.g. traded for him in March" style="flex:2 1 260px">'+
+      '<button class="btn sm" id="kr-send" disabled>Ask the commissioner</button></div>'+
+      '<input type="hidden" id="kr-player"><input type="hidden" id="kr-team"><div id="kr-msg" class="sub" style="padding:6px 0 0"></div>'+
+      (myReqs.length?'<ul class="kr-list-own">'+myReqs.map(function(r){ return '<li><b>'+esc(r.player)+'</b> <span class="pill '+(r.status==="approved"?"ok":(r.status==="declined"?"gone":"q"))+'">'+esc(r.status)+'</span>'+(r.note?' <span class="sub">\u2014 '+esc(r.note)+'</span>':'')+(r.reply?' <span class="sub">\u00b7 Sean: '+esc(r.reply)+'</span>':'')+(r.status==="pending"?' <button class="btn quiet sm" data-kr-del="'+r.id+'">Withdraw</button>':'')+'</li>'; }).join("")+'</ul>':'')+
+    '</div>':(myReqs.filter(function(r){return r.status==="approved";}).length?'<p class="sub" style="margin:0;padding:0 16px 12px">Players marked + were added by the commissioner on request.</p>':'');
   var keepers=keepersFor(t);
   var ladders = keepers.length
     ? keepers.map(function(k){
@@ -2320,7 +2349,7 @@ function renderTeam(id){
     '<div class="detail-cols">'+
       '<div class="panel" id="yh-team" style="grid-column:span 2;min-width:0" hidden></div>'+
       '<div class="panel" style="grid-column:span 2;min-width:0">'+
-        '<div class="panel-hd"><span class="eyebrow">Locked roster · 2025–26</span></div>'+rosterHtml+'</div>'+
+        '<div class="panel-hd"><span class="eyebrow">Locked roster · 2025–26</span></div>'+rosterHtml+reqHtml+'</div>'+
       '<div style="display:flex;flex-direction:column;gap:16px">'+
         '<div class="panel"><div class="panel-hd"><span class="eyebrow">Home court</span></div><div id="hc-panel"></div></div>'+
         '<div class="panel"><div class="panel-hd" style="display:flex;justify-content:space-between;align-items:center;gap:10px"><span class="eyebrow">Trophy case</span><button class="back" data-go="badges" style="margin:0;padding:0;font-size:11px;color:var(--amber)">All badges →</button></div>'+
@@ -2342,12 +2371,53 @@ document.addEventListener("change",function(e){
   var box=e.target.closest(".kp-box"); if(!box) return;
   var boxes=Array.prototype.slice.call(document.querySelectorAll("#teamdetail .kp-box")), on=boxes.filter(function(b){return b.checked;});
   var msg=document.getElementById("kp-msg"), save=document.getElementById("kp-save");
-  if(on.length>2){ box.checked=false; if(msg) msg.textContent="Two keepers at most."; return; }
+  if(on.length>2){ box.checked=false; on=boxes.filter(function(b){return b.checked;}); }
+  /* two ticked → the rest grey out until one is unticked; the K badge follows the tick straight away */
+  boxes.forEach(function(b){
+    b.disabled=on.length>=2&&!b.checked;
+    var tr=b.closest("tr"), name=tr&&tr.querySelector(".name"), badge=name&&name.querySelector(".kbadge");
+    if(tr) tr.classList.toggle("keeprow",b.checked);
+    if(name){ if(b.checked&&!badge) name.insertAdjacentHTML("beforeend",'<span class="kbadge">K</span>'); else if(!b.checked&&badge) badge.remove(); }
+  });
   var t=byId(curTeam), chosen=on.map(function(b){return b.dataset.player;});
   var rounds=chosen.map(keeperRoundOf), same=rounds.length===2&&rounds[0]===rounds[1];
   if(msg) msg.textContent=chosen.length?chosen.map(function(n,i){ var c=keeperRoundOf(n)-2-(same&&i===1?1:0); return n+" (RD "+c+")"; }).join(" · ")+(same?" · same round, so the second costs one more":""):"No keepers \u2014 all twelve picks";
   if(save) save.disabled=false;
 });
+/* keeper request box */
+function krNorm(s){ return String(s||"").normalize("NFKD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9 ]/g," ").replace(/\s+/g," ").trim(); }
+function krSearch(q){
+  var rows=(window.Players&&Players.rows())||[], toks=krNorm(q).split(" ").filter(Boolean); if(!toks.length) return [];
+  var hits=rows.filter(function(r){ var n=krNorm(r.name); return toks.every(function(t){ return n.split(" ").some(function(w){ return w.indexOf(t)===0; }); }); });
+  hits.sort(function(a,b){ return (b.gp||0)-(a.gp||0); });
+  return hits.slice(0,8);
+}
+document.addEventListener("input",function(e){
+  if(e.target.id!=="kr-q") return;
+  if(window.Players&&Players.ensure) Players.ensure();
+  var el=document.getElementById("kr-list"), q=e.target.value, hits=krSearch(q);
+  document.getElementById("kr-player").value=""; document.getElementById("kr-send").disabled=true;
+  if(!q.trim()||!hits.length){ el.hidden=true; el.innerHTML=""; return; }
+  el.innerHTML=hits.map(function(r){ var own=r.own?(" \u00b7 on "+r.own.t+"\u2019s roster"):""; return '<button type="button" class="hc-hit" data-krpick="'+esc(r.name)+'" data-team="'+esc(r.team||"")+'"><b>'+esc(r.name)+'</b><span class="sub">'+esc(r.team||"")+own+'</span></button>'; }).join("");
+  el.hidden=false;
+});
+document.addEventListener("click",function(e){
+  var hit=e.target.closest("[data-krpick]");
+  if(hit){ document.getElementById("kr-q").value=hit.dataset.krpick; document.getElementById("kr-player").value=hit.dataset.krpick; document.getElementById("kr-team").value=hit.dataset.team||""; document.getElementById("kr-list").hidden=true; document.getElementById("kr-send").disabled=false; return; }
+  if(!e.target.closest("#kr-list")&&document.getElementById("kr-list")) document.getElementById("kr-list").hidden=true;
+  var del=e.target.closest("[data-kr-del]");
+  if(del){ del.disabled=true; Polls.store().keeperRequestDelete(del.dataset.krDel).then(reloadKeepers).catch(function(err){ del.disabled=false; alert(err&&err.message||err); }); return; }
+  var send=e.target.closest("#kr-send"); if(!send) return;
+  var t=byId(curTeam), player=document.getElementById("kr-player").value, msg=document.getElementById("kr-msg");
+  if(!t||!player) return;
+  send.disabled=true; msg.textContent="Sending\u2026";
+  Polls.store().keeperRequestAdd({team_id:t.id,player:player,nba_team:document.getElementById("kr-team").value||null,note:document.getElementById("kr-note").value.trim()||null})
+    .then(reloadKeepers).catch(function(err){ send.disabled=false; msg.textContent="Couldn\u2019t send: "+(err&&err.message||err); });
+});
+function reloadKeepers(){
+  var st=Polls.store();
+  return Promise.all([st.keepersLoad(), st.keeperRequestsLoad?st.keeperRequestsLoad():Promise.resolve([])]).then(function(rs){ applyKeepers(rs[0], rs[1]); if(curTeam&&document.getElementById("v-team").classList.contains("on")) renderTeam(curTeam); if(window.Polls&&Polls.commish()&&document.getElementById("v-manager").classList.contains("on")&&typeof renderKeeperRequests==="function") renderKeeperRequests(); });
+}
 document.addEventListener("click",function(e){
   var btn=e.target.closest("#kp-save"); if(!btn) return;
   var t=byId(curTeam); if(!t) return;
@@ -2964,6 +3034,10 @@ var Polls=(function(){
       keepersLoad:function(){ return Promise.resolve((db.keepers||[]).slice()); },
       keepersSet:function(team_id,players){ var p=myProf(); if(!(commish()||(p&&p.team_id===team_id&&!db.keepersLocked))) return Promise.reject(new Error(db.keepersLocked?"Keeper declarations are locked.":"That's not your team.")); if(!db.keepers) db.keepers=[]; var row=db.keepers.filter(function(x){return x.team_id===team_id&&x.season===KEEPER_SEASON;})[0]; if(!row){ row={team_id:team_id,season:KEEPER_SEASON}; db.keepers.push(row); } row.players=players.slice(0,2); row.updated_by=db.me.id; row.updated_at=new Date().toISOString(); save(); return Promise.resolve(); },
       setKeepersLocked:function(on){ if(!commish()) return Promise.reject(new Error("Commissioner only.")); db.keepersLocked=!!on; save(); return Promise.resolve(); },
+      keeperRequestsLoad:function(){ return Promise.resolve((db.kreqs||[]).slice()); },
+      keeperRequestAdd:function(o){ var p=myProf(); if(!(commish()||(p&&p.team_id===o.team_id))) return Promise.reject(new Error("That's not your team.")); if(!db.kreqs) db.kreqs=[]; db.kreqs.push({id:"kr"+Date.now(),team_id:o.team_id,season:KEEPER_SEASON,player:o.player,nba_team:o.nba_team||null,note:o.note||null,status:"pending",reply:null,created_by:db.me.id,created_at:new Date().toISOString()}); save(); return Promise.resolve(); },
+      keeperRequestDelete:function(id){ db.kreqs=(db.kreqs||[]).filter(function(r){return r.id!==id;}); save(); return Promise.resolve(); },
+      keeperRequestDecide:function(id,status,reply){ if(!commish()) return Promise.reject(new Error("Commissioner only.")); (db.kreqs||[]).forEach(function(r){ if(r.id===id){ r.status=status; r.reply=reply||null; r.decided_at=new Date().toISOString(); } }); save(); return Promise.resolve(); },
       /* games cap, shared */
       capLoad:function(){ return Promise.resolve(db.cap?JSON.parse(JSON.stringify(db.cap)):null); },
       capSave:function(data){ if(!commish()) return Promise.reject(new Error("Commissioner only.")); db.cap=JSON.parse(JSON.stringify(data)); save(); return Promise.resolve(); },
@@ -3143,6 +3217,10 @@ var Polls=(function(){
       keepersLoad:function(){ return client.from("keeper_picks").select("team_id,season,players,updated_at").then(function(r){ chk(r); return r.data||[]; }); },
       keepersSet:function(team_id,players){ return client.from("keeper_picks").upsert({team_id:team_id,season:KEEPER_SEASON,players:players.slice(0,2),updated_at:new Date().toISOString()},{onConflict:"team_id,season"}).then(chk); },
       setKeepersLocked:function(on){ return client.rpc("set_keepers_locked",{p_on:!!on}).then(chk); },
+      keeperRequestsLoad:function(){ return client.from("keeper_requests").select("id,team_id,season,player,nba_team,note,status,reply,created_at,decided_at").order("created_at",{ascending:false}).then(function(r){ chk(r); return r.data||[]; }); },
+      keeperRequestAdd:function(o){ return client.from("keeper_requests").insert({team_id:o.team_id,season:KEEPER_SEASON,player:o.player,nba_team:o.nba_team||null,note:o.note||null}).then(chk); },
+      keeperRequestDelete:function(id){ return client.from("keeper_requests").delete().eq("id",id).then(chk); },
+      keeperRequestDecide:function(id,status,reply){ return client.rpc("keeper_request_decide",{p_id:id,p_status:status,p_reply:reply||null}).then(chk); },
       /* games cap, shared */
       capLoad:function(){ return client.from("cap_table").select("data,updated_at").eq("id","current").maybeSingle().then(function(r){ chk(r); return r.data?r.data.data:null; }); },
       capSave:function(data){ return client.from("cap_table").upsert({id:"current",data:data,updated_at:new Date().toISOString()},{onConflict:"id"}).then(chk); },
@@ -3250,7 +3328,26 @@ var Polls=(function(){
     $("su-go").textContent = signed ? "Claim team" : "Create account & claim team";
   }
 
+  function renderKeeperRequests(){
+    var el=$("kr-admin"); if(!el) return;
+    var reqs=KEEPER_REQS.slice().sort(function(a,b){ return (a.status==="pending"?0:1)-(b.status==="pending"?0:1)||(a.created_at<b.created_at?1:-1); });
+    if(!reqs.length){ el.innerHTML='<div class="empty" style="padding:12px 16px">No requests.</div>'; return; }
+    el.innerHTML='<div class="tablewrap" style="border:0;border-radius:0;box-shadow:none"><table><thead><tr><th>Team</th><th>Player</th><th>Note</th><th>Status</th><th></th></tr></thead><tbody>'+reqs.map(function(r){
+      var t=byId(r.team_id);
+      return '<tr><td class="mgr">'+esc(t?t.short:r.team_id)+'</td><td class="name">'+esc(r.player)+(r.nba_team?' <span class="sub">'+esc(r.nba_team)+'</span>':'')+'</td><td class="sub" style="white-space:normal">'+esc(r.note||"")+(r.reply?'<br><i>You: '+esc(r.reply)+'</i>':'')+'</td>'+
+        '<td><span class="pill '+(r.status==="approved"?"ok":(r.status==="declined"?"gone":"q"))+'">'+esc(r.status)+'</span></td>'+
+        '<td class="num" style="white-space:nowrap"><input class="kr-reply" data-id="'+r.id+'" placeholder="Reply (optional)" style="width:150px;margin-right:6px">'+(r.status!=="approved"?'<button class="btn sm" data-kr-decide="approved" data-id="'+r.id+'">Approve</button> ':'')+(r.status!=="declined"?'<button class="btn quiet sm" data-kr-decide="declined" data-id="'+r.id+'">Decline</button>':'')+(r.status!=="pending"?' <button class="btn quiet sm" data-kr-decide="pending" data-id="'+r.id+'">Reopen</button>':'')+'</td></tr>';
+    }).join("")+'</tbody></table></div>';
+  }
+  window.renderKeeperRequests=renderKeeperRequests;
+  document.addEventListener("click",function(e){
+    var b=e.target.closest("[data-kr-decide]"); if(!b) return;
+    var inp=document.querySelector('.kr-reply[data-id="'+b.dataset.id+'"]'), reply=inp?inp.value.trim():"";
+    b.disabled=true;
+    store.keeperRequestDecide(b.dataset.id,b.dataset.krDecide,reply).then(reloadKeepers).catch(function(err){ b.disabled=false; say("code-msg",msgOf(err)); });
+  });
   function renderCommish(){
+    renderKeeperRequests();
     $("commish-rows").innerHTML=T.map(function(t){
       var pr=profiles.filter(function(p){return p.team_id===t.id;})[0];
       return '<tr><td><b>'+esc(t.name)+'</b></td><td class="mgr">'+esc(t.mgr)+'</td>'+
@@ -3858,7 +3955,7 @@ var Polls=(function(){
     ["nav-sched","hc-sched","tile-sched-link"].forEach(function(id){ var el=$(id); if(el) el.hidden=!showSched; });
     var cb=$("se-show"); if(cb) cb.checked=showSched;
   }
-  function loadFlags(){ store.flags().then(applyFlags).catch(function(){}); if(store.keepersLoad) store.keepersLoad().then(applyKeepers).catch(function(){}); }
+  function loadFlags(){ store.flags().then(applyFlags).catch(function(){}); if(store.keepersLoad) Promise.all([store.keepersLoad(), store.keeperRequestsLoad?store.keeperRequestsLoad():Promise.resolve([])]).then(function(rs){ applyKeepers(rs[0], rs[1]); }).catch(function(){}); }
   function start(){
     var recovery=/type=recovery/.test(location.hash);
     loadFlags();
@@ -5901,7 +5998,7 @@ function go(v,silent){
 }
 document.addEventListener("click",function(e){
   var g=e.target.closest("[data-go]"); if(g){e.preventDefault();go(g.dataset.go);return;}
-  var t=e.target.closest("[data-team]"); if(t){renderTeam(t.dataset.team);go("team");}
+  var t=e.target.closest("[data-team]"); if(t&&byId(t.dataset.team)){renderTeam(t.dataset.team);go("team");}
 });
 /* open whatever the URL hash says (so a reload stays on the same page); auth hashes are ignored */
 function fromHash(silent){
