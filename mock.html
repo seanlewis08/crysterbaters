@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mock Draft · Kids That Read Good</title>
+<link rel="icon" href="data:,">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#16130F;--bg2:#1E1A14;--panel:#241F18;--line:#3A3328;--line2:#4A4134;--ink:#F3EBDD;--muted:#B9AD99;--dim:#7E7362;--amber:#E8894A;--amber2:#C1571A;--green:#4FC48E;--red:#E2574D;
+  --G:#C9872B;--F:#2E7FC4;--C:#2FA67A;--GF:#8E5FB8;--FC:#2FA67A;--mine:#E8894A}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:Barlow,system-ui,sans-serif;font-size:14px}
+body{display:flex;flex-direction:column;overflow:hidden}
+.top{display:flex;align-items:center;gap:14px;padding:10px 16px;background:linear-gradient(90deg,#C1571A,#E8894A);color:#1A120A;flex-shrink:0;flex-wrap:wrap}
+.top h1{font-family:"Saira Condensed",sans-serif;font-weight:800;font-size:22px;margin:0;letter-spacing:.02em;text-transform:uppercase}
+.top .sub{font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;opacity:.85}
+.top .spacer{flex:1}
+.pill{display:inline-flex;align-items:center;gap:6px;background:rgba(26,18,10,.22);border-radius:999px;padding:5px 11px;font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase}
+.pill.on-clock{background:#1A120A;color:#F3EBDD}
+.btn{font:inherit;font-weight:600;font-size:12.5px;letter-spacing:.04em;text-transform:uppercase;padding:7px 12px;border-radius:4px;border:1px solid rgba(26,18,10,.35);background:#1A120A;color:#F3EBDD;cursor:pointer}
+.btn:hover{background:#2A1F12}
+.btn:disabled{opacity:.4;cursor:default}
+.btn.quiet{background:transparent;color:#1A120A;border-color:rgba(26,18,10,.45)}
+.btn.quiet:hover{background:rgba(26,18,10,.12)}
+select,input{font:inherit;font-size:13px;color:var(--ink);background:var(--panel);border:1px solid var(--line2);border-radius:4px;padding:6px 8px}
+.top select{background:#1A120A;color:#F3EBDD;border-color:rgba(26,18,10,.5)}
+.main{flex:1;display:flex;flex-direction:column;min-height:0}
+.boardwrap{flex:1 1 58%;overflow:auto;min-height:220px;background:var(--bg)}
+table.board{border-collapse:separate;border-spacing:3px;min-width:100%}
+table.board th{position:sticky;top:0;z-index:2;background:var(--bg2);padding:7px 6px;text-align:left;font-family:"Saira Condensed",sans-serif;font-size:15px;font-weight:700;letter-spacing:.02em;border-bottom:2px solid var(--line2);white-space:nowrap}
+table.board th .slot{font-family:"IBM Plex Mono",monospace;font-size:10px;color:var(--dim);display:block;letter-spacing:.1em}
+table.board th.me{color:var(--mine)}
+table.board td.rnd{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--dim);text-align:center;width:28px;position:sticky;left:0;background:var(--bg);z-index:1}
+.cell{height:50px;border-radius:5px;background:var(--bg2);border:1px solid var(--line);padding:5px 7px;position:relative;min-width:132px;overflow:hidden;cursor:default}
+.cell .pk{font-family:"IBM Plex Mono",monospace;font-size:9.5px;color:var(--dim);letter-spacing:.08em}
+.cell.filled{color:#fff;border-color:transparent}
+.cell.filled .pk{color:rgba(255,255,255,.7)}
+.cell .nm{display:block;font-weight:600;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+.cell .meta{display:block;font-family:"IBM Plex Mono",monospace;font-size:9.5px;letter-spacing:.06em;opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cell.G{background:var(--G)}.cell.F{background:var(--F)}.cell.C{background:var(--C)}.cell.GF{background:var(--GF)}.cell.FC{background:var(--FC)}
+.cell.keeper::after{content:"K";position:absolute;right:6px;top:5px;font-family:"IBM Plex Mono",monospace;font-size:10px;font-weight:600;background:rgba(0,0,0,.35);padding:1px 5px;border-radius:3px}
+.cell.cur{outline:2px solid var(--amber);outline-offset:1px;background:#2C2116;animation:pulse 1.4s ease-in-out infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(232,137,74,.0)}50%{box-shadow:0 0 0 6px rgba(232,137,74,.25)}}
+.cell.mine-empty{border-color:rgba(232,137,74,.45)}
+.cell.traded .pk::after{content:" · via "attr(data-via);color:var(--amber)}
+.cell .x{position:absolute;right:4px;bottom:3px;font-size:11px;opacity:0;background:rgba(0,0,0,.35);border:0;color:#fff;border-radius:3px;padding:0 5px;cursor:pointer}
+.cell.filled:not(.keeper):hover .x{opacity:1}
+.pool{flex:1 1 42%;display:flex;flex-direction:column;min-height:200px;border-top:2px solid var(--line2);background:var(--bg2)}
+.tools{display:flex;gap:8px;align-items:center;padding:8px 12px;flex-wrap:wrap;border-bottom:1px solid var(--line)}
+.tools label{font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);display:flex;flex-direction:column;gap:3px}
+.tools .seg{display:inline-flex;border:1px solid var(--line2);border-radius:4px;overflow:hidden}
+.tools .seg button{font:inherit;font-size:12px;padding:6px 10px;background:transparent;color:var(--muted);border:0;cursor:pointer}
+.tools .seg button.on{background:var(--amber2);color:#fff}
+.poolwrap{flex:1;overflow:auto}
+table.pool{width:100%;border-collapse:collapse}
+table.pool th{position:sticky;top:0;background:var(--panel);z-index:1;font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);padding:7px 8px;text-align:right;cursor:pointer;white-space:nowrap;border-bottom:1px solid var(--line2);user-select:none}
+table.pool th.l{text-align:left}
+table.pool th.on{color:var(--amber)}
+table.pool td{padding:5px 8px;text-align:right;font-family:"IBM Plex Mono",monospace;font-size:12.5px;border-bottom:1px solid var(--line);white-space:nowrap}
+table.pool td.l{text-align:left;font-family:Barlow,sans-serif;font-size:13.5px}
+table.pool tr{cursor:pointer}
+table.pool tr:hover td{background:#2C2519}
+table.pool td .pos{display:inline-block;font-family:"IBM Plex Mono",monospace;font-size:9.5px;padding:1px 5px;border-radius:3px;margin-left:6px;color:#fff;vertical-align:1px}
+.pos.G{background:var(--G)}.pos.F{background:var(--F)}.pos.C{background:var(--C)}.pos.GF{background:var(--GF)}.pos.FC{background:var(--FC)}
+table.pool td .own{font-family:"IBM Plex Mono",monospace;font-size:9.5px;color:var(--dim);margin-left:6px}
+table.pool tr.k td{opacity:.45}
+.side{display:flex;gap:16px;padding:6px 12px;font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--muted);border-bottom:1px solid var(--line);flex-wrap:wrap;align-items:center}
+.side b{color:var(--ink)}
+.src{display:inline-flex;align-items:center;gap:6px}
+.src i{width:8px;height:8px;border-radius:50%;background:var(--dim);display:inline-block}
+.src.ok i{background:var(--green)}.src.fallback i{background:var(--amber)}
+.toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:#F3EBDD;color:#1A120A;padding:9px 14px;border-radius:5px;font-weight:600;font-size:13px;opacity:0;transition:opacity .25s;pointer-events:none;z-index:9}
+.toast.show{opacity:1}
+.empty{padding:30px;text-align:center;color:var(--dim)}
+@media (max-width:760px){.top h1{font-size:18px}.cell{min-width:110px;height:46px}.tools label span{display:none}}
+</style>
+</head>
+<body>
+<div class="top">
+  <div><h1>Mock Draft</h1><div class="sub">League For Kids That Read Good · 2026–27 · 12 rounds · snake</div></div>
+  <span class="pill" id="onclock">Loading…</span>
+  <span class="spacer"></span>
+  <label class="sub" style="display:flex;align-items:center;gap:6px">I am <select id="me"></select></label>
+  <button class="btn quiet" id="undo" title="Erase the last pick">← Undo</button>
+  <button class="btn" id="auto" title="Best available by the active ranking">Auto pick →</button>
+  <button class="btn" id="auto-me" title="Auto-pick until it's my turn">Auto to me ⇥</button>
+  <button class="btn quiet" id="reset">Reset</button>
+</div>
+<div class="main">
+  <div class="boardwrap"><table class="board" id="board"></table></div>
+  <div class="pool">
+    <div class="side">
+      <span class="src" id="src-rank"><i></i><span>Ranking: loading…</span></span>
+      <span class="src" id="src-stats"><i></i><span>Stats: loading…</span></span>
+      <span id="mine" style="margin-left:auto"></span>
+    </div>
+    <div class="tools">
+      <label><span>Search</span><input id="q" type="search" placeholder="Player" autocomplete="off" style="width:170px"></label>
+      <label><span>Position</span><div class="seg" id="posseg"><button class="on" data-pos="">All</button><button data-pos="G">G</button><button data-pos="F">F</button><button data-pos="C">C</button></div></label>
+      <label><span>Stats</span><div class="seg" id="statseg"><button class="on" data-stats="proj">ESPN projection 26–27</button><button data-stats="last">Last season</button></div></label>
+      <label><span>Show</span><div class="seg" id="showseg"><button class="on" data-show="avail">Available</button><button data-show="all">Everyone</button></div></label>
+      <span id="count" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--dim);margin-left:auto"></span>
+    </div>
+    <div class="poolwrap"><table class="pool"><thead id="phead"></thead><tbody id="prows"><tr><td class="empty" colspan="14">Loading players…</td></tr></tbody></table></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+(function(){
+"use strict";
+var $=function(id){return document.getElementById(id);};
+function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/"/g,"&quot;");}
+function norm(n){return String(n||"").normalize("NFKD").replace(/[̀-ͯ]/g,"").toLowerCase().replace(/[.'’]/g,"").replace(/[^a-z ]/g," ").split(" ").filter(function(w){return w&&["jr","sr","ii","iii","iv"].indexOf(w)<0;}).join(" ");}
+function toast(m){ var t=$("toast"); t.textContent=m; t.classList.add("show"); clearTimeout(toast.t); toast.t=setTimeout(function(){t.classList.remove("show");},1800); }
+
+/* ---- seed from the site (teams, order, traded picks, keepers) ---- */
+var seed=null;
+try{ seed=JSON.parse(localStorage.getItem("cb-mock-seed")||"null"); }catch(e){}
+if(!seed||!seed.teams){
+  document.body.innerHTML='<div class="empty" style="padding:60px;font-size:16px">Open the mock draft from the <b>Draft Board</b> page on crysterbaters.com — it brings the draft order, traded picks and keepers along.</div>';
+  return;
+}
+var ROUNDS=seed.rounds||12, SLOTS=seed.teams.length, TEAMS=seed.teams, ORDER=seed.order, byId={};
+TEAMS.forEach(function(t){ byId[t.id]=t; });
+/* picks: [{r,slot,orig,owner,player?,keeper?}] in draft order */
+var picks=[], owners=seed.owners||{};
+for(var r=1;r<=ROUNDS;r++){
+  var seq=(r%2===1)?ORDER:ORDER.slice().reverse();
+  for(var i=0;i<SLOTS;i++){
+    var orig=seq[i], owner=(owners[r]&&owners[r][orig])||orig;
+    picks.push({r:r,slot:i+1,orig:orig,owner:owner,overall:(r-1)*SLOTS+i+1,player:null,keeper:false});
+  }
+}
+/* keepers fill the pick they cost, for the team that owns that pick's round slot (the keeping team's own slot) */
+(seed.keepers||[]).forEach(function(k){
+  var pk=picks.filter(function(p){ return p.orig===k.team&&p.r===k.round&&!p.player; })[0];
+  if(pk){ pk.player={name:k.player,team:k.nba||"",pos:k.pos||"",keeper:true}; pk.keeper=true; }
+});
+var history=[];   /* overall numbers of picks made in this session (not keepers) */
+
+/* ---- data: players.json (ids, last season, elig), ESPN (ADP, draft rank, projections), Yahoo (O-Rank, ADP) ---- */
+var P=[], byKey={}, byEspn={}, ranking={src:"",label:"Ranking: loading…"}, stats={src:"proj"};
+var posColor=function(elig){ var g=/G/.test(elig), f=/F/.test(elig), c=/C/.test(elig); if(g&&f) return "GF"; if(f&&c) return "FC"; if(g) return "G"; if(c) return "C"; if(f) return "F"; return ""; };
+function setSrc(id,cls,text){ var el=$(id); el.className="src "+cls; el.querySelector("span").textContent=text; }
+
+fetch("/players.json").then(function(r){return r.json();}).then(function(j){
+  var C={}; j.cols.forEach(function(c,i){C[c]=i;});
+  P=j.players.map(function(r){
+    var o={id:r[C.id],name:r[C.name],team:r[C.team],elig:r[C.elig]||r[C.pos]||"",gp:r[C.gp]||0,
+      last:{pts:r[C.pts],reb:r[C.reb],ast:r[C.ast],stl:r[C.stl],blk:r[C.blk],tpm:r[C.tpm],fgp:r[C.fga]?r[C.fgm]/r[C.fga]:0,ftp:r[C.fta]?r[C.ftm]/r[C.fta]:0,to:r[C.to],gp:r[C.gp]},
+      proj:null,adpE:null,rankE:null,adpY:null,orank:null,keeperOf:null};
+    o.key=norm(o.name); return o;
+  });
+  P.forEach(function(p){ byKey[p.key]=p; if(p.id) byEspn[p.id]=p; });
+  (seed.keepers||[]).forEach(function(k){ var p=byKey[norm(k.player)]; if(p) p.keeperOf=k.team; });
+  /* keeper cells get elig/team from the pool */
+  picks.forEach(function(pk){ if(pk.keeper){ var p=byKey[norm(pk.player.name)]; if(p){ pk.player.team=p.team; pk.player.pos=p.elig; pk.player.ref=p; } } });
+  renderBoard(); renderPool();
+  loadEspn(); loadYahoo();
+}).catch(function(){ $("prows").innerHTML='<tr><td class="empty" colspan="14">Couldn’t load the player list.</td></tr>'; });
+
+var ESPN={0:"pts",1:"blk",2:"stl",3:"ast",6:"reb",11:"to",13:"fgm",14:"fga",15:"ftm",16:"fta",17:"tpm",42:"gp"};
+function loadEspn(){
+  var url="https://lm-api-reads.fantasy.espn.com/apis/v3/games/fba/seasons/"+(seed.espnSeason||2027)+"/segments/0/leaguedefaults/3?view=kona_player_info";
+  fetch(url,{headers:{"x-fantasy-filter":JSON.stringify({players:{limit:700,sortDraftRanks:{sortPriority:100,sortAsc:true,value:"STANDARD"}}})}})
+    .then(function(r){return r.ok?r.json():null;}).then(function(j){
+      if(!j||!j.players) throw 0;
+      var n=0;
+      j.players.forEach(function(x){
+        var pl=x.player||{}, p=byEspn[pl.id]; if(!p) return;
+        var o=pl.ownership||{}; if(o.averageDraftPosition>0) p.adpE=o.averageDraftPosition;
+        var dr=pl.draftRanksByRankType&&pl.draftRanksByRankType.STANDARD; if(dr&&dr.rank) p.rankE=dr.rank;
+        (pl.stats||[]).forEach(function(st){ if(st.statSourceId===1&&st.statSplitTypeId===0&&String(st.seasonId)===String(seed.espnSeason||2027)){ var a=st.averageStats||{}, t=st.stats||{}, q={}; Object.keys(ESPN).forEach(function(k){ q[ESPN[k]]=a[k]!=null?a[k]:null; }); q.gp=t[42]||null; q.fgp=q.fga?q.fgm/q.fga:0; q.ftp=q.fta?q.ftm/q.fta:0; p.proj=q; n++; } });
+      });
+      setSrc("src-stats","ok","Stats: ESPN 2026–27 projections for "+n+" players (last season for the rest)");
+      if(!ranking.src){ ranking={src:"espn",label:"Ranking: ESPN draft rank (Yahoo not connected)"}; setSrc("src-rank","fallback",ranking.label); }
+      renderPool();
+    }).catch(function(){ setSrc("src-stats","fallback","Stats: last season (ESPN projections unavailable)"); if(!ranking.src){ ranking={src:"none",label:"Ranking: none available"}; setSrc("src-rank","",ranking.label); } stats.src="last"; renderPool(); });
+}
+function loadYahoo(){
+  fetch("/api/yahoo/adp?sort=OR&pages=16",{credentials:"same-origin",cache:"no-store"}).then(function(r){ return r.status===401?{nc:true}:(r.ok?r.json():null); }).then(function(j){
+    if(!j||j.nc||!j.players) throw 0;
+    var n=0; j.players.forEach(function(y){ var p=byKey[norm(y.name)]; if(!p) return; if(y.orank) { p.orank=y.orank; n++; } if(y.pick) p.adpY=y.pick; });
+    ranking={src:"yahoo",label:"Ranking: Yahoo O-Rank, live ("+n+" players)"}; setSrc("src-rank","ok",ranking.label); renderPool();
+  }).catch(function(){ if(!ranking.src||ranking.src==="none"){ ranking={src:"espn",label:"Ranking: ESPN draft rank (Yahoo not connected — connect on your team page)"}; setSrc("src-rank","fallback",ranking.label); renderPool(); } });
+}
+function rankOf(p){ if(ranking.src==="yahoo") return p.orank||9999; if(ranking.src==="espn") return p.rankE||9999; return 9999; }
+function line(p){ return (stats.src==="proj"&&p.proj)?p.proj:p.last; }
+
+/* ---- board ---- */
+var me=null, cur=null;
+function nextOpen(){ for(var i=0;i<picks.length;i++) if(!picks[i].player) return picks[i]; return null; }
+function renderBoard(){
+  cur=nextOpen();
+  var h='<thead><tr><th class="rnd"></th>'+ORDER.map(function(id,i){ var t=byId[id]; return '<th'+(id===me?' class="me"':'')+'><span class="slot">Pick '+(i+1)+'</span>'+esc(t?t.short:id)+'</th>'; }).join("")+'</tr></thead><tbody>';
+  for(var r=1;r<=ROUNDS;r++){
+    h+='<tr><td class="rnd">'+r+'</td>';
+    for(var i=0;i<SLOTS;i++){
+      var orig=ORDER[i], pk=picks.filter(function(p){return p.r===r&&p.orig===orig;})[0];
+      var cls="cell"+(pk.player?" filled "+posColor(pk.player.pos||""):"")+(pk.keeper?" keeper":"")+(pk===cur?" cur":"")+(pk.owner!==pk.orig?" traded":"")+(!pk.player&&pk.owner===me?" mine-empty":"");
+      h+='<td><div class="'+cls+'" data-overall="'+pk.overall+'"><span class="pk" data-via="'+esc(pk.owner!==pk.orig?(byId[pk.owner]||{}).short||pk.owner:"")+'">'+pk.r+'-'+pk.slot+(pk.owner!==pk.orig?'':'')+'</span>'+
+        (pk.player?'<span class="nm">'+esc(shortName(pk.player.name))+'</span><span class="meta">'+esc((pk.player.pos||"")+(pk.player.team?" · "+pk.player.team:""))+'</span>'+(pk.keeper?'':'<button class="x" data-undo="'+pk.overall+'" title="Take this pick back">×</button>'):
+          '<span class="meta" style="color:var(--dim)">'+esc((byId[pk.owner]||{}).short||"")+(pk===cur?' · on the clock':'')+'</span>')+'</div></td>';
+    }
+    h+='</tr>';
+  }
+  $("board").innerHTML=h+'</tbody>';
+  var oc=$("onclock");
+  if(cur){ var t=byId[cur.owner]; oc.textContent="Pick "+cur.r+"-"+cur.slot+" · "+(t?t.short:cur.owner)+(cur.owner===me?" (you)":""); oc.className="pill"+(cur.owner===me?" on-clock":""); }
+  else { oc.textContent="Draft complete"; oc.className="pill"; }
+  $("undo").disabled=!history.length; $("auto").disabled=!cur; $("auto-me").disabled=!cur||!me;
+  var c=$("board").querySelector(".cell.cur"); if(c&&c.scrollIntoView) try{ c.scrollIntoView({block:"nearest",inline:"nearest"}); }catch(e){}
+  renderMine();
+}
+function shortName(n){ var parts=String(n).split(" "); if(parts.length<2) return n; return parts[0].charAt(0)+". "+parts.slice(1).join(" "); }
+function renderMine(){
+  var el=$("mine"); if(!me){ el.innerHTML=""; return; }
+  var mine=picks.filter(function(p){return p.owner===me&&p.player;}), g=0,f=0,c=0;
+  mine.forEach(function(p){ var e=p.player.pos||""; if(/G/.test(e)) g++; if(/F/.test(e)) f++; if(/C/.test(e)) c++; });
+  el.innerHTML='<b>'+esc((byId[me]||{}).short||"")+'</b>: '+mine.length+' picked · G '+g+' · F '+f+' · C '+c;
+}
+
+/* ---- pool ---- */
+var f={q:"",pos:"",show:"avail"}, sortKey="rank", sortAsc=true;
+var COLS=[
+  {k:"rank",h:"Rank",get:function(p){return rankOf(p);},fmt:function(v){return v>=9999?"—":v;},asc:true},
+  {k:"name",h:"Player",l:true,get:function(p){return p.name;},asc:true},
+  {k:"team",h:"NBA",get:function(p){return p.team;},asc:true},
+  {k:"adpY",h:"Y ADP",get:function(p){return p.adpY==null?9999:p.adpY;},fmt:function(v){return v>=9999?"—":v.toFixed(1);},asc:true},
+  {k:"adpE",h:"E ADP",get:function(p){return p.adpE==null?9999:p.adpE;},fmt:function(v){return v>=9999?"—":v.toFixed(1);},asc:true},
+  {k:"gp",h:"GP",get:function(p){return line(p).gp||0;},fmt:function(v){return Math.round(v);}},
+  {k:"pts",h:"PTS",get:function(p){return line(p).pts||0;},fmt:d1},
+  {k:"reb",h:"REB",get:function(p){return line(p).reb||0;},fmt:d1},
+  {k:"ast",h:"AST",get:function(p){return line(p).ast||0;},fmt:d1},
+  {k:"stl",h:"STL",get:function(p){return line(p).stl||0;},fmt:d1},
+  {k:"blk",h:"BLK",get:function(p){return line(p).blk||0;},fmt:d1},
+  {k:"tpm",h:"3PM",get:function(p){return line(p).tpm||0;},fmt:d1},
+  {k:"fgp",h:"FG%",get:function(p){return line(p).fgp||0;},fmt:pct},
+  {k:"ftp",h:"FT%",get:function(p){return line(p).ftp||0;},fmt:pct},
+  {k:"to",h:"TO",get:function(p){return line(p).to||0;},fmt:d1,asc:true}
+];
+function d1(v){return (+v).toFixed(1);} function pct(v){return v?(+v).toFixed(3).replace(/^0/,""):"—";}
+function taken(p){ return picks.some(function(pk){ return pk.player&&(pk.player.ref===p||norm(pk.player.name)===p.key); }); }
+function renderPool(){
+  if(!P.length) return;
+  $("phead").innerHTML='<tr>'+COLS.map(function(c){return '<th class="'+(c.l?"l ":"")+(c.k===sortKey?"on":"")+'" data-sort="'+c.k+'">'+c.h+(c.k===sortKey?(sortAsc?" ▴":" ▾"):"")+'</th>';}).join("")+'</tr>';
+  var q=norm(f.q), col=COLS.filter(function(c){return c.k===sortKey;})[0], dir=sortAsc?1:-1;
+  var list=P.filter(function(p){
+    if(q&&p.key.indexOf(q)<0) return false;
+    if(f.pos&&!(new RegExp(f.pos).test(p.elig))) return false;
+    if(f.show==="avail"&&taken(p)) return false;
+    return true;
+  });
+  list.sort(function(a,b){ var x=col.get(a), y=col.get(b); if(typeof x==="string") return x<y?-dir:x>y?dir:0; if(x===y) return rankOf(a)-rankOf(b); return (x-y)*dir; });
+  var top=list.slice(0,300);
+  $("prows").innerHTML=top.map(function(p){
+    var tk=taken(p), kcls=posColor(p.elig);
+    return '<tr data-key="'+esc(p.key)+'"'+(tk?' class="k"':'')+'>'+COLS.map(function(c){
+      var v=c.get(p);
+      if(c.k==="name") return '<td class="l"><b>'+esc(p.name)+'</b><span class="pos '+kcls+'">'+esc(p.elig)+'</span>'+(p.keeperOf?'<span class="own">keeper · '+esc((byId[p.keeperOf]||{}).short||"")+'</span>':(tk?'<span class="own">drafted</span>':''))+'</td>';
+      return '<td'+(c.l?' class="l"':'')+'>'+(c.fmt?c.fmt(v):esc(v))+'</td>';
+    }).join("")+'</tr>';
+  }).join("")||'<tr><td class="empty" colspan="14">Nobody matches.</td></tr>';
+  $("count").textContent=list.length+" players"+(list.length>300?" (top 300 shown)":"");
+}
+
+/* ---- picking ---- */
+function pick(p,why){
+  if(!cur){ toast("The draft is complete."); return; }
+  if(taken(p)){ toast(p.name+" is already gone."); return; }
+  cur.player={name:p.name,team:p.team,pos:p.elig,ref:p}; history.push(cur.overall);
+  if(why) toast(why);
+  renderBoard(); renderPool();
+}
+function undo(){
+  var n=history.pop(); if(!n) return;
+  var pk=picks[n-1]; pk.player=null;
+  /* picks after it that were made in this session stay; the clock moves back to the hole */
+  renderBoard(); renderPool();
+}
+function bestAvailable(){
+  var best=null, br=1e9;
+  P.forEach(function(p){ if(taken(p)) return; var r=rankOf(p); if(r<br){ br=r; best=p; } });
+  if(best&&br>=9999){ /* no ranking at all: fall back to ESPN ADP, then last-season points */
+    best=null; var ba=1e9; P.forEach(function(p){ if(taken(p)) return; var a=p.adpE!=null?p.adpE:(5000-(p.last.pts||0)); if(a<ba){ ba=a; best=p; } });
+  }
+  return best;
+}
+function autoOne(){ var p=bestAvailable(); if(!p) return false; var t=byId[cur.owner]; pick(p,(t?t.short:cur.owner)+" takes "+p.name); return true; }
+
+$("auto").addEventListener("click",function(){ if(cur) autoOne(); });
+$("auto-me").addEventListener("click",function(){ var guard=0; while(cur&&cur.owner!==me&&guard++<130){ if(!autoOne()) break; } if(cur&&cur.owner===me) toast("You’re on the clock: pick "+cur.r+"-"+cur.slot); });
+$("undo").addEventListener("click",undo);
+$("reset").addEventListener("click",function(){ if(!history.length) return; if(!confirm("Clear every pick you’ve made in this mock?")) return; picks.forEach(function(pk){ if(!pk.keeper) pk.player=null; }); history=[]; renderBoard(); renderPool(); });
+$("board").addEventListener("click",function(e){ var x=e.target.closest("[data-undo]"); if(!x) return; var n=+x.dataset.undo; var i=history.indexOf(n); if(i>=0) history.splice(i,1); picks[n-1].player=null; renderBoard(); renderPool(); });
+$("prows").addEventListener("click",function(e){ var tr=e.target.closest("tr[data-key]"); if(!tr) return; var p=byKey[tr.dataset.key]; if(p) pick(p); });
+$("phead").addEventListener("click",function(e){ var th=e.target.closest("[data-sort]"); if(!th) return; var c=COLS.filter(function(x){return x.k===th.dataset.sort;})[0]; if(sortKey===c.k) sortAsc=!sortAsc; else { sortKey=c.k; sortAsc=!!c.asc; } renderPool(); });
+$("q").addEventListener("input",function(){ f.q=this.value; renderPool(); });
+["posseg","statseg","showseg"].forEach(function(id){ $(id).addEventListener("click",function(e){ var b=e.target.closest("button"); if(!b) return; Array.prototype.forEach.call(this.querySelectorAll("button"),function(x){x.classList.toggle("on",x===b);}); if(b.dataset.pos!=null) f.pos=b.dataset.pos; if(b.dataset.stats) stats.src=b.dataset.stats; if(b.dataset.show) f.show=b.dataset.show; renderPool(); }); });
+$("me").innerHTML='<option value="">—</option>'+ORDER.map(function(id){ var t=byId[id]; return '<option value="'+id+'">'+esc(t?t.short:id)+'</option>'; }).join("");
+if(seed.me&&byId[seed.me]) $("me").value=seed.me;
+me=$("me").value||null;
+$("me").addEventListener("change",function(){ me=this.value||null; renderBoard(); });
+document.addEventListener("keydown",function(e){ if(e.target.tagName==="INPUT") return; if(e.key==="z"&&(e.metaKey||e.ctrlKey)){ e.preventDefault(); undo(); } if(e.key==="a"){ if(cur) autoOne(); } });
+renderBoard();
+})();
+</script>
+</body>
+</html>
