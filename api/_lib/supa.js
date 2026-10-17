@@ -6,15 +6,14 @@
 const URL_ = () => (process.env.SUPABASE_URL || "").replace(/\/$/, "");
 const KEY = () => process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 
+// New-style keys (sb_secret_…) go in `apikey` only — sending them as a
+// Bearer token makes PostgREST try to parse a JWT, fail, and fall back to
+// anon privileges ("permission denied"). Legacy JWT keys (eyJ…) need both.
 function headers(extra) {
-  return Object.assign(
-    {
-      apikey: KEY(),
-      Authorization: "Bearer " + KEY(),
-      "Content-Type": "application/json",
-    },
-    extra || {}
-  );
+  const key = KEY();
+  const h = { apikey: key, "Content-Type": "application/json" };
+  if (key.startsWith("eyJ")) h.Authorization = "Bearer " + key;
+  return Object.assign(h, extra || {});
 }
 
 async function rest(method, path, body, extra) {
