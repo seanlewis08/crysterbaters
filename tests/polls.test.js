@@ -117,12 +117,14 @@ async function fakeDiscord(method, path, body) {
   return json({ message: "no route " + method + " " + path }, 404);
 }
 
+const webhookPosts = [];
 globalThis.fetch = async (url, init) => {
   const u = new URL(url);
   const method = (init && init.method) || "GET";
   let body;
   if (init && init.body) { try { body = JSON.parse(init.body); } catch (_) { body = String(init.body); } }
   if (u.host === "fake.supabase.co") return fakeSupabase(method, u.pathname.replace("/rest/v1/", ""), u.search.slice(1), body, init.headers);
+  if (u.host === "discord.com" && u.pathname.startsWith("/api/webhooks/")) { webhookPosts.push(body); return new Response(JSON.stringify({ id: "wh-msg-" + webhookPosts.length }), { status: 200 }); }
   if (u.host === "discord.com") return fakeDiscord(method, u.pathname.replace("/api/v10", ""), body);
   if (u.host === "api.login.yahoo.com") return new Response(JSON.stringify({ access_token: "at-1", refresh_token: "rt-sean", expires_in: 3600 }), { status: 200 });
   if (u.host === "fantasysports.yahooapis.com" && u.pathname.endsWith("/teams/roster")) {
@@ -342,6 +344,65 @@ const click = (customId, userId) => ({ type: 3, data: { custom_id: customId }, m
     assert.strictEqual(sean.roster[0][0], "BN");
     const again = await call(teamsFn, makeReq("GET", undefined, {}, {}));
     assert.strictEqual(again.body.built, r.body.built, "served from cache");
+  }
+
+
+  // #site-updates: which changes get announced, and how they read
+  {
+    const ev = require("../api/_lib/site-events");
+    const ctx = { profileByUser: async () => ({ display_name: "Sean", team_id: "jalenba" }), getVotes: async () => [{ option_index: 0 }, { option_index: 0 }, { option_index: 1 }], pollsChannel: "123" };
+    const poll = { id: "p1", question: "Expand the IL?", options: ["Yes", "No"], closes_at: "2026-10-20T00:00:00Z", created_by: "u1", created_by_email: "seanlewis08@gmail.com", closed: false };
+    let e = await ev.describe({ type: "INSERT", table: "polls", record: poll }, ctx);
+    assert.ok(e && /New poll: Expand the IL\?/.test(e.embed.title));
+    assert.ok(/🇦 Yes\n🇧 No/.test(e.embed.description) && /<#123>/.test(e.embed.description));
+    assert.strictEqual(e.embed.footer.text, "Opened by Sean");
+    e = await ev.describe({ type: "UPDATE", table: "polls", record: Object.assign({}, poll, { closed: true }), old_record: poll }, ctx);
+    assert.ok(/Poll closed/.test(e.embed.title) && /Result: \*\*Yes\*\*/.test(e.embed.description) && /\*\*Yes\*\* — 2\nNo — 1/.test(e.embed.description));
+    assert.strictEqual(e.embed.footer.text, "3 votes");
+    assert.strictEqual(await ev.describe({ type: "UPDATE", table: "polls", record: Object.assign({}, poll, { question: "edited" }), old_record: poll }, ctx), null, "edits are quiet");
+    assert.strictEqual(await ev.describe({ type: "INSERT", table: "votes", record: { poll_id: "p1" } }, ctx), null, "votes are quiet");
+    const due = { season: "2026-27", team_id: "knuepp", paid: true, method: "venmo", confirmed: false };
+    e = await ev.describe({ type: "UPDATE", table: "dues_payments", record: due, old_record: Object.assign({}, due, { paid: false }) }, ctx);
+    assert.ok(/Dues paid: The Knuepp Sluepps \(Ben\)/.test(e.embed.title) && /via Venmo/.test(e.embed.description));
+    e = await ev.describe({ type: "UPDATE", table: "dues_payments", record: Object.assign({}, due, { confirmed: true }), old_record: due }, ctx);
+    assert.ok(/Dues confirmed/.test(e.embed.title));
+    assert.strictEqual(await ev.describe({ type: "UPDATE", table: "dues_payments", record: due, old_record: due }, ctx), null);
+    e = await ev.describe({ type: "INSERT", table: "badge_awards", record: { badge_id: "trader-joe", team_id: "freaky", season: "2026–27", note: "Week 4" } }, ctx);
+    assert.ok(/Badge awarded: Trader Joe/.test(e.embed.title) && /Real Freaky Naughty/.test(e.embed.description) && /Week 4/.test(e.embed.description));
+    assert.strictEqual(ev.badgeName("some-new-badge"), "Some New Badge");
+    const kr = { id: "k1", team_id: "ant", season: "2026-27", player: "Deni Avdija", nba_team: "POR", status: "pending", note: "trading for him" };
+    e = await ev.describe({ type: "INSERT", table: "keeper_requests", record: kr }, ctx);
+    assert.ok(/Keeper request: Deni Avdija \(POR\)/.test(e.embed.title) && /> trading for him/.test(e.embed.description));
+    e = await ev.describe({ type: "UPDATE", table: "keeper_requests", record: Object.assign({}, kr, { status: "declined", reply: "no" }), old_record: kr }, ctx);
+    assert.ok(/Keeper declined: Deni Avdija/.test(e.embed.title) && /> no/.test(e.embed.description));
+    const ag = { id: "a1", title: "Move the trade deadline", details: "Two weeks earlier", status: "open", created_by: "u1", created_by_email: "x@y.z" };
+    e = await ev.describe({ type: "INSERT", table: "agenda", record: ag }, ctx);
+    assert.ok(/New open item: Move the trade deadline/.test(e.embed.title) && e.embed.footer.text === "Raised by Sean");
+    e = await ev.describe({ type: "UPDATE", table: "agenda", record: Object.assign({}, ag, { status: "decided", outcome: "Yes, Feb 1" }), old_record: ag }, ctx);
+    assert.ok(/Decided: Move the trade deadline/.test(e.embed.title) && /Yes, Feb 1/.test(e.embed.description));
+    const is = { num: 7, title: "Keeper page 404s", kind: "bug", status: "open", created_by: "u1" };
+    e = await ev.describe({ type: "INSERT", table: "issues", record: is }, ctx);
+    assert.ok(/🐛 Bug #7: Keeper page 404s/.test(e.embed.title));
+    e = await ev.describe({ type: "UPDATE", table: "issues", record: Object.assign({}, is, { status: "closed" }), old_record: is }, ctx);
+    assert.ok(/Closed #7/.test(e.embed.title));
+    const ch = { title: "Usage vs value", author: "Kabir", pinned: true };
+    e = await ev.describe({ type: "UPDATE", table: "charts", record: ch, old_record: Object.assign({}, ch, { pinned: false }) }, ctx);
+    assert.ok(/Chart of the week: Usage vs value/.test(e.embed.title) && /by Kabir/.test(e.embed.description));
+    assert.strictEqual(await ev.describe({ type: "INSERT", table: "charts", record: ch }, ctx), null, "new charts are quiet until pinned");
+
+    // the endpoint: auth, skip, post through the webhook
+    const su = require("../api/site-updates");
+    process.env.SITE_UPDATES_WEBHOOK = "https://discord.com/api/webhooks/1/tok";
+    let r = await call(su, makeReq("POST", { type: "INSERT", table: "votes", record: {} }, { "x-cb-secret": "wrong" }, {}));
+    assert.strictEqual(r.statusCode, 401);
+    r = await call(su, makeReq("POST", { type: "INSERT", table: "votes", record: {} }, { "x-cb-secret": process.env.SYNC_SECRET }, {}));
+    assert.strictEqual(r.statusCode, 200); assert.strictEqual(r.body.skipped, "not announced");
+    webhookPosts.length = 0;
+    r = await call(su, makeReq("POST", { type: "INSERT", table: "badge_awards", record: { badge_id: "homer", team_id: "jalenba", season: "2026–27" } }, { "x-cb-secret": process.env.SYNC_SECRET }, {}));
+    assert.strictEqual(r.statusCode, 200, JSON.stringify(r.body));
+    assert.strictEqual(webhookPosts.length, 1);
+    assert.strictEqual(webhookPosts[0].username, "Crysterbaters");
+    assert.ok(/Badge awarded: Homer/.test(webhookPosts[0].embeds[0].title));
   }
 
   // Parsers
