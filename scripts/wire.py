@@ -35,6 +35,8 @@ FEEDS = [
     {
         "key": "rotowire",
         "name": "RotoWire NBA News",
+        "username": "RotoWire",
+        "avatar": "https://www.google.com/s2/favicons?domain=rotowire.com&sz=128",
         "url": "https://www.rotowire.com/rss/news.php?sport=NBA",
         "channel": "1561013442436136971",   # #📰┃nba-news
         "color": 0xE07A3A,
@@ -43,6 +45,8 @@ FEEDS = [
     {
         "key": "hoopsrumors",
         "name": "Hoops Rumors",
+        "username": "Hoops Rumors",
+        "avatar": "https://www.google.com/s2/favicons?domain=hoopsrumors.com&sz=128",
         "url": "https://www.hoopsrumors.com/feed",
         "channel": "1561013729267679303",   # #🗣️┃rumor-mill
         "color": 0x1B3F7A,
@@ -51,6 +55,8 @@ FEEDS = [
     {
         "key": "shams",
         "name": "Shams Charania",
+        "username": "Shams Watch",
+        "avatar": "https://www.google.com/s2/favicons?domain=espn.com&sz=128",
         "url": "https://news.google.com/rss/search?q=%22Shams+Charania%22&hl=en-US&gl=US&ceid=US:en",
         "channel": "1561013562137116743",   # #💣┃shams
         "color": 0xCE1141,
@@ -105,9 +111,7 @@ def build_embed(feed, e):
     title = html.unescape(e.get("title", "")).strip()
     link = e.get("link", "")
     desc = clean_text(e.get("summary") or e.get("description") or "", feed.get("strip", ()))
-    author = {"name": feed["name"]}
-    if feed.get("icon"):
-        author["icon_url"] = feed["icon"]
+    author = None
     if feed.get("google_news"):
         # Google News titles are "Headline - Source"; the source also comes as <source>
         src = (e.get("source") or {}).get("title") or ""
@@ -120,9 +124,10 @@ def build_embed(feed, e):
         "title": title[:256],
         "url": link,
         "color": feed["color"],
-        "author": author,
         "footer": {"text": feed["name"]},
     }
+    if author:
+        embed["author"] = author
     if desc and desc.lower() != title.lower():
         embed["description"] = desc[:4096]
     ts = entry_time(e)
@@ -176,6 +181,22 @@ def seen_links(channel_id):
     return links, newest
 
 
+_hooks = {}
+
+
+def webhook_for(channel_id):
+    """The channel's 'The Wire' webhook (created once by the bot), so posts carry
+    their own name and avatar instead of the Polls bot's."""
+    if channel_id in _hooks:
+        return _hooks[channel_id]
+    hooks = dc("GET", f"/channels/{channel_id}/webhooks") or []
+    hook = next((h for h in hooks if h.get("name") == "The Wire" and h.get("token")), None)
+    if not hook:
+        hook = dc("POST", f"/channels/{channel_id}/webhooks", json={"name": "The Wire"})
+    _hooks[channel_id] = f"/webhooks/{hook['id']}/{hook['token']}"
+    return _hooks[channel_id]
+
+
 def norm_link(u):
     return re.sub(r"[?#].*$", "", u or "").rstrip("/")
 
@@ -222,7 +243,10 @@ def main():
             if args.dry:
                 print("   ·", embed["title"], "|", (embed.get("description") or "")[:90].replace("\n", " "))
             else:
-                dc("POST", f"/channels/{feed['channel']}/messages", json=body)
+                body["username"] = feed.get("username") or feed["name"]
+                if feed.get("avatar"):
+                    body["avatar_url"] = feed["avatar"]
+                dc("POST", webhook_for(feed["channel"]) + "?wait=true", json=body)
                 total += 1
                 time.sleep(0.6)
     print(f"done: {total} posted" if not args.dry else "dry run complete")
