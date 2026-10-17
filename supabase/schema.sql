@@ -816,3 +816,87 @@ grant select, insert, update, delete on public.issues to authenticated;
 grant select, insert, delete on public.issue_comments to authenticated;
 grant execute on function public.issue_set_status(uuid, text) to authenticated;
 revoke all on public.issues, public.issue_comments from anon;
+-- ----------------------------------------------------------------------
+-- 10. Discord ↔ site polls (added 2026-10-17)
+--
+-- Polls and votes stay in these tables as the single source of truth.
+-- A Vercel function (api/poll-sync.js) mirrors every poll into the
+-- league's Discord #polls channel and re-renders it on every vote; the
+-- Discord buttons and slash commands (api/discord.js) write back here
+-- with the service role under the linked manager's own user_id, so the
+-- site cannot tell a Discord vote from a site vote.
+--
+-- One-time setup after running this file (SQL editor, as the project owner):
+--   insert into public.discord_settings (id, sync_url, sync_secret)
+--   values (1, 'https://crysterbaters.com/api/poll-sync', '<same value as the SYNC_SECRET env var on Vercel>')
+--   on conflict (id) do update set sync_url = excluded.sync_url, sync_secret = excluded.sync_secret;
+-- The secret lives only in that row and in Vercel's env — never in this repo.
+-- ----------------------------------------------------------------------
+create extension if not exists pg_net with schema extensions;
+
+-- Which Discord account is which manager. Set by /link in Discord
+-- (service role), cleared by /unlink or the commissioner.
+alter table public.profiles add column if not exists discord_id text unique;
+
+-- Where each poll lives in Discord. Service role only.
+create table if not exists public.poll_messages (
+  poll_id     uuid primary key references public.polls (id) on delete cascade,
+  channel_id  text not null,
+  message_id  text not null,
+  posted_at   timestamptz not null default now(),
+  closed_rendered boolean not null default false
+);
+alter table public.poll_messages enable row level security;
+revoke all on public.poll_messages from anon, authenticated;
+
+-- Where to send change notifications. Service role only.
+create table if not exists public.discord_settings (
+  id          int primary key check (id = 1),
+  sync_url    text not null,
+  sync_secret text not null
+);
+alter table public.discord_settings enable row level security;
+revoke all on public.discord_settings from anon, authenticated;
+
+-- Fire-and-forget POST to the sync function with a Supabase-webhook-shaped
+-- body: { type, table, record, old_record }. Never blocks or fails the
+-- write that triggered it — if the row in discord_settings is missing the
+-- trigger is a no-op, so the site keeps working with Discord unconfigured.
+create or replace function public.discord_notify()
+returns trigger language plpgsql security definer set search_path = public, extensions as $$
+declare
+  s public.discord_settings%rowtype;
+  body jsonb;
+begin
+  select * into s from public.discord_settings where id = 1;
+  if not found or s.sync_url is null then
+    return coalesce(new, old);
+  end if;
+  body := jsonb_build_object(
+    'type', tg_op,
+    'table', tg_table_name,
+    'record', case when tg_op = 'DELETE' then null else to_jsonb(new) end,
+    'old_record', case when tg_op = 'INSERT' then null else to_jsonb(old) end
+  );
+  begin
+    perform net.http_post(
+      url := s.sync_url,
+      body := body,
+      headers := jsonb_build_object('Content-Type', 'application/json', 'x-cb-secret', s.sync_secret),
+      timeout_milliseconds := 5000
+    );
+  exception when others then
+    raise warning 'discord_notify: %', sqlerrm;
+  end;
+  return coalesce(new, old);
+end $$;
+
+drop trigger if exists polls_discord_notify on public.polls;
+create trigger polls_discord_notify
+  after insert or update or delete on public.polls
+  for each row execute function public.discord_notify();
+
+drop trigger if exists votes_discord_notify on public.votes;
+create trigger votes_discord_notify
+  after insert or update or delete on public.votes
+  for each row execute function public.discord_notify();

@@ -1,0 +1,7 @@
+{
+  "name": "crysterbaters",
+  "private": true,
+  "description": "League hub for the Crysterbaters (static index.html) plus Vercel functions that mirror the site's polls into Discord.",
+  "engines": { "node": ">=20" },
+  "scripts": { "test": "node tests/polls.test.js" }
+}
