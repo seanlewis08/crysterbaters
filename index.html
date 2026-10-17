@@ -4730,8 +4730,8 @@ var Plot=(function(){
     {k:"fpts",  s:"FPTS", h:"Fantasy points",      g:"Our numbers", get:cnt("fpts"), fmt:n1, ax:ax},
     {k:"tmin",  s:"TMIN", h:"Total minutes",       g:"Our numbers", get:function(r){return r.min*r.gp;}, fmt:whole, ax:function(v){return v>=1000?(v/1000).toFixed(1)+"k":whole(v);}, flat:true},
     {k:"age",   s:"AGE",  h:"Age",                 g:"Contract", get:function(r){return r.age||null;}, fmt:whole, ax:ax, flat:true, agg:"mean"},
-    {k:"salary",s:"SAL",  h:"Salary",              g:"Contract", get:function(r){return r.salary||null;}, fmt:mon, ax:monax, flat:true, neg:true},
-    {k:"cappct",s:"%CAP", h:"% of the cap",        g:"Contract", get:function(r,cap){return r.salary?r.salary/cap:null;}, fmt:function(v){return (v*100).toFixed(1)+"%";}, ax:pcax, flat:true, neg:true},
+    {k:"salary",s:"SAL",  h:"Salary",              g:"Contract", get:function(r){return r.salary||null;}, fmt:mon, ax:monax, flat:true},
+    {k:"cappct",s:"%CAP", h:"% of the cap",        g:"Contract", get:function(r,cap){return r.salary?r.salary/cap:null;}, fmt:function(v){return (v*100).toFixed(1)+"%";}, ax:pcax, flat:true},
     {k:"yrs",   s:"YRS",  h:"Years left",          g:"Contract", get:function(r){return r.yrs||null;}, fmt:whole, ax:ax, flat:true, agg:"mean"}
   ];
   function met(k){ for(var i=0;i<M.length;i++){ if(M[i].k===k) return M[i]; } return M[0]; }
