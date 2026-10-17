@@ -928,13 +928,12 @@ grant all on public.team_map to service_role;
 -- ───────────────────────────────────────────────────────────────────────────
 -- 11. #site-updates: announce league events in Discord (2026-10-17)
 --
--- Same shape as discord_notify, but aimed at /api/site-updates, which decides
+-- Same shape as discord_notify; /api/poll-sync (shared endpoint) decides
 -- what's worth a post (new poll, poll result, dues paid/confirmed, badge
 -- awarded, keeper request + decision, open item raised/decided, issue
 -- opened/closed, chart pinned) and formats it. Votes and edits stay quiet.
-alter table public.discord_settings add column if not exists site_updates_url text;
-update public.discord_settings set site_updates_url = 'https://crysterbaters.com/api/site-updates' where id = 1;
-
+-- Delivered to the same endpoint as the poll sync (discord_settings.sync_url);
+-- polls are already covered there by discord_notify, so they are not re-triggered.
 create or replace function public.site_notify()
 returns trigger language plpgsql security definer set search_path = public, extensions as $$
 declare
@@ -942,7 +941,7 @@ declare
   body jsonb;
 begin
   select * into s from public.discord_settings where id = 1;
-  if not found or s.site_updates_url is null then
+  if not found or s.sync_url is null then
     return coalesce(new, old);
   end if;
   body := jsonb_build_object(
@@ -953,7 +952,7 @@ begin
   );
   begin
     perform net.http_post(
-      url := s.site_updates_url,
+      url := s.sync_url,
       body := body,
       headers := jsonb_build_object('Content-Type', 'application/json', 'x-cb-secret', s.sync_secret),
       timeout_milliseconds := 5000
@@ -967,7 +966,7 @@ end $$;
 do $$
 declare t text;
 begin
-  foreach t in array array['polls','dues_payments','badge_awards','keeper_requests','agenda','issues','charts'] loop
+  foreach t in array array['dues_payments','badge_awards','keeper_requests','agenda','issues','charts'] loop
     execute format('drop trigger if exists %I on public.%I', t || '_site_notify', t);
     execute format('create trigger %I after insert or update on public.%I for each row execute function public.site_notify()', t || '_site_notify', t);
   end loop;

@@ -120,4 +120,23 @@ async function describe(n, ctx = {}) {
   }
 }
 
-module.exports = { describe, badgeName, COLORS, SITE };
+// Post one event to the #site-updates webhook (SITE_UPDATES_WEBHOOK). Returns
+// { posted, title } or { skipped }. Lookups come from supa so poll results
+// can count votes and "Opened by" can use display names.
+async function announce(body) {
+  const hook = process.env.SITE_UPDATES_WEBHOOK;
+  if (!hook) return { skipped: "SITE_UPDATES_WEBHOOK not set" };
+  const profileByUser = (userId) => supa.one("profiles", "select=*&user_id=eq." + encodeURIComponent(userId));
+  const ev = await describe(body, { profileByUser, getVotes: supa.getVotes, pollsChannel: process.env.DISCORD_POLLS_CHANNEL_ID });
+  if (!ev) return { skipped: "not announced" };
+  const r = await fetch(hook + (hook.includes("?") ? "&" : "?") + "wait=true", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "User-Agent": "DiscordBot (https://crysterbaters.com, 1.0)" },
+    body: JSON.stringify({ username: "Crysterbaters", allowed_mentions: { parse: [] }, embeds: [ev.embed], content: ev.content }),
+  });
+  if (!r.ok) throw new Error("site-updates webhook " + r.status + " " + (await r.text()).slice(0, 200));
+  const msg = await r.json();
+  return { posted: msg.id, title: ev.embed.title };
+}
+
+module.exports = { describe, announce, badgeName, COLORS, SITE };

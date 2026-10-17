@@ -391,15 +391,13 @@ const click = (customId, userId) => ({ type: 3, data: { custom_id: customId }, m
     assert.strictEqual(await ev.describe({ type: "INSERT", table: "charts", record: ch }, ctx), null, "new charts are quiet until pinned");
 
     // the endpoint: auth, skip, post through the webhook
-    const su = require("../api/site-updates");
     process.env.SITE_UPDATES_WEBHOOK = "https://discord.com/api/webhooks/1/tok";
-    let r = await call(su, makeReq("POST", { type: "INSERT", table: "votes", record: {} }, { "x-cb-secret": "wrong" }, {}));
+    let r = await call(syncFn, makeReq("POST", { type: "INSERT", table: "badge_awards", record: {} }, { "x-cb-secret": "wrong" }, {}));
     assert.strictEqual(r.statusCode, 401);
-    r = await call(su, makeReq("POST", { type: "INSERT", table: "votes", record: {} }, { "x-cb-secret": process.env.SYNC_SECRET }, {}));
-    assert.strictEqual(r.statusCode, 200); assert.strictEqual(r.body.skipped, "not announced");
     webhookPosts.length = 0;
-    r = await call(su, makeReq("POST", { type: "INSERT", table: "badge_awards", record: { badge_id: "homer", team_id: "jalenba", season: "2026–27" } }, { "x-cb-secret": process.env.SYNC_SECRET }, {}));
+    r = await call(syncFn, makeReq("POST", { type: "INSERT", table: "badge_awards", record: { badge_id: "homer", team_id: "jalenba", season: "2026–27" } }, { "x-cb-secret": process.env.SYNC_SECRET }, {}));
     assert.strictEqual(r.statusCode, 200, JSON.stringify(r.body));
+    assert.ok(r.body.site && r.body.site.posted, JSON.stringify(r.body));
     assert.strictEqual(webhookPosts.length, 1);
     assert.strictEqual(webhookPosts[0].username, "Crysterbaters");
     assert.ok(/Badge awarded: Homer/.test(webhookPosts[0].embeds[0].title));
