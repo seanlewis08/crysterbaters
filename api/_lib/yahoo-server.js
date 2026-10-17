@@ -1,0 +1,96 @@
+// Server-side Yahoo reads for the Discord functions (no browser cookie).
+// Uses the one refresh token the commissioner shared via /api/yahoo/share,
+// kept in discord_settings (service role only). Only team names and
+// manager nicknames are read, on demand; nothing from Yahoo is stored
+// except which Yahoo team key is which site team (team_map).
+"use strict";
+
+const L = require("../yahoo/_lib");
+const supa = require("./supa");
+
+const LEAGUE = "nba.l." + L.LEAGUE_ID;
+let cached = null; // { at, exp } for this warm instance
+
+async function accessToken() {
+  if (cached && Date.now() < cached.exp) return cached.at;
+  const s = await supa.one("discord_settings", "select=yahoo_refresh_token&id=eq.1");
+  const rt = s && s.yahoo_refresh_token;
+  if (!rt) throw new Error("Yahoo not connected for the server: visit /api/yahoo/share?key=… while connected to Yahoo on the site.");
+  const fakeReq = { headers: { host: "crysterbaters.com" } };
+  const t = await L.tokenRequest(fakeReq, { grant_type: "refresh_token", refresh_token: rt });
+  if (t.rt && t.rt !== rt) {
+    await supa.update("discord_settings", "id=eq.1", { yahoo_refresh_token: t.rt }).catch(() => {});
+  }
+  cached = { at: t.at, exp: t.exp };
+  return t.at;
+}
+
+const list = (v) => (Array.isArray(v) ? v : v && typeof v === "object" ? [v] : []);
+
+// Live: [{ key, name, nick, logo }]
+async function leagueTeams() {
+  const at = await accessToken();
+  const raw = await L.yahoo({ at }, "/league/" + LEAGUE + "/teams");
+  const league = L.fold(raw.fantasy_content.league);
+  return list(league.teams).map((x) => x.team || x).filter(Boolean).map((t) => {
+    const mgr = list(t.managers).map((m) => m.manager || m)[0] || {};
+    const logo = list(t.team_logos).map((l) => l.team_logo || l)[0] || {};
+    return { key: t.team_key, name: t.name, nick: mgr.nickname || "", logo: logo.url || "" };
+  });
+}
+
+const norm = (s) => String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "");
+
+// Live Yahoo teams joined to site team ids via team_map. Unmapped Yahoo teams
+// are matched by current name, then by manager first name, and the match is
+// saved so later renames don't matter. Returns [{ team_id|null, key, name, nick }].
+async function mappedTeams() {
+  const [teams, map] = await Promise.all([leagueTeams(), supa.select("team_map", "select=team_id,yahoo_team_key")]);
+  const byKey = new Map(map.map((m) => [m.yahoo_team_key, m.team_id]));
+  const taken = new Set(map.map((m) => m.team_id));
+  const out = [];
+  for (const t of teams) {
+    let id = byKey.get(t.key) || null;
+    if (!id) {
+      const cand = supa.TEAMS.find((x) => !taken.has(x.id) && norm(x.name) === norm(t.name))
+        || supa.TEAMS.find((x) => !taken.has(x.id) && t.nick && norm(x.mgr.split(" ")[0]) === norm(t.nick.split(" ")[0]));
+      if (cand) {
+        id = cand.id;
+        taken.add(id);
+        await supa.upsert("team_map", { team_id: id, yahoo_team_key: t.key, updated_at: new Date().toISOString() }, "team_id").catch(() => {});
+      }
+    }
+    out.push({ team_id: id, key: t.key, name: t.name, nick: t.nick });
+  }
+  return out;
+}
+
+// Choices for the /link autocomplete: live names when Yahoo answers, the
+// site's names otherwise. Always ≤ 25 and filtered by what was typed.
+async function linkChoices(typed) {
+  let rows;
+  try {
+    rows = (await mappedTeams()).map((t) => ({
+      name: t.name + (t.nick ? " · " + t.nick : ""),
+      value: t.team_id || "unmapped:" + t.key,
+    }));
+  } catch (e) {
+    console.error("yahoo autocomplete fallback:", e.message);
+    rows = supa.TEAMS.map((t) => ({ name: t.name + " · " + t.mgr.split(" ")[0], value: t.id }));
+  }
+  const q = norm(typed);
+  const hit = q ? rows.filter((r) => norm(r.name).includes(q)) : rows;
+  return (hit.length ? hit : rows).slice(0, 25).map((r) => ({ name: r.name.slice(0, 100), value: r.value }));
+}
+
+// Current Yahoo name for a site team id (for messages), falling back to the site's name.
+async function teamName(teamId) {
+  try {
+    const t = (await mappedTeams()).find((x) => x.team_id === teamId);
+    if (t) return t.name;
+  } catch (_) { /* fall through */ }
+  const s = supa.teamById(teamId);
+  return s ? s.name : teamId;
+}
+
+module.exports = { leagueTeams, mappedTeams, linkChoices, teamName, _reset: () => { cached = null; } };

@@ -47,17 +47,21 @@ const remove = (table, query) => rest("DELETE", table + "?" + query, undefined, 
 
 // ---- domain helpers --------------------------------------------------
 
+// Keyed by the permanent team id (what profiles.team_id stores). Names are
+// the Yahoo team names as of 2026-10; if a manager renames in Yahoo, only
+// the label here goes stale — links and votes are by id. `mgr` is shown
+// next to the name in /link so a stale label can't cause a wrong pick.
 const TEAMS = [
-  { id: "knuepp",  name: "The Knuepp Sluepps",          short: "Ben" },
-  { id: "claxton", name: "Nic Claxton's Block Party",   short: "Anush" },
-  { id: "rollins", name: "Shai See Me Rollins",         short: "David" },
-  { id: "george",  name: "It's the Summer of George",   short: "Abada" },
-  { id: "rucker",  name: "Rucker Legends",              short: "Tyler" },
-  { id: "ant",     name: "Ant's Babymaking Factory",    short: "Gonzo" },
-  { id: "ysga",    name: "Fun to Stay at the Y.S.G.A.", short: "Chris" },
-  { id: "freaky",  name: "Real Freaky Naughty",         short: "Rajat" },
-  { id: "giannis", name: "Regular Season Giannis",      short: "Kabir" },
-  { id: "jalenba", name: "The JaleNBA",                 short: "Sean" },
+  { id: "knuepp",  name: "The Knuepp Sluepps",          short: "Ben",   mgr: "Ben Zavelsky" },
+  { id: "claxton", name: "Nic Claxton's Block Party",   short: "Anush", mgr: "Anush Rohani-Shukla" },
+  { id: "rollins", name: "Shai See Me Rollins",         short: "David", mgr: "David Zavelsky" },
+  { id: "george",  name: "It's the Summer of George",   short: "Abada", mgr: "Jon Abada" },
+  { id: "rucker",  name: "Rucker Legends",              short: "Tyler", mgr: "Tyler Brown" },
+  { id: "ant",     name: "Ant's Babymaking Factory",    short: "Gonzo", mgr: "Jonathan Gonzalez" },
+  { id: "ysga",    name: "Fun to Stay at the Y.S.G.A.", short: "Chris", mgr: "Chris Kestle" },
+  { id: "freaky",  name: "Real Freaky Naughty",         short: "Rajat", mgr: "Rajat Khanna" },
+  { id: "giannis", name: "Regular Season Giannis",      short: "Kabir", mgr: "Kabir Sodhi" },
+  { id: "jalenba", name: "The JaleNBA",                 short: "Sean",  mgr: "Sean Lewis" },
 ];
 const teamById = (id) => TEAMS.find((t) => t.id === id) || null;
 

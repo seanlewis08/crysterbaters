@@ -13,6 +13,7 @@ process.env.DISCORD_BOT_TOKEN = "bot";
 process.env.DISCORD_APP_ID = "app1";
 process.env.DISCORD_POLLS_CHANNEL_ID = "chan1";
 process.env.SYNC_SECRET = "s3cret";
+process.env.YAHOO_CLIENT_ID = "yid"; process.env.YAHOO_CLIENT_SECRET = "ysec"; process.env.YAHOO_COOKIE_SECRET = "cookie";
 
 // ---- Ed25519 keys for signature tests --------------------------------
 const { publicKey, privateKey } = crypto.generateKeyPairSync("ed25519");
@@ -33,7 +34,16 @@ const db = {
   polls: [],
   votes: [],
   poll_messages: [],
+  discord_settings: [{ id: 1, sync_url: "https://x/api/poll-sync", sync_secret: "s3cret", yahoo_refresh_token: "rt-sean" }],
+  team_map: [],
 };
+// Yahoo: Ben renamed his team; everyone else matches the site's names.
+const yahooTeams = [
+  { key: "466.l.33689.t.1", name: "Knueppel Kings", nick: "Ben" },
+  { key: "466.l.33689.t.2", name: "The JaleNBA", nick: "Sean" },
+  { key: "466.l.33689.t.3", name: "Regular Season Giannis", nick: "Myhops" },
+];
+let yahooCalls = 0;
 const discord = { messages: {}, nextId: 100, calls: [] };
 
 function parseFilters(qs) {
@@ -110,9 +120,16 @@ async function fakeDiscord(method, path, body) {
 globalThis.fetch = async (url, init) => {
   const u = new URL(url);
   const method = (init && init.method) || "GET";
-  const body = init && init.body ? JSON.parse(init.body) : undefined;
+  let body;
+  if (init && init.body) { try { body = JSON.parse(init.body); } catch (_) { body = String(init.body); } }
   if (u.host === "fake.supabase.co") return fakeSupabase(method, u.pathname.replace("/rest/v1/", ""), u.search.slice(1), body, init.headers);
   if (u.host === "discord.com") return fakeDiscord(method, u.pathname.replace("/api/v10", ""), body);
+  if (u.host === "api.login.yahoo.com") return new Response(JSON.stringify({ access_token: "at-1", refresh_token: "rt-sean", expires_in: 3600 }), { status: 200 });
+  if (u.host === "fantasysports.yahooapis.com") {
+    yahooCalls++;
+    const teams = {}; yahooTeams.forEach((t, i) => { teams[i] = { team: [[{ team_key: t.key }, { name: t.name }, { managers: [{ manager: { nickname: t.nick } }] }]] }; }); teams.count = yahooTeams.length;
+    return new Response(JSON.stringify({ fantasy_content: { league: [{ league_key: "466.l.33689" }, { teams }] } }), { status: 200 });
+  }
   throw new Error("unexpected fetch " + url);
 };
 
@@ -160,17 +177,38 @@ const click = (customId, userId) => ({ type: 3, data: { custom_id: customId }, m
     assert.ok(!dc.verifySignature(pubRaw, sign("9", "{}"), "10", "{}"), "timestamp is part of the signed message");
   }
 
+  // /link autocomplete: live Yahoo names, mapped to site ids (rename-proof)
+  {
+    const ac = (typed) => interact({ type: 4, data: { name: "link", options: [{ name: "team", value: typed, focused: true }] }, member: { user: { id: "d-ben" } } });
+    let r = await ac("");
+    assert.strictEqual(r.body.type, 8);
+    const names = r.body.data.choices.map((c) => c.name);
+    assert.deepStrictEqual(names, ["Knueppel Kings · Ben", "The JaleNBA · Sean", "Regular Season Giannis · Myhops"]);
+    const values = r.body.data.choices.map((c) => c.value);
+    assert.deepStrictEqual(values, ["knuepp", "jalenba", "giannis"], "renamed team still maps to knuepp via manager name");
+    assert.strictEqual(db.team_map.length, 3, "matches persisted");
+    r = await ac("kings");
+    assert.deepStrictEqual(r.body.data.choices.map((c) => c.value), ["knuepp"]);
+    // Yahoo down → site names, never an empty list
+    const saved = yahooTeams.splice(0); const brokenKey = db.discord_settings[0].yahoo_refresh_token; db.discord_settings[0].yahoo_refresh_token = null;
+    require("../api/_lib/yahoo-server")._reset();
+    r = await ac("");
+    assert.strictEqual(r.body.data.choices.length, 10);
+    assert.ok(r.body.data.choices.some((c) => c.name === "The JaleNBA · Sean"));
+    db.discord_settings[0].yahoo_refresh_token = brokenKey; yahooTeams.push(...saved);
+  }
+
   // /link
   {
     let r = await interact(cmd("link", { team: "knuepp" }, "d-ben"));
-    assert.match(r.body.data.content, /Linked\. You vote here as \*\*Benny\*\*/);
+    assert.match(r.body.data.content, /Linked\. You vote here as \*\*Benny\*\* \(Knueppel Kings\)/);
     assert.strictEqual(db.profiles.find((p) => p.team_id === "knuepp").discord_id, "d-ben");
     r = await interact(cmd("link", { team: "knuepp" }, "d-stranger"));
     assert.match(r.body.data.content, /already linked to another/);
     r = await interact(cmd("link", { team: "rucker" }, "d-tyler"));
     assert.match(r.body.data.content, /Nobody has claimed/);
     r = await interact(cmd("whoami", {}, "d-ben"));
-    assert.match(r.body.data.content, /Benny.*Knuepp/);
+    assert.match(r.body.data.content, /Benny.*Knueppel Kings/);
   }
 
   // /poll by a linked user → row + Discord message
@@ -277,8 +315,7 @@ const click = (customId, userId) => ({ type: 3, data: { custom_id: customId }, m
     assert.strictEqual(r.statusCode, 401);
     r = await call(registerFn, makeReq("GET", undefined, {}, { key: "s3cret" }));
     assert.deepStrictEqual(r.body.registered, ["link", "unlink", "whoami", "poll"]);
-    const teamChoices = registerFn.COMMANDS[0].options[0].choices;
-    assert.strictEqual(teamChoices.length, 10);
+    assert.strictEqual(registerFn.COMMANDS[0].options[0].autocomplete, true);
   }
 
   // Parsers

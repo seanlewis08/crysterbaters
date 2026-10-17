@@ -910,3 +910,17 @@ grant all on all sequences in schema public to service_role;
 grant execute on all functions in schema public to service_role;
 alter default privileges in schema public grant all on tables to service_role;
 alter default privileges in schema public grant all on sequences to service_role;
+
+-- Live Yahoo team names for Discord (/link autocomplete). The commissioner
+-- shares one Yahoo refresh token via /api/yahoo/share; team_map pins each
+-- Yahoo team key to the site's permanent team id so renames never break a
+-- link. Both service-role only.
+alter table public.discord_settings add column if not exists yahoo_refresh_token text;
+create table if not exists public.team_map (
+  team_id        text primary key,
+  yahoo_team_key text not null unique,
+  updated_at     timestamptz not null default now()
+);
+alter table public.team_map enable row level security;
+revoke all on public.team_map from anon, authenticated;
+grant all on public.team_map to service_role;

@@ -6,6 +6,7 @@
 const supa = require("./_lib/supa");
 const dc = require("./_lib/discord");
 const poll = require("./_lib/poll");
+const yahoo = require("./_lib/yahoo-server");
 
 module.exports.config = { api: { bodyParser: false } };
 
@@ -47,15 +48,19 @@ async function handleCommand(ix, res) {
   const me = await supa.profileByDiscord(user.id);
 
   if (name === "link") {
-    const teamId = opt(ix, "team");
+    const teamId = String(opt(ix, "team") || "");
+    if (teamId.startsWith("unmapped:")) {
+      return whisper(res, "That Yahoo team isn't matched to a site team yet — ask Sean to map it (team_map) and try again.");
+    }
     const team = supa.teamById(teamId);
     if (!team) return whisper(res, "Pick a team from the list.");
+    const liveName = await yahoo.teamName(teamId);
     const prof = await supa.profileByTeam(teamId);
-    if (!prof) return whisper(res, "Nobody has claimed **" + team.name + "** on the site yet. Claim it first: <https://crysterbaters.com/#signup>, then run /link again.");
-    if (prof.discord_id && prof.discord_id !== user.id) return whisper(res, "**" + team.name + "** is already linked to another Discord account. Ask Sean to unlink it if that's wrong.");
+    if (!prof) return whisper(res, "Nobody has claimed **" + liveName + "** on the site yet. Claim it first: <https://crysterbaters.com/#signup>, then run /link again.");
+    if (prof.discord_id && prof.discord_id !== user.id) return whisper(res, "**" + liveName + "** is already linked to another Discord account. Ask Sean to unlink it if that's wrong.");
     if (me && me.team_id !== teamId) await supa.update("profiles", "user_id=eq." + me.user_id, { discord_id: null });
     await supa.update("profiles", "user_id=eq." + prof.user_id, { discord_id: user.id });
-    return whisper(res, "Linked. You vote here as **" + supa.nameFor(prof, prof.email) + "** (" + team.name + "). Your Discord votes show up on the site and vice versa.");
+    return whisper(res, "Linked. You vote here as **" + supa.nameFor(prof, prof.email) + "** (" + liveName + "). Your Discord votes show up on the site and vice versa.");
   }
 
   if (name === "unlink") {
@@ -66,8 +71,7 @@ async function handleCommand(ix, res) {
 
   if (name === "whoami") {
     if (!me) return whisper(res, "Not linked yet — run **/link** and pick your team.");
-    const t = supa.teamById(me.team_id);
-    return whisper(res, "You're **" + supa.nameFor(me, me.email) + "** — " + (t ? t.name : me.team_id) + ".");
+    return whisper(res, "You're **" + supa.nameFor(me, me.email) + "** — " + (await yahoo.teamName(me.team_id)) + ".");
   }
 
   if (name === "poll") {
@@ -141,6 +145,11 @@ module.exports = async (req, res) => {
   if (ix.type === dc.IT.PING) return res.status(200).json({ type: dc.RT.PONG });
 
   try {
+    if (ix.type === dc.IT.AUTOCOMPLETE) {
+      const focused = ((ix.data && ix.data.options) || []).find((o) => o.focused) || {};
+      const choices = ix.data.name === "link" ? await yahoo.linkChoices(focused.value || "") : [];
+      return reply(res, dc.RT.AUTOCOMPLETE_RESULT, { choices });
+    }
     if (ix.type === dc.IT.APPLICATION_COMMAND) return await handleCommand(ix, res);
     if (ix.type === dc.IT.MESSAGE_COMPONENT) return await handleComponent(ix, res);
     return whisper(res, "Unsupported interaction.");

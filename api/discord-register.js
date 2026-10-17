@@ -4,15 +4,17 @@
 "use strict";
 
 const dc = require("./_lib/discord");
-const { TEAMS } = require("./_lib/supa");
+
 
 const COMMANDS = [
   {
     name: "link",
     description: "Link your Discord account to your Crysterbaters team",
+    // Names come live from Yahoo via autocomplete (api/_lib/yahoo-server.js),
+    // so a rename in Yahoo shows up here immediately.
     options: [{
-      type: 3, name: "team", description: "Your team", required: true,
-      choices: TEAMS.map((t) => ({ name: t.name, value: t.id })),
+      type: 3, name: "team", description: "Your team (start typing — names come from Yahoo)", required: true,
+      autocomplete: true,
     }],
   },
   { name: "unlink", description: "Unlink your Discord account from your team" },
