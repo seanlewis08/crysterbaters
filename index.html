@@ -62,7 +62,12 @@
   content:"";position:absolute;inset:0;pointer-events:none;
   background:repeating-linear-gradient(0deg,rgba(255,255,255,.028) 0 1px,transparent 1px 3px);
 }
-#splash.done{opacity:0;visibility:hidden}
+#splash.done{opacity:0;visibility:hidden;pointer-events:none}
+/* belt-and-braces: even if a script on the page dies, the splash fades on its own */
+#splash{user-select:none;-webkit-user-select:none;animation:splash-auto .65s ease 4.4s forwards}
+@keyframes splash-auto{to{opacity:0;visibility:hidden;pointer-events:none}}
+body.splashing{animation:splash-unlock 0s linear 5.1s forwards}
+@keyframes splash-unlock{to{overflow:auto}}
 
 .splash-stage{grid-row:2;display:flex;flex-direction:column;align-items:center;gap:34px;position:relative}
 
@@ -707,6 +712,8 @@ select.flash{box-shadow:0 0 0 3px var(--amber-glow),0 0 0 1px var(--amber);trans
 .plotbox .cval{font-family:var(--mono);font-size:18px;font-weight:600;fill:var(--ink);font-variant-numeric:tabular-nums}
 .plotbox .tgrade{font-family:var(--disp);font-size:24px;font-weight:800;fill:var(--ink)}
 .plotbox .tmore{font-family:var(--mono);font-size:9.5px;fill:var(--dim)}
+.plotbox .tname{font-family:var(--disp);font-size:13px;font-weight:700;fill:var(--ink)}
+.plotbox .tval{font-family:var(--mono);font-size:9.5px;fill:var(--muted)}
 .plotbox.poster{background:#0E1116;border-color:#262C36}
 .plotbox.poster .grid,.plotbox.poster .colax{stroke:#262C36}
 .plotbox.poster .axis,.plotbox.poster .med{stroke:#3A4250}
@@ -718,7 +725,8 @@ select.flash{box-shadow:0 0 0 3px var(--amber-glow),0 0 0 1px var(--amber);trans
 .plotbox.poster .dot{fill-opacity:.92}
 .plotbox.poster .dot.on{fill:#F5A524;stroke:#0E1116}
 .plotbox.poster .hov{stroke:#F5A524}
-.plotbox.poster .lbl,.plotbox.poster .tlbl,.plotbox.poster .cname,.plotbox.poster .cval,.plotbox.poster .tgrade{fill:#F3F4F6;stroke:#0E1116}
+.plotbox.poster .lbl,.plotbox.poster .tlbl,.plotbox.poster .cname,.plotbox.poster .cval,.plotbox.poster .tgrade,.plotbox.poster .tname{fill:#F3F4F6;stroke:#0E1116}
+.plotbox.poster .tval{fill:#8A94A6}
 .plotbox.poster .call{stroke:#0E1116}
 .plotbox.poster .hot,.plotbox.poster .bdg{stroke:#F5A524}
 .plotbox.poster .bdg{fill:#F3F4F6}
@@ -1039,6 +1047,28 @@ footer p + p{margin-top:11px}
   </div>
   <div class="splash-skip">Click to skip</div>
 </div>
+<script>
+(function(){
+  var el=document.getElementById("splash");
+  if(!el) return;
+  var reduced=false; try{ reduced=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches; }catch(e){}
+  var seen=false; try{ seen=!!localStorage.getItem("cb-belt-seen"); }catch(e){}
+  if(reduced||seen){ el.parentNode.removeChild(el); return; }
+  try{ localStorage.setItem("cb-belt-seen","1"); }catch(e){}
+  document.body.classList.add("splashing");
+  var done=false;
+  function finish(){
+    if(done) return; done=true;
+    el.classList.add("done");
+    document.body.classList.remove("splashing");
+    setTimeout(function(){ if(el.parentNode) el.parentNode.removeChild(el); },800);
+  }
+  var timer=setTimeout(finish,3400);
+  function skip(){ clearTimeout(timer); finish(); }
+  el.addEventListener("click",skip); el.addEventListener("touchend",skip); el.addEventListener("pointerdown",skip);
+  document.addEventListener("keydown",function(k){ if(k.key==="Escape"||k.key===" "||k.key==="Enter") skip(); });
+})();
+</script>
 
 <header class="topbar">
   <div class="topbar-in">
@@ -4912,6 +4942,7 @@ var Plot=(function(){
   function labelText(r){ return f.chart==="teams"?r.name:shortName(r.name); }
   function chartSvg(w,h,exp){
     var o=[], mx=met(f.x), my=met(f.y), swarm=f.chart==="swarm", teams=f.chart==="teams";
+    pts.forEach(function(p){ p.named=false; });
     if(f.chart==="cards") return cardsSvg(w,exp);
     if(f.chart==="tiers") return tiersSvg(w,exp);
     var nOn=pts.filter(function(p){ return sel[p.r.key]; }).length, showLgd=(nOn>LBL_MAX)||(f.color==="grad");
@@ -5093,38 +5124,38 @@ var Plot=(function(){
   }
 
   /* ----- tier list: grades by percentile of the stat ----- */
-  var TIERS=[["A+",0.03],["A",0.08],["A-",0.15],["B+",0.25],["B",0.40],["C+",0.55],["C",0.70],["D",0.85],["F",1.01]];
+  /* five shelves, S to D, by rank: the top 5, next 10, 15, 20, 25 (75 players); a smaller pool scales down.
+     Fantasy teams: 1 / 2 / 2 / 2 / 3. Everyone below the last shelf falls off and is counted in the footer. */
+  var TIERS=["S","A","B","C","D"], TCUT=[5,15,30,50,75], TCUT_TEAMS=[1,3,5,7,10];
+  function tierCuts(n,teams){ if(teams) return TCUT_TEAMS; if(n>=TCUT[4]) return TCUT; return TCUT.map(function(c){ return Math.max(1,Math.round(c*n/TCUT[4])); }); }
   function tiered(){
-    var my=met(f.y), list=pts.slice().sort(function(a,b){ return my.neg?(a.y-b.y):(b.y-a.y); }), n=list.length, out=[], k=0;
-    if(pts[0]&&pts[0].t){
-      var cut=[1,2,3,5,6,7,8,9,99];
-      TIERS.forEach(function(t,i){ out.push({g:t[0],list:[]}); });
-      list.forEach(function(p,i){ var r=i+1, ti=0; while(r>cut[ti]) ti++; out[ti].list.push(p); });
-      return out.filter(function(t){ return t.list.length; });
-    }
-    TIERS.forEach(function(t){ var end=Math.round(n*t[1]), row={g:t[0],list:[]}; while(k<Math.min(n,end)){ row.list.push(list[k]); k++; } out.push(row); });
-    return out.filter(function(t){ return t.list.length; });
+    var my=met(f.y), list=pts.slice().sort(function(a,b){ return my.neg?(a.y-b.y):(b.y-a.y); }), n=list.length, out=[], teams=!!(pts[0]&&pts[0].t), cut=tierCuts(n,teams);
+    TIERS.forEach(function(g){ out.push({g:g,list:[]}); });
+    list.forEach(function(p,i){ var r=i+1, ti=0; while(ti<cut.length&&r>cut[ti]) ti++; if(ti<cut.length) out[ti].list.push(p); });
+    out.off=Math.max(0,n-cut[cut.length-1]);
+    return out.filter(function(t){ return t.list.length; }).map(function(t){ t.off=out.off; return t; });
   }
   function tiersSvg(w,exp){
-    var my=met(f.y), rows=tiered(), o=[], PAD=14, LW=54, AV=15, GAP=6, per=Math.max(4,Math.floor((w-PAD*2-LW)/(AV*2+GAP))), MAXR=2;
-    var y=PAD, layout=[];
-    rows.forEach(function(t){
-      var n=Math.min(t.list.length,per*MAXR), lines=Math.ceil(n/per)||1, rh=lines*(AV*2+GAP)+10;
-      layout.push({t:t,y:y,rh:rh,n:n}); y+=rh+6;
-    });
-    var h=y+PAD-6;
+    var my=met(f.y), rows=tiered(), o=[], PAD=14, LW=50, AV=12, CH=30, GAP=8, teams=!!(pts[0]&&pts[0].t);
+    var CW=teams?128:116, per=Math.max(2,Math.floor((w-PAD*2-LW)/(CW+GAP))), y=PAD, layout=[], off=rows.length?rows[0].off:0;
+    var dup={}; rows.forEach(function(t){ t.list.forEach(function(p){ if(!p.t){ var k=shortName(p.r.name); dup[k]=(dup[k]||0)+1; } }); });   /* two Johnsons on the shelves → J. Johnson */
+    rows.forEach(function(t){ var lines=Math.ceil(t.list.length/per)||1, rh=lines*(CH+GAP)+8; layout.push({t:t,y:y,rh:rh}); y+=rh+6; });
+    var h=y+PAD-6+(off?16:0);
     o.push('<svg width="'+w+'" height="'+h+'" viewBox="0 0 '+w+' '+h+'" role="img" aria-label="'+esc("Tiers by "+axname(my))+'">');
     if(!exp) geo=[];
     layout.forEach(function(L,i){
-      o.push('<rect class="trow" x="'+PAD+'" y="'+L.y+'" width="'+(w-PAD*2)+'" height="'+L.rh+'" rx="5" fill-opacity="'+(0.16-i*0.015).toFixed(3)+'"/>');
+      o.push('<rect class="trow" x="'+PAD+'" y="'+L.y+'" width="'+(w-PAD*2)+'" height="'+L.rh+'" rx="5" fill-opacity="'+(0.18-i*0.03).toFixed(3)+'"/>');
       o.push('<text class="tgrade" x="'+(PAD+LW/2)+'" y="'+(L.y+L.rh/2+9)+'" text-anchor="middle">'+esc(L.t.g)+'</text>');
-      L.t.list.slice(0,L.n).forEach(function(p,j){
-        var cx=PAD+LW+AV+(j%per)*(AV*2+GAP), cy=L.y+5+AV+Math.floor(j/per)*(AV*2+GAP);
+      L.t.list.forEach(function(p,j){
+        var x0=PAD+LW+(j%per)*(CW+GAP), cy=L.y+4+CH/2+Math.floor(j/per)*(CH+GAP), cx=x0+AV+2;
         if(p.t) badge(o,cx,cy,AV,p.t); else avatar(o,cx,cy,AV,p.r,p.r.id);
+        var nm=p.t?p.t.short:shortName(p.r.name); if(!p.t&&dup[nm]>1&&!NICK[p.r.name]) nm=p.r.name.charAt(0)+". "+nm; if(nm.length>13) nm=nm.slice(0,12)+"…";
+        o.push('<text class="tname" x="'+(cx+AV+5)+'" y="'+(cy-1)+'">'+esc(nm)+'</text>');
+        o.push('<text class="tval" x="'+(cx+AV+5)+'" y="'+(cy+10)+'">'+esc(my.fmt(p.y))+'</text>');
         if(!exp) geo.push({i:pts.indexOf(p),x:cx,y:cy,r:AV});
       });
-      if(L.t.list.length>L.n) o.push('<text class="tmore" x="'+(w-PAD-8)+'" y="'+(L.y+L.rh-6)+'" text-anchor="end">+'+(L.t.list.length-L.n)+' more</text>');
     });
+    if(off) o.push('<text class="tmore" x="'+(w-PAD-4)+'" y="'+(h-PAD+6)+'" text-anchor="end">'+off+' more off the shelf · ranked by '+esc(axname(my))+'</text>');
     o.push('</svg>');
     return o.join("");
   }
@@ -6300,28 +6331,6 @@ if(!fromHash(true)) go("home",true);
 loadLiveTeams();
 window.addEventListener("popstate",function(){ if(!fromHash(true)) go("home",true); });
 
-/* ---------- splash ---------- */
-(function(){
-  var el=document.getElementById("splash");
-  if(!el) return;
-  var reduced=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  var seen=false; try{ seen=!!localStorage.getItem("cb-belt-seen"); }catch(e){}
-  if(reduced||seen){ el.remove(); return; }
-  try{ localStorage.setItem("cb-belt-seen","1"); }catch(e){}
-  document.body.classList.add("splashing");
-  var done=false;
-  function finish(){
-    if(done) return; done=true;
-    el.classList.add("done");
-    document.body.classList.remove("splashing");
-    setTimeout(function(){ if(el.parentNode) el.remove(); },800);
-  }
-  var timer=setTimeout(finish,3400);
-  el.addEventListener("click",function(){clearTimeout(timer);finish();});
-  document.addEventListener("keydown",function(k){
-    if(k.key==="Escape"||k.key===" "){clearTimeout(timer);finish();}
-  },{once:true});
-})();
 })();
 </script>
 
