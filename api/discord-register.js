@@ -7,6 +7,7 @@ const dc = require("./_lib/discord");
 
 
 const COMMANDS = [
+  { name: "dues", description: "Your league dues: amount, status, and pay links (Venmo / Cash App / Zelle)" },
   {
     name: "link",
     description: "Link your Discord account to your Crysterbaters team",

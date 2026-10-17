@@ -12,6 +12,7 @@
 
 const poll = require("./_lib/poll");
 const events = require("./_lib/site-events");
+const dues = require("./_lib/dues");
 
 const POLL_TABLES = new Set(["polls", "votes"]);
 
@@ -32,7 +33,9 @@ module.exports = async (req, res) => {
   try {
     if (req.method === "GET") {
       const n = await poll.sweep();
-      return res.status(200).json({ swept: n });
+      let nudge = null;
+      try { nudge = await dues.autoNudge(); } catch (e) { console.error("dues nudge:", e); nudge = { error: e.message }; }
+      return res.status(200).json({ swept: n, dues: nudge });
     }
     const body = typeof req.body === "string" ? JSON.parse(req.body || "{}") : (req.body || {});
     const out = { ok: true, event: body.type, table: body.table };
@@ -46,6 +49,9 @@ module.exports = async (req, res) => {
     if (body.table !== "votes") {
       try { out.site = await events.announce(body); }
       catch (e) { console.error("site-updates:", e); out.site = { error: e.message || String(e) }; }
+    }
+    if (body.table === "dues_payments" || body.table === "dues_seasons") {
+      try { out.board = !!(await dues.refreshBoard()); } catch (e) { console.error("dues board:", e); out.board = { error: e.message || String(e) }; }
     }
     return res.status(200).json(out);
   } catch (e) {

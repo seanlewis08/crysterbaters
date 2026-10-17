@@ -8,6 +8,7 @@ const dc = require("./_lib/discord");
 const poll = require("./_lib/poll");
 const yahoo = require("./_lib/yahoo-server");
 const welcome = require("./_lib/welcome");
+const dues = require("./_lib/dues");
 
 module.exports.config = { api: { bodyParser: false } };
 
@@ -75,6 +76,11 @@ async function handleCommand(ix, res) {
     return whisper(res, "You're **" + supa.nameFor(me, me.email) + "** — " + (await yahoo.teamName(me.team_id)) + ".");
   }
 
+  if (name === "dues") {
+    const out = await dues.handleCommand(ix, me);
+    return reply(res, out.type, out.data);
+  }
+
   if (name === "poll") {
     if (!me) return whisper(res, "Run **/link** first so the poll is created under your name.");
     const question = String(opt(ix, "question") || "").trim();
@@ -101,6 +107,10 @@ async function handleComponent(ix, res) {
   if (String(ix.data.custom_id || "").startsWith("fav:")) {
     const out = await welcome.handleComponent(ix);
     return out ? reply(res, out.type, out.data) : whisper(res, "Unknown picker.");
+  }
+  if (String(ix.data.custom_id || "").startsWith("dues:")) {
+    const out = await dues.handleComponent(ix, await supa.profileByDiscord(userOf(ix).id));
+    return out ? reply(res, out.type, out.data) : whisper(res, "Unknown button.");
   }
   const [kind, pollId, idxStr] = String(ix.data.custom_id || "").split(":");
   const user = userOf(ix);

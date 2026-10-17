@@ -12,6 +12,7 @@ process.env.SUPABASE_SERVICE_ROLE_KEY = "service";
 process.env.DISCORD_BOT_TOKEN = "bot";
 process.env.DISCORD_APP_ID = "app1";
 process.env.DISCORD_POLLS_CHANNEL_ID = "chan1";
+process.env.DISCORD_DUES_CHANNEL_ID = "chdues";
 process.env.SYNC_SECRET = "s3cret";
 process.env.YAHOO_CLIENT_ID = "yid"; process.env.YAHOO_CLIENT_SECRET = "ysec"; process.env.YAHOO_COOKIE_SECRET = "cookie";
 
@@ -36,6 +37,8 @@ const db = {
   poll_messages: [],
   discord_settings: [{ id: 1, sync_url: "https://x/api/poll-sync", sync_secret: "s3cret", yahoo_refresh_token: "rt-sean" }],
   team_map: [],
+  dues_seasons: [{ season: "2026-27", amount: 50, due_date: "2026-11-01", venmo: "@Sean-Lewis", zelle: "sean@x.com", cashapp: "$seanlewis", note: "Winner takes 60%.", active: true, created_at: "2026-10-01T00:00:00Z" }],
+  dues_payments: [{ season: "2026-27", team_id: "giannis", user_id: "u-kabir", method: "venmo", paid: true, paid_at: "2026-10-10T00:00:00Z", confirmed: true, confirmed_at: "2026-10-11T00:00:00Z", updated_at: "2026-10-11T00:00:00Z" }],
 };
 // Yahoo: Ben renamed his team; everyone else matches the site's names.
 const yahooTeams = [
@@ -103,9 +106,13 @@ async function fakeDiscord(method, path, body) {
   discord.calls.push(method + " " + path);
   const json = (x, status) => new Response(JSON.stringify(x), { status: status || 200 });
   let m;
+  if ((m = path.match(/^\/channels\/(\w+)\/messages$/)) && method === "GET") {
+    const list = Object.values(discord.messages).filter((x) => x.channel_id === m[1]).reverse().map((x) => Object.assign({ author: { id: process.env.DISCORD_APP_ID || "app", bot: true }, timestamp: x.timestamp || new Date().toISOString() }, x));
+    return json(list);
+  }
   if ((m = path.match(/^\/channels\/(\w+)\/messages$/)) && method === "POST") {
     const id = String(discord.nextId++);
-    discord.messages[id] = Object.assign({ id, channel_id: m[1] }, body);
+    discord.messages[id] = Object.assign({ id, channel_id: m[1], timestamp: new Date(discord.now || Date.now()).toISOString() }, body);
     return json(discord.messages[id]);
   }
   if ((m = path.match(/^\/channels\/(\w+)\/messages\/(\w+)$/))) {
@@ -318,12 +325,12 @@ const click = (customId, userId) => ({ type: 3, data: { custom_id: customId }, m
   {
     db.polls[0].closes_at = new Date(Date.now() - 1000).toISOString();
     const r = await call(syncFn, makeReq("GET", undefined, { "x-vercel-cron": "1" }));
-    assert.deepStrictEqual(r.body, { swept: 1 });
+    assert.strictEqual(r.body.swept, 1); assert.ok(r.body.dues && !r.body.dues.error, JSON.stringify(r.body.dues));
     const msg = discord.messages[db.poll_messages[0].message_id];
     assert.match(msg.content, /\*\*Closed\*\* <t:\d+:D>/);
     assert.strictEqual(db.poll_messages[0].closed_rendered, true);
     const again = await call(syncFn, makeReq("GET", undefined, { "x-vercel-cron": "1" }));
-    assert.deepStrictEqual(again.body, { swept: 0 }, "idempotent");
+    assert.strictEqual(again.body.swept, 0, "idempotent");
   }
 
   // Register endpoint
@@ -331,8 +338,8 @@ const click = (customId, userId) => ({ type: 3, data: { custom_id: customId }, m
     let r = await call(registerFn, makeReq("GET", undefined, {}, { key: "nope" }));
     assert.strictEqual(r.statusCode, 401);
     r = await call(registerFn, makeReq("GET", undefined, {}, { key: "s3cret" }));
-    assert.deepStrictEqual(r.body.registered, ["link", "unlink", "whoami", "poll"]);
-    assert.strictEqual(registerFn.COMMANDS[0].options[0].autocomplete, true);
+    assert.deepStrictEqual(r.body.registered, ["dues", "link", "unlink", "whoami", "poll"]);
+    assert.strictEqual(registerFn.COMMANDS.find((c) => c.name === "link").options[0].autocomplete, true);
   }
 
   // /api/teams: live names + rosters keyed by site team id
@@ -450,6 +457,66 @@ const click = (customId, userId) => ({ type: 3, data: { custom_id: customId }, m
     assert.deepStrictEqual(stars, ["⭐ Nikola Jokic"]);
     r = await interact({ type: 5, member: member(held()), data: { custom_id: "fav:player:modal", components: [{ type: 1, components: [{ type: 4, custom_id: "name", value: "!!!" }] }] } });
     assert.ok(/doesn't look like a name/.test(r.body.data.content));
+  }
+
+
+  // Dues: /dues card, pay links, I've paid → confirm, board, reminders, auto-nudge
+  {
+    const dues = require("../api/_lib/dues");
+    const season = db.dues_seasons[0];
+    const links = dues.payLinks(season, "The JaleNBA");
+    assert.strictEqual(links.length, 3);
+    assert.ok(links[0].url.startsWith("https://venmo.com/Sean-Lewis?txn=pay&amount=50&note=Crysterbaters%202026-27"), links[0].url);
+    assert.strictEqual(links[1].url, "https://cash.app/$seanlewis/50");
+    assert.strictEqual(links[2].custom_id, "dues:zelle");
+    // unlinked user
+    let r = await interact({ type: 2, member: { user: { id: "d-nobody" }, roles: [] }, data: { name: "dues" } });
+    assert.ok(/\/link/.test(r.body.data.content));
+    // Sean (commissioner, unpaid): card has pay links, I've paid, and commissioner tools
+    r = await interact({ type: 2, member: { user: { id: "d-sean" }, roles: [] }, data: { name: "dues" } });
+    assert.ok(/2026-27 dues: \$50/.test(r.body.data.content) && /unpaid/.test(r.body.data.content), r.body.data.content);
+    const ids = r.body.data.components.flatMap((row) => row.components.map((c) => c.custom_id || c.url));
+    assert.ok(ids.includes("dues:paid:2026-27") && ids.includes("dues:remind") && ids.includes("dues:zelle"));
+    // Kabir (confirmed): no pay buttons
+    r = await interact({ type: 2, member: { user: { id: "d-kabir" }, roles: [] }, data: { name: "dues" } });
+    assert.ok(/confirmed/.test(r.body.data.content));
+    assert.ok(!JSON.stringify(r.body.data.components).includes("dues:paid"));
+    // Zelle button shows the contact
+    r = await interact({ type: 3, member: { user: { id: "d-sean" }, roles: [] }, data: { custom_id: "dues:zelle", component_type: 2 } });
+    assert.ok(/sean@x\.com/.test(r.body.data.content));
+    // I've paid → method prompt → recorded, board posted, confirm notice with button
+    r = await interact({ type: 3, member: { user: { id: "d-sean" }, roles: [] }, data: { custom_id: "dues:paid:2026-27", component_type: 2 } });
+    assert.strictEqual(r.body.type, 7); assert.ok(/How did you pay/.test(r.body.data.content));
+    const before = Object.keys(discord.messages).length;
+    r = await interact({ type: 3, member: { user: { id: "d-sean" }, roles: [] }, data: { custom_id: "dues:paid:2026-27:zelle", component_type: 2 } });
+    assert.ok(/Marked paid via Zelle/.test(r.body.data.content), r.body.data.content);
+    const row = db.dues_payments.find((x) => x.team_id === "jalenba");
+    assert.ok(row && row.paid && !row.confirmed && row.method === "zelle" && row.user_id === "u-sean");
+    const newMsgs = Object.values(discord.messages).slice(before);
+    const board = newMsgs.find((m) => (m.content || "").startsWith(dues.BOARD_TAG));
+    assert.ok(board && /🟡 The JaleNBA/.test(board.content) && /✅ Regular Season Giannis/.test(board.content) && /❌ The Knuepp Sluepps/.test(board.content), board && board.content);
+    const notice = newMsgs.find((m) => /marked 2026-27 dues paid via Zelle/.test(m.content || ""));
+    assert.ok(notice && notice.components[0].components[0].custom_id === "dues:confirm:2026-27:jalenba");
+    // non-commissioner can't confirm; commissioner can; board updates in place
+    r = await interact({ type: 3, member: { user: { id: "d-kabir" }, roles: [] }, data: { custom_id: "dues:confirm:2026-27:jalenba", component_type: 2 } });
+    assert.ok(/Only the commissioner/.test(r.body.data.content));
+    r = await interact({ type: 3, member: { user: { id: "d-sean" }, roles: [] }, data: { custom_id: "dues:confirm:2026-27:jalenba", component_type: 2 } });
+    assert.ok(/confirmed/.test(r.body.data.content)); assert.ok(row.confirmed);
+    assert.strictEqual(Object.values(discord.messages).filter((m) => (m.content || "").startsWith(dues.BOARD_TAG)).length, 1, "one board, edited in place");
+    assert.ok(/✅ The JaleNBA/.test(board.content));
+    // reminder pings only linked unpaid managers (Ben has no discord_id → named)
+    r = await interact({ type: 3, member: { user: { id: "d-sean" }, roles: [] }, data: { custom_id: "dues:remind", component_type: 2 } });
+    const nudge = Object.values(discord.messages).find((m) => (m.content || "").startsWith(dues.NUDGE_TAG));
+    assert.ok(nudge && /<@d-ben>|Ben/.test(nudge.content) && /Anush/.test(nudge.content) && !/<@d-sean>/.test(nudge.content) && !/<@d-kabir>/.test(nudge.content), nudge && nudge.content);
+    assert.ok(!nudge.allowed_mentions.users.includes("d-sean") && !nudge.allowed_mentions.users.includes("d-kabir"));
+    // auto-nudge: fires 3 days out, once per day; quiet otherwise
+    delete discord.messages[Object.keys(discord.messages).find((k) => (discord.messages[k].content || "").startsWith(dues.NUDGE_TAG))];
+    discord.now = Date.parse("2026-10-29T15:00:00Z");
+    let n = await dues.autoNudge(new Date("2026-10-29T15:00:00Z")); assert.ok(n.nudged, JSON.stringify(n));
+    n = await dues.autoNudge(new Date("2026-10-29T18:00:00Z")); assert.strictEqual(n.skipped, "already nudged today");
+    n = await dues.autoNudge(new Date("2026-10-27T15:00:00Z")); assert.strictEqual(n.skipped, "not a nudge day");
+    discord.now = null;
+    assert.ok(registerFn.COMMANDS.some((c) => c.name === "dues"));
   }
 
   // Parsers
