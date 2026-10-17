@@ -9,7 +9,7 @@ const API = "https://discord.com/api/v10";
 const TOKEN = () => process.env.DISCORD_BOT_TOKEN || "";
 
 // Interaction types / response types (subset).
-const IT = { PING: 1, APPLICATION_COMMAND: 2, MESSAGE_COMPONENT: 3, AUTOCOMPLETE: 4 };
+const IT = { PING: 1, APPLICATION_COMMAND: 2, MESSAGE_COMPONENT: 3, AUTOCOMPLETE: 4, MODAL_SUBMIT: 5 };
 const RT = {
   PONG: 1,
   CHANNEL_MESSAGE: 4,
@@ -17,6 +17,7 @@ const RT = {
   DEFERRED_UPDATE_MESSAGE: 6,
   UPDATE_MESSAGE: 7,
   AUTOCOMPLETE_RESULT: 8,
+  MODAL: 9,
 };
 const EPHEMERAL = 1 << 6;
 

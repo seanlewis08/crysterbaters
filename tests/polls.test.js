@@ -44,7 +44,7 @@ const yahooTeams = [
   { key: "466.l.33689.t.3", name: "Regular Season Giannis", nick: "Myhops" },
 ];
 let yahooCalls = 0;
-const discord = { messages: {}, nextId: 100, calls: [] };
+const discord = { messages: {}, nextId: 100, calls: [], roles: [], memberRoles: {} };
 
 function parseFilters(qs) {
   const q = new URLSearchParams(qs);
@@ -114,6 +114,13 @@ async function fakeDiscord(method, path, body) {
     if (method === "DELETE") { delete discord.messages[m[2]]; return new Response(null, { status: 204 }); }
   }
   if ((m = path.match(/^\/applications\/(\w+)\/commands$/)) && method === "PUT") return json(body.map((c, i) => ({ id: String(i), name: c.name })));
+  if (path.match(/^\/guilds\/\w+\/roles$/) && method === "GET") return json(discord.roles);
+  if (path.match(/^\/guilds\/\w+\/roles$/) && method === "POST") { const r = Object.assign({ id: "r" + discord.nextId++, position: 1 }, body); discord.roles.push(r); return json(r); }
+  if ((m = path.match(/^\/guilds\/\w+\/members\/([\w-]+)\/roles\/([\w-]+)$/))) {
+    const set = (discord.memberRoles[m[1]] = discord.memberRoles[m[1]] || new Set());
+    if (method === "PUT") set.add(m[2]); if (method === "DELETE") set.delete(m[2]);
+    return new Response(null, { status: 204 });
+  }
   return json({ message: "no route " + method + " " + path }, 404);
 }
 
@@ -401,6 +408,44 @@ const click = (customId, userId) => ({ type: 3, data: { custom_id: customId }, m
     assert.strictEqual(webhookPosts.length, 1);
     assert.strictEqual(webhookPosts[0].username, "Crysterbaters");
     assert.ok(/Badge awarded: Homer/.test(webhookPosts[0].embeds[0].title));
+  }
+
+
+  // #welcome pickers: team / zone / ping dropdowns and the favorite-player modal
+  {
+    const w = require("../api/_lib/welcome");
+    assert.strictEqual(w.roleSpecs().length, 30 + 5 + 4);
+    assert.strictEqual(w.welcomeMessage().components.length, 5);
+    assert.strictEqual(w.cleanPlayerName("luka  DONCIC jr."), "Luka Doncic Jr.");
+    assert.strictEqual(w.cleanPlayerName("🔥"), null);
+    const member = (rolesHeld) => ({ user: { id: "u-sean", username: "monkeydsean" }, roles: rolesHeld });
+    const held = () => Array.from(discord.memberRoles["u-sean"] || []);
+    // pick Lakers, then switch to Warriors: exactly one 🏀 role at a time, created on demand
+    let r = await interact({ type: 3, member: member([]), data: { custom_id: "fav:team:W", component_type: 3, values: ["LAL"] } });
+    assert.strictEqual(r.statusCode, 200); assert.ok(/Lakers/.test(r.body.data.content));
+    let lakers = discord.roles.find((x) => x.name === "🏀 Lakers"); assert.ok(lakers && lakers.color === 0x552583);
+    assert.deepStrictEqual(held(), [lakers.id]);
+    r = await interact({ type: 3, member: member(held()), data: { custom_id: "fav:team:W", component_type: 3, values: ["GS"] } });
+    const dubs = discord.roles.find((x) => x.name === "🏀 Warriors");
+    assert.deepStrictEqual(held(), [dubs.id], "old team role removed");
+    // zone
+    r = await interact({ type: 3, member: member(held()), data: { custom_id: "fav:zone", component_type: 3, values: ["pacific"] } });
+    assert.ok(/Pacific/.test(r.body.data.content)); assert.ok(held().length === 2);
+    // pings: multi-select, clearing removes all
+    r = await interact({ type: 3, member: member(held()), data: { custom_id: "fav:ping", component_type: 3, values: ["news", "shams"] } });
+    assert.ok(/News.*Shams|Shams.*News/.test(r.body.data.content)); assert.strictEqual(held().length, 4);
+    r = await interact({ type: 3, member: member(held()), data: { custom_id: "fav:ping", component_type: 3, values: [] } });
+    assert.ok(/All pings off/.test(r.body.data.content)); assert.strictEqual(held().length, 2);
+    // favorite player: button opens a modal, submit creates ⭐ role, resubmit swaps it
+    r = await interact({ type: 3, member: member(held()), data: { custom_id: "fav:player", component_type: 2 } });
+    assert.strictEqual(r.body.type, 9); assert.strictEqual(r.body.data.custom_id, "fav:player:modal");
+    r = await interact({ type: 5, member: member(held()), data: { custom_id: "fav:player:modal", components: [{ type: 1, components: [{ type: 4, custom_id: "name", value: "jalen johnson" }] }] } });
+    assert.ok(/Jalen Johnson/.test(r.body.data.content)); assert.ok(discord.roles.some((x) => x.name === "⭐ Jalen Johnson"));
+    r = await interact({ type: 5, member: member(held()), data: { custom_id: "fav:player:modal", components: [{ type: 1, components: [{ type: 4, custom_id: "name", value: "Nikola Jokic" }] }] } });
+    const stars = held().map((id) => discord.roles.find((x) => x.id === id).name).filter((n) => n.startsWith("⭐"));
+    assert.deepStrictEqual(stars, ["⭐ Nikola Jokic"]);
+    r = await interact({ type: 5, member: member(held()), data: { custom_id: "fav:player:modal", components: [{ type: 1, components: [{ type: 4, custom_id: "name", value: "!!!" }] }] } });
+    assert.ok(/doesn't look like a name/.test(r.body.data.content));
   }
 
   // Parsers

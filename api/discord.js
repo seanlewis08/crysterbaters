@@ -7,6 +7,7 @@ const supa = require("./_lib/supa");
 const dc = require("./_lib/discord");
 const poll = require("./_lib/poll");
 const yahoo = require("./_lib/yahoo-server");
+const welcome = require("./_lib/welcome");
 
 module.exports.config = { api: { bodyParser: false } };
 
@@ -97,6 +98,10 @@ async function handleCommand(ix, res) {
 }
 
 async function handleComponent(ix, res) {
+  if (String(ix.data.custom_id || "").startsWith("fav:")) {
+    const out = await welcome.handleComponent(ix);
+    return out ? reply(res, out.type, out.data) : whisper(res, "Unknown picker.");
+  }
   const [kind, pollId, idxStr] = String(ix.data.custom_id || "").split(":");
   const user = userOf(ix);
   const me = await supa.profileByDiscord(user.id);
@@ -152,6 +157,10 @@ module.exports = async (req, res) => {
     }
     if (ix.type === dc.IT.APPLICATION_COMMAND) return await handleCommand(ix, res);
     if (ix.type === dc.IT.MESSAGE_COMPONENT) return await handleComponent(ix, res);
+    if (ix.type === dc.IT.MODAL_SUBMIT) {
+      const out = await welcome.handleModal(ix);
+      return out ? reply(res, out.type, out.data) : whisper(res, "Unknown form.");
+    }
     return whisper(res, "Unsupported interaction.");
   } catch (e) {
     console.error(e);
