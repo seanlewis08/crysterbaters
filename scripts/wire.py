@@ -57,6 +57,8 @@ FEEDS = [
         "icon": "https://ssl.gstatic.com/gnews/logo/google_news_192.png",
         "google_news": True,
         "max_age_hours": 36,
+        # Google News matches the name anywhere in the article; only keep headlines that are about him
+        "title_must_match": r"\b(shams|charania)\b",
         # optional: a role id to ping on each post (set WIRE_SHAMS_ROLE in the workflow if wanted)
         "ping_role": os.environ.get("WIRE_SHAMS_ROLE", ""),
     },
@@ -199,6 +201,8 @@ def main():
             print(f"[{feed['key']}] fetch failed: {ex}")
             continue
         entries = [e for e in parsed.entries if e.get("link") and e.get("title")]
+        if feed.get("title_must_match"):
+            entries = [e for e in entries if re.search(feed["title_must_match"], e["title"], re.I)]
         if feed.get("max_age_hours"):
             cutoff = datetime.now(timezone.utc).timestamp() - feed["max_age_hours"] * 3600
             entries = [e for e in entries if not entry_time(e) or entry_time(e).timestamp() >= cutoff]
