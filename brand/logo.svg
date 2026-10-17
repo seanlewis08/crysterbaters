@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <clipPath id="disc"><circle cx="512" cy="512" r="470"/></clipPath>
+    <pattern id="planks" width="1024" height="68" patternUnits="userSpaceOnUse">
+      <rect width="1024" height="68" fill="#E9DCC1"/>
+      <rect y="66" width="1024" height="2" fill="#D4C3A2"/>
+      <rect x="0" y="0" width="2" height="68" fill="#D4C3A2"/>
+      <rect x="340" y="0" width="2" height="68" fill="#D4C3A2" transform="translate(120 0)"/>
+      <rect x="700" y="0" width="2" height="68" fill="#D4C3A2" transform="translate(-60 0)"/>
+    </pattern>
+    <radialGradient id="ballg" cx="40%" cy="35%" r="70%">
+      <stop offset="0" stop-color="#E07A3A"/>
+      <stop offset="1" stop-color="#9E4210"/>
+    </radialGradient>
+    <linearGradient id="ring" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2E2114"/>
+      <stop offset="1" stop-color="#160F08"/>
+    </linearGradient>
+  </defs>
+
+  <!-- outer leather ring -->
+  <circle cx="512" cy="512" r="512" fill="url(#ring)"/>
+  <circle cx="512" cy="512" r="488" fill="none" stroke="#C1571A" stroke-width="10"/>
+
+  <!-- hardwood floor -->
+  <g clip-path="url(#disc)">
+    <rect width="1024" height="1024" fill="url(#planks)"/>
+    <!-- court lines: key, free-throw circle, three-point arc (lower half of a court, seen from above) -->
+    <g fill="none" stroke="#1B3F7A" stroke-width="14" stroke-linecap="round" opacity="0.9">
+      <path d="M 92 1060 A 560 560 0 0 1 932 1060"/>
+      <rect x="392" y="700" width="240" height="420" rx="4"/>
+      <circle cx="512" cy="700" r="110"/>
+    </g>
+    <!-- paint -->
+    <rect x="399" y="707" width="226" height="420" fill="#1B3F7A" opacity="0.10"/>
+  </g>
+
+  <!-- monogram -->
+  <g font-family="'Saira Condensed','Barlow Condensed','Arial Narrow','Helvetica Neue',Arial,sans-serif" font-weight="800" text-anchor="middle">
+    <text x="512" y="568" font-size="440" fill="#22190E" letter-spacing="-18">CB</text>
+    <text x="512" y="568" font-size="440" fill="none" stroke="#E9DCC1" stroke-width="6" letter-spacing="-18" opacity="0.55">CB</text>
+  </g>
+
+  <!-- basketball, tucked bottom-right -->
+  <g transform="translate(690 690)">
+    <circle r="150" fill="url(#ballg)" stroke="#22190E" stroke-width="12"/>
+    <g fill="none" stroke="#22190E" stroke-width="12" stroke-linecap="round">
+      <path d="M -150 0 H 150"/>
+      <path d="M 0 -150 V 150"/>
+      <path d="M -106 -106 Q 0 -30 106 -106"/>
+      <path d="M -106 106 Q 0 30 106 106"/>
+    </g>
+  </g>
+
+  <!-- wordmark arc -->
+  <defs>
+    <path id="arc" d="M 180 512 A 332 332 0 0 1 844 512"/>
+  </defs>
+  <text font-family="'Saira Condensed','Barlow Condensed','Arial Narrow',Arial,sans-serif" font-weight="700" font-size="92" fill="#22190E" letter-spacing="10">
+    <textPath href="#arc" startOffset="50%" text-anchor="middle">CRYSTERBATERS</textPath>
+  </text>
+</svg>

@@ -125,6 +125,13 @@ globalThis.fetch = async (url, init) => {
   if (u.host === "fake.supabase.co") return fakeSupabase(method, u.pathname.replace("/rest/v1/", ""), u.search.slice(1), body, init.headers);
   if (u.host === "discord.com") return fakeDiscord(method, u.pathname.replace("/api/v10", ""), body);
   if (u.host === "api.login.yahoo.com") return new Response(JSON.stringify({ access_token: "at-1", refresh_token: "rt-sean", expires_in: 3600 }), { status: 200 });
+  if (u.host === "fantasysports.yahooapis.com" && u.pathname.endsWith("/teams/roster")) {
+    const teams = {}; yahooTeams.forEach((t, i) => {
+      const players = { 0: { player: [[{ player_key: "p" + i }, { name: { full: "Player " + i } }, { editorial_team_abbr: "BOS" }], { selected_position: [{ position: i === 0 ? "PG" : "BN" }] }] }, count: 1 };
+      teams[i] = { team: [[{ team_key: t.key }, { name: t.name }, { managers: [{ manager: { nickname: t.nick } }] }], { roster: { 0: { players } } }] };
+    }); teams.count = yahooTeams.length;
+    return new Response(JSON.stringify({ fantasy_content: { league: [{ league_key: "466.l.33689" }, { teams }] } }), { status: 200 });
+  }
   if (u.host === "fantasysports.yahooapis.com") {
     yahooCalls++;
     const teams = {}; yahooTeams.forEach((t, i) => { teams[i] = { team: [[{ team_key: t.key }, { name: t.name }, { managers: [{ manager: { nickname: t.nick } }] }]] }; }); teams.count = yahooTeams.length;
@@ -144,6 +151,7 @@ function makeReq(method, body, headers, query) {
 function makeRes() {
   const res = { statusCode: 200, body: null };
   res.status = (c) => { res.statusCode = c; return res; };
+  res.headers = {}; res.setHeader = (k, v) => { res.headers[k] = v; };
   res.json = (x) => { res.body = x; res.done(); return res; };
   res.send = (x) => { res.body = x; res.done(); return res; };
   res.wait = new Promise((r) => { res.done = r; });
@@ -316,6 +324,24 @@ const click = (customId, userId) => ({ type: 3, data: { custom_id: customId }, m
     r = await call(registerFn, makeReq("GET", undefined, {}, { key: "s3cret" }));
     assert.deepStrictEqual(r.body.registered, ["link", "unlink", "whoami", "poll"]);
     assert.strictEqual(registerFn.COMMANDS[0].options[0].autocomplete, true);
+  }
+
+  // /api/teams: live names + rosters keyed by site team id
+  {
+    const teamsFn = require("../api/teams");
+    assert.strictEqual(teamsFn._test.slot("PG"), "G"); assert.strictEqual(teamsFn._test.slot("PF"), "F");
+    assert.strictEqual(teamsFn._test.slot("Util"), "Util"); assert.strictEqual(teamsFn._test.slot("IL+"), "IL"); assert.strictEqual(teamsFn._test.slot("BN"), "BN");
+    teamsFn._test.reset();
+    const r = await call(teamsFn, makeReq("GET", undefined, {}, {}));
+    assert.strictEqual(r.statusCode, 200);
+    const ben = r.body.teams.find((t) => t.id === "knuepp");
+    assert.ok(ben, "renamed Yahoo team keyed to knuepp");
+    assert.strictEqual(ben.name, "Knueppel Kings");
+    assert.deepStrictEqual(ben.roster[0], ["G", "Player 0", "BOS", ""]);
+    const sean = r.body.teams.find((t) => t.id === "jalenba");
+    assert.strictEqual(sean.roster[0][0], "BN");
+    const again = await call(teamsFn, makeReq("GET", undefined, {}, {}));
+    assert.strictEqual(again.body.built, r.body.built, "served from cache");
   }
 
   // Parsers

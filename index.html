@@ -2321,6 +2321,7 @@ document.getElementById("watch").innerHTML=K.map(function(k){
 })();
 
 /* ---------- standings ---------- */
+function renderStandings(){
 document.getElementById("standings").innerHTML=T.slice().sort(function(a,b){
   return ST[a.id].rs-ST[b.id].rs;
 }).map(function(t){
@@ -2338,6 +2339,8 @@ document.getElementById("standings").innerHTML=T.slice().sort(function(a,b){
     '<td class="num">'+s.moves+'</td>'+
     '<td class="num">'+(T.length+1-s.rs)+'</td></tr>';
 }).join("");
+}
+renderStandings();
 
 /* ---------- team cards ---------- */
 function teamCard(t){
@@ -2363,6 +2366,46 @@ if(typeof renderBoard==="function"&&typeof trades!=="undefined"&&trades) renderB
 if(curTeam&&document.getElementById("v-team").classList.contains("on")) renderTeam(curTeam);
 }
 rebuildKeeperViews();
+
+/* ---------- live team names and rosters from Yahoo ----------
+   /api/teams (api/teams.js) reads the league through the commissioner's shared Yahoo login
+   and returns each team's current name and roster keyed by our permanent team ids. Whatever is
+   typed into T[] above is the fallback when Yahoo is unreachable. Keeper flags and costs are
+   carried over by player name so the keeper pages keep working across the swap. */
+var LIVE_TEAMS=null;
+function applyLiveTeams(data){
+  if(!data||!data.teams||!data.teams.length) return false;
+  var changed=false;
+  data.teams.forEach(function(lt){
+    var t=lt.id&&byId(lt.id); if(!t) return;
+    t.yahooKey=lt.key||t.yahooKey; t.nick=lt.nick||t.nick;
+    if(lt.name&&lt.name!==t.name){ t.name=lt.name; changed=true; }
+    if(lt.roster&&lt.roster.length){
+      var old={}; (t.roster||[]).forEach(function(r){ old[norm(r[1])]=r; });
+      var costs=t.costs||{}, nc={};
+      t.roster=lt.roster.map(function(r){
+        var prev=old[norm(r[1])]; var k=prev?prev[3]:0;
+        if(k&&prev&&costs[prev[1]]!=null) nc[r[1]]=costs[prev[1]];
+        return [r[0], r[1], r[2]||(prev?prev[2]:""), k];
+      });
+      t.costs=nc; changed=true;
+    }
+  });
+  if(!changed) return false;
+  LIVE_TEAMS=data; window.cbLive={data:data,T:T,byId:byId,keepersFor:keepersFor};
+  try{ applyKeepers(Object.keys(KEEPER_ROWS).map(function(k){return KEEPER_ROWS[k];}), KEEPER_REQS); }catch(e){ rebuildKeeperViews(); }
+  renderStandings();
+  if(typeof renderOrderControls==="function") try{ renderOrderControls(); }catch(e){}
+  ["pl-owner","po-owner"].forEach(function(id){ var sel=document.getElementById(id); if(!sel) return;
+    Array.prototype.forEach.call(sel.options,function(o){ var t=byId(o.value); if(t) o.textContent=t.short+" — "+t.name; }); });
+  document.dispatchEvent(new CustomEvent("cb:liveteams",{detail:data}));
+  return true;
+}
+function loadLiveTeams(){
+  if(!/crysterbaters\.(vercel\.app|com)$|^(localhost|127\.0\.0\.1)$/.test(location.hostname)&&!window.CB_FORCE_LIVE) return;
+  fetch("/api/teams",{cache:"no-store"}).then(function(r){ return r.ok?r.json():null; })
+    .then(applyLiveTeams).catch(function(){});
+}
 
 /* ---------- keeper ladders ---------- */
 function renderKeeperLadders(){
@@ -6039,6 +6082,8 @@ var Yahoo=(function(){
   function nrm(s){ return String(s||"").normalize("NFKD").replace(/[̀-ͯ]/g,"").toLowerCase().replace(/[^a-z0-9]/g,""); }
   function siteTeamFor(d){
     if(!d||!d.team) return null;
+    var key=d.team.key||d.team.team_key;
+    if(key){ for(var k=0;k<T.length;k++){ if(T[k].yahooKey===key) return T[k]; } }
     var want=nrm(d.team.name);
     for(var i=0;i<T.length;i++){ if(nrm(T[i].name)===want) return T[i]; }
     return null;
@@ -6245,6 +6290,7 @@ function fromHash(silent){
   return false;
 }
 if(!fromHash(true)) go("home",true);
+loadLiveTeams();
 window.addEventListener("popstate",function(){ if(!fromHash(true)) go("home",true); });
 
 /* ---------- splash ---------- */

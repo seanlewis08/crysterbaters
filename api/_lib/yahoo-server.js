@@ -83,6 +83,27 @@ async function linkChoices(typed) {
   return (hit.length ? hit : rows).slice(0, 25).map((r) => ({ name: r.name.slice(0, 100), value: r.value }));
 }
 
+// Every team's current roster in one call: [{ key, name, nick, players:[{name,nba,pos,status}] }]
+async function leagueRosters() {
+  const at = await accessToken();
+  const raw = await L.yahoo({ at }, "/league/" + LEAGUE + "/teams/roster");
+  const league = L.fold(raw.fantasy_content.league);
+  return list(league.teams).map((x) => x.team || x).filter(Boolean).map((t) => {
+    const mgr = list(t.managers).map((m) => m.manager || m)[0] || {};
+    const ro = t.roster || {};
+    const players = list(ro.players || (ro["0"] && ro["0"].players)).map((p) => {
+      const pl = p.player || p;
+      return {
+        name: pl.name && pl.name.full,
+        nba: pl.editorial_team_abbr || "",
+        pos: (pl.selected_position && pl.selected_position.position) || "",
+        status: pl.status || "",
+      };
+    }).filter((p) => p.name);
+    return { key: t.team_key, name: t.name, nick: mgr.nickname || "", players };
+  });
+}
+
 // Current Yahoo name for a site team id (for messages), falling back to the site's name.
 async function teamName(teamId) {
   try {
@@ -93,4 +114,4 @@ async function teamName(teamId) {
   return s ? s.name : teamId;
 }
 
-module.exports = { leagueTeams, mappedTeams, linkChoices, teamName, _reset: () => { cached = null; } };
+module.exports = { leagueTeams, leagueRosters, mappedTeams, linkChoices, teamName, _reset: () => { cached = null; } };
