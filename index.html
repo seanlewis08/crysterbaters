@@ -2984,10 +2984,11 @@ function etDayNumber(iso){
 }
 document.getElementById("cfetch").addEventListener("click",function(){
   var btn=this, start=parseYmd(CAP.start), startDay=Math.floor(Date.UTC(start.getFullYear(),start.getMonth(),start.getDate())/86400000);
+  /* ESPN stopped answering date ranges (400) in Oct 2026; whole months still work, so ask month by month */
   var maxWeeks=30, chunks=[];
-  for(var c=0;c<maxWeeks;c+=4){
-    var a=new Date(start); a.setDate(a.getDate()+c*7); var b=new Date(a); b.setDate(b.getDate()+27);
-    chunks.push(ymd(a).replace(/-/g,"")+"-"+ymd(b).replace(/-/g,""));
+  for(var c=0;c<8;c++){
+    var a=new Date(start.getFullYear(),start.getMonth()+c,1);
+    chunks.push(String(a.getFullYear())+("0"+(a.getMonth()+1)).slice(-2));
   }
   btn.disabled=true; cMsg.style.color="var(--muted)"; cMsg.textContent="Counting…";
   Promise.all(chunks.map(function(r){
@@ -6235,8 +6236,11 @@ var Yahoo=(function(){
   function schedule(d){
     var host=$("yh-sched"); if(!host||!d.players.length) return;
     var r=weekRange(d), today=etParts(new Date().toISOString());
-    fetch("https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates="+r[0].replace(/-/g,"")+"-"+r[1].replace(/-/g,"")+"&limit=1000")
-      .then(function(res){ if(!res.ok) throw new Error("ESPN answered "+res.status); return res.json(); })
+    /* one request per day of the week: ESPN no longer accepts a date range here */
+    var days=[], d0=new Date(r[0]+"T12:00:00Z"); for(var k=0;k<7;k++){ var dk=new Date(d0); dk.setUTCDate(dk.getUTCDate()+k); days.push(dk.toISOString().slice(0,10).replace(/-/g,"")); }
+    Promise.all(days.map(function(day){ return fetch("https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates="+day+"&limit=1000")
+      .then(function(res){ if(!res.ok) throw new Error("ESPN answered "+res.status); return res.json(); }); }))
+      .then(function(parts){ var j={events:[]}; parts.forEach(function(x){ (x.events||[]).forEach(function(e){ j.events.push(e); }); }); return j; })
       .then(function(j){
         /* games per team per ET day; a game counts as "to come" until it has started */
         var byTeam={}, seen={};
