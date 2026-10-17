@@ -415,14 +415,18 @@ const click = (customId, userId) => ({ type: 3, data: { custom_id: customId }, m
   {
     const w = require("../api/_lib/welcome");
     assert.strictEqual(w.roleSpecs().length, 30 + 5 + 4);
-    assert.strictEqual(w.welcomeMessage().components.length, 5);
+    assert.strictEqual(w.welcomeMessage().components.length, 3);
     assert.strictEqual(w.cleanPlayerName("luka  DONCIC jr."), "Luka Doncic Jr.");
     assert.strictEqual(w.cleanPlayerName("🔥"), null);
     const member = (rolesHeld) => ({ user: { id: "u-sean", username: "monkeydsean" }, roles: rolesHeld });
     const held = () => Array.from(discord.memberRoles["u-sean"] || []);
     // pick Lakers, then switch to Warriors: exactly one 🏀 role at a time, created on demand
-    let r = await interact({ type: 3, member: member([]), data: { custom_id: "fav:team:W", component_type: 3, values: ["LAL"] } });
-    assert.strictEqual(r.statusCode, 200); assert.ok(/Lakers/.test(r.body.data.content));
+    let r = await interact({ type: 3, member: member([]), data: { custom_id: "fav:team", component_type: 2 } });
+    assert.ok(r.body.data.flags === 64 && /conference/.test(r.body.data.content), "button asks East or West privately");
+    r = await interact({ type: 3, member: member([]), data: { custom_id: "fav:conf:W", component_type: 2 } });
+    assert.strictEqual(r.body.type, 7); assert.strictEqual(r.body.data.components[0].components[0].options.length, 15);
+    r = await interact({ type: 3, member: member([]), data: { custom_id: "fav:team:W", component_type: 3, values: ["LAL"] } });
+    assert.strictEqual(r.statusCode, 200); assert.strictEqual(r.body.type, 7); assert.ok(/Lakers/.test(r.body.data.content) && /#552583/.test(r.body.data.content));
     let lakers = discord.roles.find((x) => x.name === "🏀 Lakers"); assert.ok(lakers && lakers.color === 0x552583);
     assert.deepStrictEqual(held(), [lakers.id]);
     r = await interact({ type: 3, member: member(held()), data: { custom_id: "fav:team:W", component_type: 3, values: ["GS"] } });

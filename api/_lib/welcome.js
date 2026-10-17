@@ -50,12 +50,6 @@ function roleSpecs() {
 // The #welcome message. Five action rows is Discord's maximum.
 function welcomeMessage(opts = {}) {
   const draft = opts.draft || "Sat Oct 17 · 3:00 PM PT";
-  const teamSelect = (conf, id, placeholder) => ({
-    type: 1, components: [{
-      type: 3, custom_id: id, placeholder, min_values: 1, max_values: 1,
-      options: NBA.filter((t) => t[3] === conf).map((t) => ({ label: t[1], value: t[0] })),
-    }],
-  });
   return {
     content: [
       "# Welcome to the Crysterbaters",
@@ -64,19 +58,18 @@ function welcomeMessage(opts = {}) {
       "**Start here**",
       "1. Claim your team on the site → <" + SITE + "/#signup>",
       "2. Type `/link` in any channel and pick your team so polls here count for you.",
-      "3. Pick your colours below. Favorite team becomes your role colour, and the time zone helps us schedule things.",
+      "3. Pick your NBA team below: your name takes its colour (one team at a time, the latest pick wins). Add a favorite player and your time zone while you're here.",
       "",
       "🎥 **Live draft:** " + draft + " in the Draft Room. Cameras on.",
     ].join("\n"),
     allowed_mentions: { parse: [] },
     components: [
-      teamSelect("E", "fav:team:E", "Favorite NBA team · East"),
-      teamSelect("W", "fav:team:W", "Favorite NBA team · West"),
       { type: 1, components: [{ type: 3, custom_id: "fav:zone", placeholder: "Your time zone", min_values: 1, max_values: 1,
         options: ZONES.map((z) => ({ label: z[1], value: z[0], emoji: { name: z[2] } })) }] },
       { type: 1, components: [{ type: 3, custom_id: "fav:ping", placeholder: "Ping me for… (pick any)", min_values: 0, max_values: PINGS.length,
         options: PINGS.map((p) => ({ label: p[1], value: p[0], description: p[3], emoji: { name: p[2] } })) }] },
       { type: 1, components: [
+        { type: 2, style: 1, custom_id: "fav:team", label: "Pick your NBA team", emoji: { name: "🏀" } },
         { type: 2, style: 1, custom_id: "fav:player", label: "Set favorite player", emoji: { name: "⭐" } },
         { type: 2, style: 5, label: "Open the site", url: SITE },
       ] },
@@ -129,6 +122,19 @@ async function handleComponent(ix) {
   const values = ix.data.values || [];
 
   if (id === "fav:player") return { type: dc.RT.MODAL, data: playerModal() };
+  if (id === "fav:team") {
+    return { type: dc.RT.CHANNEL_MESSAGE, data: { flags: dc.EPHEMERAL, content: "Which conference is your team in?", components: [{ type: 1, components: [
+      { type: 2, style: 2, custom_id: "fav:conf:E", label: "East", emoji: { name: "🗽" } },
+      { type: 2, style: 2, custom_id: "fav:conf:W", label: "West", emoji: { name: "🌉" } },
+    ] }] } };
+  }
+  if (id.startsWith("fav:conf:")) {
+    const conf = id.endsWith("E") ? "E" : "W";
+    return { type: dc.RT.UPDATE_MESSAGE, data: { content: "Pick one. Your name takes its colour; picking again later swaps it.", components: [{ type: 1, components: [{
+      type: 3, custom_id: "fav:team:" + conf, placeholder: conf === "E" ? "Eastern Conference" : "Western Conference", min_values: 1, max_values: 1,
+      options: NBA.filter((t) => t[3] === conf).map((t) => ({ label: t[1], value: t[0] })),
+    }] }] } };
+  }
 
   const roles = await guildRoles();
   if (id.startsWith("fav:team:")) {
@@ -136,7 +142,8 @@ async function handleComponent(ix) {
     if (!t) return ephemeral("Pick a team from the list.");
     const r = await ensureRole(roles, teamRole(t), t[2]);
     await setCategory(user.id, memberRoles, roles, PREFIX.team, [r.id]);
-    return ephemeral("You're repping the **" + t[1] + "** now. Your name wears their colour.");
+    // this select lives on the ephemeral prompt, so replace that prompt with the confirmation
+    return { type: dc.RT.UPDATE_MESSAGE, data: { content: "🏀 You're repping the **" + t[1] + "** now. Your name wears " + t[1] + " colours (#" + t[2].toString(16).padStart(6, "0").toUpperCase() + "). Hit the button again any time to switch.", components: [] } };
   }
   if (id === "fav:zone") {
     const z = ZONES.find((x) => x[0] === values[0]);
