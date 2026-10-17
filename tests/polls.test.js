@@ -493,7 +493,8 @@ const click = (customId, userId) => ({ type: 3, data: { custom_id: customId }, m
     const row = db.dues_payments.find((x) => x.team_id === "jalenba");
     assert.ok(row && row.paid && !row.confirmed && row.method === "zelle" && row.user_id === "u-sean");
     const newMsgs = Object.values(discord.messages).slice(before);
-    const board = newMsgs.find((m) => (m.content || "").startsWith(dues.BOARD_TAG));
+    // (the sweep's ensureBoard may already have posted it — either way it must now reflect the payment)
+    const board = Object.values(discord.messages).find((m) => (m.content || "").startsWith(dues.BOARD_TAG));
     assert.ok(board && /🟡 The JaleNBA/.test(board.content) && /✅ Regular Season Giannis/.test(board.content) && /❌ The Knuepp Sluepps/.test(board.content), board && board.content);
     const notice = newMsgs.find((m) => /marked 2026-27 dues paid via Zelle/.test(m.content || ""));
     assert.ok(notice && notice.components[0].components[0].custom_id === "dues:confirm:2026-27:jalenba");

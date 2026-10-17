@@ -117,6 +117,15 @@ async function refreshBoard() {
   return dc.api("POST", "/channels/" + channelId + "/messages", body);
 }
 
+// Post the board only if #dues exists and has none yet (cheap enough for the periodic sweep).
+async function ensureBoard() {
+  const channelId = await duesChannel();
+  if (!channelId) return { skipped: "no #dues channel" };
+  if (await findBoard(channelId)) return { ok: "board present" };
+  const m = await refreshBoard();
+  return m ? { posted: m.id } : { skipped: "no active season" };
+}
+
 // Ping whoever still owes. Linked managers get a real mention; the rest are named.
 async function remind(season, rows, profiles, { auto = false } = {}) {
   const channelId = await duesChannel();
@@ -236,4 +245,4 @@ async function handleComponent(ix, me) {
   return null;
 }
 
-module.exports = { activeSeason, payments, payLinks, statusCard, boardMessage, refreshBoard, remind, autoNudge, handleCommand, handleComponent, BOARD_TAG, NUDGE_TAG };
+module.exports = { activeSeason, payments, payLinks, statusCard, boardMessage, refreshBoard, ensureBoard, remind, autoNudge, handleCommand, handleComponent, BOARD_TAG, NUDGE_TAG };

@@ -33,9 +33,10 @@ module.exports = async (req, res) => {
   try {
     if (req.method === "GET") {
       const n = await poll.sweep();
-      let nudge = null;
+      let nudge = null, board = null;
+      try { board = await dues.ensureBoard(); } catch (e) { console.error("dues board:", e); board = { error: e.message }; }
       try { nudge = await dues.autoNudge(); } catch (e) { console.error("dues nudge:", e); nudge = { error: e.message }; }
-      return res.status(200).json({ swept: n, dues: nudge });
+      return res.status(200).json({ swept: n, dues: nudge, board });
     }
     const body = typeof req.body === "string" ? JSON.parse(req.body || "{}") : (req.body || {});
     const out = { ok: true, event: body.type, table: body.table };
