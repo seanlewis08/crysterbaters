@@ -900,3 +900,13 @@ drop trigger if exists votes_discord_notify on public.votes;
 create trigger votes_discord_notify
   after insert or update or delete on public.votes
   for each row execute function public.discord_notify();
+
+-- The Vercel functions use the service role. This project's defaults do
+-- not grant it anything, so say so explicitly (RLS is bypassed by the
+-- service role regardless; these are plain table privileges).
+grant usage on schema public to service_role;
+grant all on all tables in schema public to service_role;
+grant all on all sequences in schema public to service_role;
+grant execute on all functions in schema public to service_role;
+alter default privileges in schema public grant all on tables to service_role;
+alter default privileges in schema public grant all on sequences to service_role;
