@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1600 640" width="1600" height="640">
+  <defs>
+    <pattern id="planks" width="1600" height="64" patternUnits="userSpaceOnUse">
+      <rect width="1600" height="64" fill="#E9DCC1"/>
+      <rect y="62" width="1600" height="2" fill="#D4C3A2"/>
+      <rect x="260" width="2" height="64" fill="#D4C3A2"/><rect x="780" width="2" height="64" fill="#D4C3A2"/><rect x="1240" width="2" height="64" fill="#D4C3A2"/>
+    </pattern>
+    <linearGradient id="fade" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#160F08" stop-opacity="0.92"/>
+      <stop offset="0.55" stop-color="#160F08" stop-opacity="0.78"/>
+      <stop offset="1" stop-color="#160F08" stop-opacity="0.35"/>
+    </linearGradient>
+    <radialGradient id="ballg" cx="40%" cy="35%" r="70%"><stop offset="0" stop-color="#E07A3A"/><stop offset="1" stop-color="#9E4210"/></radialGradient>
+    <clipPath id="disc"><circle r="228"/></clipPath>
+  </defs>
+  <rect width="1600" height="640" fill="url(#planks)"/>
+  <!-- court lines -->
+  <g fill="none" stroke="#1B3F7A" stroke-width="12" stroke-linecap="round" opacity="0.85">
+    <path d="M 1600 -60 A 560 560 0 0 0 1600 700" transform="translate(-120 0)"/>
+    <rect x="1340" y="200" width="420" height="240" rx="4"/>
+    <circle cx="1340" cy="320" r="110"/>
+    <path d="M 0 -60 A 560 560 0 0 1 0 700" transform="translate(120 0)"/>
+    <rect x="-160" y="200" width="420" height="240" rx="4"/>
+    <circle cx="260" cy="320" r="110"/>
+  </g>
+  <rect width="1600" height="640" fill="url(#fade)"/>
+  <!-- logo disc -->
+  <g transform="translate(1290 320)">
+    <circle r="250" fill="#2E2114"/><circle r="238" fill="none" stroke="#C1571A" stroke-width="6"/>
+    <circle r="228" fill="url(#planks)" transform="translate(-1290 -320) translate(1290 320)"/>
+    <g clip-path="url(#disc)" fill="none" stroke="#1B3F7A" stroke-width="8" stroke-linecap="round" opacity="0.9">
+      <path d="M -206 270 A 280 280 0 0 1 206 270"/>
+      <rect x="-60" y="92" width="120" height="210" rx="3"/>
+      <circle cx="0" cy="92" r="55"/>
+    </g>
+    <g font-family="'Saira Condensed','Barlow Condensed','Arial Narrow',Arial,sans-serif" font-weight="800" text-anchor="middle">
+      <text y="48" font-size="215" fill="#22190E" letter-spacing="-9">CB</text>
+    </g>
+    <g transform="translate(88 88)">
+      <circle r="72" fill="url(#ballg)" stroke="#22190E" stroke-width="6"/>
+      <g fill="none" stroke="#22190E" stroke-width="6" stroke-linecap="round">
+        <path d="M -72 0 H 72"/><path d="M 0 -72 V 72"/><path d="M -51 -51 Q 0 -14 51 -51"/><path d="M -51 51 Q 0 14 51 51"/>
+      </g>
+    </g>
+    <circle r="250" fill="none" stroke="#22190E" stroke-width="14"/>
+  </g>
+  <!-- text -->
+  <g font-family="'Saira Condensed','Barlow Condensed','Arial Narrow',Arial,sans-serif" fill="#F4EBD9">
+    <text x="90" y="200" font-size="46" font-weight="700" letter-spacing="10" fill="#E07A3A">CRYSTERBATERS · 2026-27</text>
+    <text x="84" y="360" font-size="190" font-weight="800" letter-spacing="-2">LIVE DRAFT</text>
+    <text x="90" y="440" font-size="52" font-weight="700" letter-spacing="2">SAT OCT 17 · 3:00 PM PT · DRAFT ROOM</text>
+    <text x="90" y="520" font-size="36" font-weight="700" letter-spacing="3" fill="#D4C3A2">CAMERAS ON · crysterbaters.com</text>
+  </g>
+</svg>

@@ -90,6 +90,7 @@ async function leagueRosters() {
   const league = L.fold(raw.fantasy_content.league);
   return list(league.teams).map((x) => x.team || x).filter(Boolean).map((t) => {
     const mgr = list(t.managers).map((m) => m.manager || m)[0] || {};
+    const logo = list(t.team_logos).map((l) => l.team_logo || l)[0] || {};
     const ro = t.roster || {};
     const players = list(ro.players || (ro["0"] && ro["0"].players)).map((p) => {
       const pl = p.player || p;
@@ -100,7 +101,7 @@ async function leagueRosters() {
         status: pl.status || "",
       };
     }).filter((p) => p.name);
-    return { key: t.team_key, name: t.name, nick: mgr.nickname || "", players };
+    return { key: t.team_key, name: t.name, nick: mgr.nickname || "", logo: logo.url || "", players };
   });
 }
 

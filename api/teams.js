@@ -35,7 +35,7 @@ async function build(withRosters) {
           .map((p) => [slot(p.pos), p.name, p.nba, p.status])
           .sort((a, b) => ORDER[a[0]] - ORDER[b[0]])
       : null;
-    return { id: idByKey.get(t.key) || null, key: t.key, name: t.name, nick: t.nick, roster };
+    return { id: idByKey.get(t.key) || null, key: t.key, name: t.name, nick: t.nick, logo: t.logo || "", roster };
   });
   return { built: new Date().toISOString(), league: "nba.l.33689", teams };
 }
