@@ -678,6 +678,12 @@ td input.capin:focus-visible{outline:1px solid var(--amber);border-color:var(--a
 .preset small{display:block;font-size:11.5px;color:var(--muted);line-height:1.3}
 .preset:hover{border-color:var(--amber)}
 .preset.on{border-color:var(--amber);box-shadow:inset 0 0 0 1px var(--amber)}
+.preset.diy{border-style:dashed;border-color:var(--amber-dim);background:var(--amber-glow)}
+.preset.diy b{color:var(--amber)}
+.po-build{display:flex;align-items:baseline;gap:12px;margin:6px 0 2px;scroll-margin-top:120px}
+select.flash{box-shadow:0 0 0 3px var(--amber-glow),0 0 0 1px var(--amber);transition:box-shadow .3s}
+.po-build h3{font-family:var(--disp);font-size:18px;font-weight:700;letter-spacing:.02em;text-transform:uppercase;margin:0}
+.po-build span{font-size:13px;color:var(--muted)}
 .pltools [hidden]{display:none}
 .poster-row{margin-top:-2px}
 .plotbox .colax{stroke:var(--line);stroke-width:1;stroke-dasharray:3 4;shape-rendering:crispEdges}
@@ -1745,6 +1751,7 @@ footer p + p{margin-top:11px}
 
       <div class="presets" id="po-presets"></div>
 
+      <div class="po-build" id="po-build"><h3>Build your own</h3><span>Pick a chart type, choose any stats for the axes, filter to the league or one team — every box below redraws the chart. Save it to the gallery when you like it.</span></div>
       <div class="pltools" id="po-tools">
         <div class="field"><label for="po-chart">Chart</label><select id="po-chart"></select></div>
         <div class="field" data-for="swarm"><label for="po-g">Group by</label><select id="po-g"></select></div>
@@ -5483,7 +5490,7 @@ var Plot=(function(){
     $("po-g").innerHTML=G.map(function(g){ return '<option value="'+g.k+'">'+esc(g.h)+'</option>'; }).join("");
     $("po-chart").innerHTML=Object.keys(CHARTS).map(function(k){ return '<option value="'+k+'">'+esc(CHARTS[k])+'</option>'; }).join("");
     var os=$("po-owner"); T.forEach(function(t){ var o=document.createElement("option"); o.value=t.id; o.textContent=t.short+" — "+t.name; os.appendChild(o); });
-    $("po-presets").innerHTML=PRESETS.map(function(p){ return '<button class="preset" data-preset="'+p.id+'"><b>'+esc(p.h)+'</b><small>'+esc(p.p)+'</small></button>'; }).join("");
+    $("po-presets").innerHTML=PRESETS.map(function(p){ return '<button class="preset" data-preset="'+p.id+'"><b>'+esc(p.h)+'</b><small>'+esc(p.p)+'</small></button>'; }).join("")+'<button class="preset diy" id="po-diy"><b>Build your own</b><small>Any chart, any two stats, any slice of the league — the controls below are yours</small></button>';
     sync(); showFields();
 
     ["chart","x","y","g","size","color","pos","owner","mode","style","order","subject","agg"].forEach(function(k){ $("po-"+k).addEventListener("change",function(){ f[k]=this.value; f.preset=""; if(k==="chart"){ sel={}; } refresh(); }); });
@@ -5503,7 +5510,7 @@ var Plot=(function(){
     $("po-none").addEventListener("click",function(){ sel={}; draw(); panel(); });
     $("po-groups").addEventListener("click",function(e){ var b=e.target.closest("[data-hlpos]"); if(b&&!b.disabled) group(b.dataset.hlpos); });
     $("po-list").addEventListener("click",function(e){ var b=e.target.closest("[data-k]"); if(b) toggle(b.dataset.k); });
-    $("po-presets").addEventListener("click",function(e){ var b=e.target.closest("[data-preset]"); if(!b) return; var p=PRESETS.filter(function(x){return x.id===b.dataset.preset;})[0]; sel={}; applyState(p.s); f.preset=p.id; sync(); pushHash(); });
+    $("po-presets").addEventListener("click",function(e){ var d=e.target.closest("#po-diy"); if(d){ f.preset=""; sync(); try{ $("po-build").scrollIntoView({behavior:"smooth",block:"start"}); }catch(x){} var c=$("po-chart"); c.focus(); c.classList.add("flash"); setTimeout(function(){ c.classList.remove("flash"); },1600); return; } var b=e.target.closest("[data-preset]"); if(!b) return; var p=PRESETS.filter(function(x){return x.id===b.dataset.preset;})[0]; sel={}; applyState(p.s); f.preset=p.id; sync(); pushHash(); });
     $("po-gallery").addEventListener("click",function(e){
       var b=e.target.closest("[data-gid],[data-gpin],[data-gdel]"); if(!b) return;
       if(b.dataset.gid) galleryOpen(b.dataset.gid); else if(b.dataset.gpin) galleryPin(b.dataset.gpin); else galleryDel(b.dataset.gdel);
