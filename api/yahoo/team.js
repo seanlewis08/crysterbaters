@@ -104,7 +104,9 @@ module.exports = async (req, res) => {
       // the league context only returns the scoring categories (no GP), so each day's lineup
       // comes from the roster and "did he play" from the game-wide player stats for that date
       const got = await Promise.all(dates.map(date =>
-        L.yahoo(s, "/team/" + key + "/roster;date=" + date + "/players")
+        // Yahoo only honours the date when the coverage type is given too; a bare
+        // ";date=" is ignored and today's roster comes back for every day
+        L.yahoo(s, "/team/" + key + "/roster;type=date;date=" + date + "/players")
           .then(j => L.fold(j).fantasy_content.team).catch(e => ({ _err: e.message }))));
       let rawDay = null;
       for (let i = 0; i < got.length; i++) {
@@ -129,11 +131,12 @@ module.exports = async (req, res) => {
             ps.forEach(p => { p.gp = byKey[p.key] || 0; });
           } catch (e) { dayErr = e.message; }
         }
-        days.push({ date: dates[i], active: ps.filter(p => !BENCH[p.pos]).reduce((a, p) => a + p.gp, 0), bench: ps.filter(p => BENCH[p.pos]).reduce((a, p) => a + p.gp, 0), players: ps, error: dayErr || undefined });
+        days.push({ date: dates[i], yahooDate: r.date || undefined, active: ps.filter(p => !BENCH[p.pos]).reduce((a, p) => a + p.gp, 0), bench: ps.filter(p => BENCH[p.pos]).reduce((a, p) => a + p.gp, 0), players: ps, error: dayErr || undefined });
       }
       if (rawDay) warn.push("rawDay: " + rawDay);
       // a one-line picture of what Yahoo gave per day, so a flat week is easy to tell from a stuck one
-      warn.push("days: " + days.map(d => d.date.slice(5) + ":" + (d.error ? "ERR" : ((d.players || []).filter(p => !BENCH[p.pos]).map(p => (p.name || "").split(" ").pop()).join("/") || "none"))).join(" | "));
+      // each entry shows the date asked for and, in brackets, the date Yahoo says the roster is for
+      warn.push("days: " + days.map(d => d.date.slice(5) + (d.yahooDate && d.yahooDate !== d.date ? "[" + d.yahooDate.slice(5) + "!]" : "") + ":" + (d.error ? "ERR" : ((d.players || []).filter(p => !BENCH[p.pos]).map(p => (p.name || "").split(" ").pop()).join("/") || "none"))).join(" | "));
       // the week's games played come from the days (the league context carries no GP stat)
       const gpByKey = {};
       days.forEach(d => (d.players || []).forEach(p => { gpByKey[p.key] = (gpByKey[p.key] || 0) + p.gp; }));
