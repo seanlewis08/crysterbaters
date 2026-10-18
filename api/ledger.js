@@ -1,14 +1,19 @@
-// The nightly ledger run (and the commissioner's "Snapshot all teams now").
-//   1. the league's calendar from Yahoo → league_meta
-//   2. every team's lineup for each day of the current week (and yesterday,
-//      which may belong to last week on a Monday) → lineup_days
-//   3. ESPN box scores for every date up to today that isn't complete yet → nba_box
-//   4. a line in snapshot_runs
-// Who may call it: Vercel's cron (Authorization: Bearer CRON_SECRET), the
-// commissioner's browser (a Supabase session token whose email is the
-// commissioner's), or ?key=SYNC_SECRET by hand. Each step is idempotent, so
-// running it twice in a day is harmless; a run that hits the time budget just
-// leaves the rest for the next one.
+// The games ledger, one function (the Hobby plan allows twelve per deployment):
+//   GET  /api/ledger?team=jalenba[&week=5]   one team's week, in /api/yahoo/team's
+//        shape, so the page draws stored and live data the same way. Lineups are
+//        what the last snapshot (or that manager's last visit) read from Yahoo;
+//        games played come from ESPN box scores. Cached a minute at the edge.
+//   POST /api/ledger  (or the nightly cron, or ?key=SYNC_SECRET)   the snapshot run:
+//     1. the league's calendar from Yahoo → league_meta
+//     2. every team's lineup for each day of the current week (and yesterday,
+//        which may belong to last week on a Monday) → lineup_days
+//     3. ESPN box scores for every date up to today that isn't complete yet → nba_box
+//     4. a line in snapshot_runs
+//   Who may run it: Vercel's cron (Authorization: Bearer CRON_SECRET), the
+//   commissioner's browser (a Supabase session token whose email is the
+//   commissioner's), or ?key=SYNC_SECRET by hand. Each step is idempotent, so
+//   running it twice in a day is harmless; a run that hits the time budget just
+//   leaves the rest for the next one.
 "use strict";
 
 const yahoo = require("./_lib/yahoo-server");
@@ -37,7 +42,7 @@ async function callerIsCommissioner(req) {
   return u && u.email && s && s.commissioner_email && u.email.toLowerCase() === s.commissioner_email.toLowerCase() ? "commissioner" : null;
 }
 
-module.exports = async (req, res) => {
+async function snapshot(req, res) {
   res.setHeader("Cache-Control", "no-store");
   const who = await callerIsCommissioner(req).catch(() => null);
   if (!who) return res.status(401).json({ error: "commissioner only" });
@@ -105,4 +110,25 @@ module.exports = async (req, res) => {
     if (runId) await supa.update("snapshot_runs", "id=eq." + runId, { finished_at: new Date().toISOString(), note: ("failed: " + e.message).slice(0, 900) }).catch(() => {});
     return res.status(502).json(Object.assign(out, { error: e.message || String(e) }));
   }
+}
+
+async function read(req, res) {
+  const q = req.query || {};
+  const team = String(q.team || "");
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  if (!supa.teamById(team)) { res.setHeader("Cache-Control", "no-store"); return res.status(400).json({ error: "unknown team" }); }
+  try {
+    const d = await ledger.readTeamWeek(team, Number(q.week) || 0);
+    if (!d) { res.setHeader("Cache-Control", "no-store"); return res.status(404).json({ error: "no_snapshot", detail: "The ledger is empty: the commissioner's nightly snapshot hasn't run yet." }); }
+    res.setHeader("Cache-Control", "public, s-maxage=60, stale-while-revalidate=300");
+    return res.status(200).json(d);
+  } catch (e) {
+    res.setHeader("Cache-Control", "no-store");
+    return res.status(503).json({ error: e.message || String(e) });
+  }
+}
+
+module.exports = async (req, res) => {
+  if (req.method === "GET" && req.query && req.query.team) return read(req, res);
+  return snapshot(req, res);
 };

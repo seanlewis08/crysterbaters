@@ -3496,7 +3496,7 @@ var Polls=(function(){
       /* the games ledger: the commissioner's session may run the snapshot (every team's lineups from Yahoo, box scores from ESPN) right now */
       snapshotRun:function(){
         return client.auth.getSession().then(function(r){ var t=r.data.session&&r.data.session.access_token; if(!t) throw new Error("Not signed in.");
-          return fetch("/api/snapshot",{method:"POST",headers:{Authorization:"Bearer "+t}}); })
+          return fetch("/api/ledger",{method:"POST",headers:{Authorization:"Bearer "+t}}); })
           .then(function(r){ return r.json().catch(function(){return {};}).then(function(j){ if(!r.ok) throw new Error(j.error||("snapshot "+r.status)); return j; }); });
       },
       recordPoll:function(p){
@@ -6205,10 +6205,10 @@ var Yahoo=(function(){
     return v;
   }
   /* two sources, one shape: the manager's own team reads Yahoo live through their cookie
-     (/api/yahoo/team); every other team page reads the games ledger (/api/cap), which the
+     (/api/yahoo/team); every other team page reads the games ledger (/api/ledger), which the
      nightly snapshot and each manager's own visits keep current */
   var src={kind:"live", team:null};
-  function urlFor(){ var w=view.week?"week="+view.week:""; return src.kind==="live"?"/api/yahoo/team"+(w?"?"+w:""):"/api/cap?team="+encodeURIComponent(src.team||"")+(w?"&"+w:""); }
+  function urlFor(){ var w=view.week?"week="+view.week:""; return src.kind==="live"?"/api/yahoo/team"+(w?"?"+w:""):"/api/ledger?team="+encodeURIComponent(src.team||"")+(w?"&"+w:""); }
   /* fetch each URL once, hand the same answer to every panel that asked for that URL */
   var cache={}, FRESH=120000, again=[];
   function take(arr, url){ var out=[]; for(var i=arr.length-1;i>=0;i--){ if(arr[i].url===url){ out.unshift(arr[i]); arr.splice(i,1); } } return out; }
@@ -6429,7 +6429,7 @@ var Yahoo=(function(){
     document.addEventListener("click",function(e){
       var b;
       if(e.target.closest("#yh-refresh")){ var p=e.target.closest(".panel"); if(p) p.innerHTML='<div class="empty">'+(src.kind==="live"?"Asking Yahoo…":"Reading the ledger…")+'</div>'; cache={}; rerun(true); return; }
-      if(e.target.closest("#yh-out")){ fetch("/api/yahoo/logout",{credentials:"same-origin"}).then(function(){ cache={}; cur=null; rerun(true); },function(){ cache={}; cur=null; rerun(true); }); return; }
+      if(e.target.closest("#yh-out")){ fetch("/api/yahoo/login?out=1",{credentials:"same-origin"}).then(function(){ cache={}; cur=null; rerun(true); },function(){ cache={}; cur=null; rerun(true); }); return; }
       if((b=e.target.closest("[data-yhweek]"))){ if(b.disabled) return; view.week=+b.dataset.yhweek||null; view.day=null; sched=null; var p2=e.target.closest(".panel"); if(p2){ var nav=p2.querySelector(".yh-nav"); if(nav) nav.insertAdjacentHTML("beforeend",'<span class="sub" style="margin-left:auto">'+(src.kind==="live"?"Asking Yahoo…":"Reading the ledger…")+'</span>'); } rerun(false); return; }
       if((b=e.target.closest("[data-yhday]"))){ view.day=b.dataset.yhday||null; repaint(); return; }
       if((b=e.target.closest("#yh-snap"))){

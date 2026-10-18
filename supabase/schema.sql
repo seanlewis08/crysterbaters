@@ -978,7 +978,7 @@ end $$;
 --     day-by-day lineups work for everyone without a Yahoo login.
 --
 --     lineup_days   one row per team × date × player: the slot Yahoo held
---                   for him that day. Written by /api/snapshot (all teams,
+--                   for him that day. Written by /api/ledger (POST) (all teams,
 --                   nightly and on the commissioner's button) and by
 --                   /api/yahoo/team (the signed-in manager's own team).
 --     player_links  Yahoo player key → ESPN athlete id, matched by name and
@@ -989,7 +989,7 @@ end $$;
 --     nba_days      which dates' box scores are complete.
 --     league_meta   the Yahoo league's weeks and dates (one row).
 --     snapshot_runs a log line per run, for the "as of" note on the page.
---     All service-role only: the page reads them through /api/cap.
+--     All service-role only: the page reads them through /api/ledger.
 -- ----------------------------------------------------------------------
 create table if not exists public.lineup_days (
   team_id     text not null check (team_id ~ '^[a-z0-9]{2,20}$'),

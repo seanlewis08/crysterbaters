@@ -2,6 +2,9 @@
   "cleanUrls": true,
   "crons": [
     { "path": "/api/poll-sync", "schedule": "0 15 * * *" },
-    { "path": "/api/snapshot", "schedule": "40 9 * * *" }
-  ]
+    { "path": "/api/ledger", "schedule": "40 9 * * *" }
+  ],
+  "functions": {
+    "api/ledger.js": { "maxDuration": 60 }
+  }
 }

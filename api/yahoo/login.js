@@ -1,7 +1,10 @@
 const L = require("./_lib");
 const crypto = require("crypto");
+// ?out=1 signs out instead: clears the Yahoo cookies (was /api/yahoo/logout; folded
+// in here to stay under the twelve-function limit of the Hobby plan)
 module.exports = async (req, res) => {
   try {
+    if (/[?&]out=1(&|$)/.test(req.url || "")) { L.clearCookie(res, L.COOKIE); L.clearCookie(res, L.STATE); return L.json(res, 200, { ok: true }); }
     const state = crypto.randomBytes(16).toString("hex");
     // where to land afterwards: "manager" or "team/<id>" (letters, digits and one slash only)
     const back = String(new URL(req.url, L.origin(req)).searchParams.get("back") || "manager").replace(/[^a-z0-9/]/gi, "").slice(0, 40) || "manager";

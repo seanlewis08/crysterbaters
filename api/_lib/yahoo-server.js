@@ -1,5 +1,5 @@
 // Server-side Yahoo reads with no browser cookie: the Discord functions and
-// the games ledger (/api/snapshot). Uses the one refresh token the
+// the games ledger (/api/ledger (POST)). Uses the one refresh token the
 // commissioner shared via /api/yahoo/share, kept in discord_settings (service
 // role only). What gets stored from Yahoo is limited to which Yahoo team key
 // is which site team (team_map) and each team's daily lineup slots

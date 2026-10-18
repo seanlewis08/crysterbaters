@@ -7,7 +7,7 @@
 //   linkPlayers(rows)                Yahoo player → ESPN athlete id by name + NBA team
 //   fetchBox(date)                   ESPN box scores for every final game on a date
 //   readTeamWeek(teamId, week)       assemble the same shape /api/yahoo/team returns,
-//                                    from the stored rows (for /api/cap)
+//                                    from the stored rows (for /api/ledger)
 //
 // Nothing here ever touches a token: callers pass in what Yahoo returned.
 "use strict";
