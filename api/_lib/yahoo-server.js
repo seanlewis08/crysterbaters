@@ -143,6 +143,36 @@ async function leagueRostersOn(date) {
   });
 }
 
+// This season's draft, every pick with the player's name: [{round, pick, overall, team_id,
+// key, player, nba, pos}]. draftresults only carries player keys, so names come from the
+// league's players resource, 25 keys at a time. Cached for an hour — a draft doesn't change.
+let draftCache = null;
+async function draftResults() {
+  if (draftCache && Date.now() - draftCache.at < 60 * 60 * 1000) return draftCache.v;
+  const at = await accessToken();
+  const dr = L.fold((await L.yahoo({ at }, "/league/" + LEAGUE + "/draftresults")).fantasy_content.league);
+  const picks = list(dr.draft_results).map((x) => x.draft_result || x).filter((d) => d && d.player_key)
+    .map((d) => ({ round: Number(d.round) || 0, pick: Number(d.pick) || 0, teamKey: d.team_key || "", playerKey: d.player_key }));
+  const names = {};
+  const keys = Array.from(new Set(picks.map((p) => p.playerKey)));
+  for (let i = 0; i < keys.length; i += 25) {
+    const raw = L.fold((await L.yahoo({ at }, "/league/" + LEAGUE + "/players;player_keys=" + keys.slice(i, i + 25).join(","))).fantasy_content.league);
+    list(raw.players).map((x) => x.player || x).forEach((pl) => {
+      if (pl && pl.player_key) names[pl.player_key] = { player: (pl.name && pl.name.full) || pl.player_key, nba: pl.editorial_team_abbr || "", pos: pl.display_position || "" };
+    });
+  }
+  const map = await mappedTeams();
+  const idByKey = new Map(map.map((m) => [m.key, m.team_id]));
+  const nameByKey = new Map(map.map((m) => [m.key, m.name]));
+  const n = Math.max(1, new Set(picks.map((p) => p.teamKey)).size);
+  const out = picks.sort((a, b) => a.pick - b.pick).map((p) => {
+    const nm = names[p.playerKey] || { player: p.playerKey, nba: "", pos: "" };
+    return { round: p.round, pick: p.pick, slot: ((p.pick - 1) % n) + 1, team_id: idByKey.get(p.teamKey) || null, team: nameByKey.get(p.teamKey) || "", key: p.playerKey, player: nm.player, nba: nm.nba, pos: nm.pos };
+  });
+  draftCache = { at: Date.now(), v: { season: String(dr.season || ""), status: dr.draft_status || "", teams: n, picks: out } };
+  return draftCache.v;
+}
+
 // Current Yahoo name for a site team id (for messages), falling back to the site's name.
 async function teamName(teamId) {
   try {
@@ -153,4 +183,4 @@ async function teamName(teamId) {
   return s ? s.name : teamId;
 }
 
-module.exports = { leagueTeams, leagueRosters, mappedTeams, linkChoices, teamName, leagueMeta, weekDates, leagueRostersOn, _reset: () => { cached = null; } };
+module.exports = { leagueTeams, leagueRosters, mappedTeams, linkChoices, teamName, leagueMeta, weekDates, leagueRostersOn, draftResults, _reset: () => { cached = null; draftCache = null; } };

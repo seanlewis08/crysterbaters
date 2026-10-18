@@ -531,6 +531,19 @@ output.led{
 .podium div:first-child dd{color:var(--amber)}
 .warnbar{padding:12px 20px;background:var(--red-glow);color:var(--red);font-size:14px;border-bottom:1px solid rgba(255,81,71,.4);font-family:var(--mono);letter-spacing:.04em}
 
+.dteams{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:0;border-top:1px solid var(--line)}
+.dteam{border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:10px 14px 12px}
+.dteam-hd{font-size:14px;margin:0 0 6px}
+.dteam table{width:100%;border-collapse:collapse}
+.dteam td{padding:3px 4px;font-size:13px;border:0;vertical-align:baseline}
+.dteam td.name{font-weight:600}
+.dteam tr.taken td.name{color:var(--amber)}
+details.archive{margin:28px 0 0;border:1px dashed var(--line);border-radius:6px;padding:0 16px}
+details.archive>summary{cursor:pointer;padding:12px 0;list-style:none;display:flex;gap:12px;align-items:baseline;flex-wrap:wrap}
+details.archive>summary::-webkit-details-marker{display:none}
+details.archive>summary::before{content:"▸";color:var(--amber);font-size:12px}
+details.archive[open]>summary::before{content:"▾"}
+details.archive>section{margin-top:8px;padding-bottom:16px}
 .board{border-collapse:separate;border-spacing:0;width:100%;min-width:980px}
 .board th,.board td{padding:0;border:0}
 .board thead th{
@@ -1285,6 +1298,19 @@ footer p + p{margin-top:11px}
   <!-- ================= DRAFT ================= -->
   <div class="view" id="v-draft">
     <section>
+      <div class="sec-head"><h2>2026–27 Draft</h2><span class="eyebrow cool" id="d26eyebrow">Oct 17, 2026 · 12 rounds · snake</span></div>
+      <div class="rulebar"></div>
+      <p class="lede">The board as it happened, straight from Yahoo. Amber cells are keepers taking their round; the small line under each name is who made the pick and the overall number. Next season's keeper costs come from this board — a player's cost is his round here, minus two.</p>
+      <div class="panel" style="margin-top:20px;overflow:hidden">
+        <div class="ttabs" style="padding:12px 16px 0"><button class="ttab on" data-d26view="board">By round</button><button class="ttab" data-d26view="team">By team</button></div>
+        <div id="d26wrap" style="overflow:auto;max-height:72vh"><div class="empty" style="padding:18px 16px">Reading the draft from Yahoo…</div></div>
+        <p class="sub" id="d26foot" style="margin:0;padding:10px 16px 14px"></p>
+      </div>
+    </section>
+
+    <details class="archive" id="predraft">
+    <summary><span class="eyebrow">Pre-draft tools · archived</span> <span class="sub">The board, pick swaps and the enter-in-Yahoo checklist we used before the draft. Kept for next year.</span></summary>
+    <section>
       <div class="sec-head"><h2>Pre-Draft Board</h2><span class="eyebrow cool">2026–27 · 12 rounds · snake</span></div>
       <div class="rulebar"></div>
       <p class="lede">Order is the reverse of last season's regular-season standings (ties broken head-to-head). Change it up top, log any pick swaps, and every keeper drops into the pick it costs — so you can see what's gone before anyone picks. Swapped picks show in blue with who they came from; every team still drafts twelve.</p>
@@ -1327,11 +1353,12 @@ footer p + p{margin-top:11px}
         </table>
       </div>
     </section>
+    </details>
 
     <section>
       <div class="sec-head"><h2>Last Year's Draft</h2><span class="eyebrow cool">2025 · 120 picks</span></div>
       <div class="rulebar"></div>
-      <p class="lede">The full board from the 2025 draft, straight from Yahoo. Amber rows were keepers taking their round. This is what every 2026–27 keeper cost is calculated from — a player's cost is his round here, minus two.</p>
+      <p class="lede">The full board from the 2025 draft, straight from Yahoo. Amber cells were keepers taking their round. This is what every 2026–27 keeper cost was calculated from.</p>
       <div class="panel" style="margin-top:18px;overflow:hidden">
         <div style="overflow:auto;max-height:70vh">
           <table class="board"><thead id="d25head"></thead><tbody id="d25body"></tbody></table>
@@ -2346,7 +2373,7 @@ document.getElementById("watch").innerHTML=K.map(function(k){
     {go:"teams",   n:"10",       lbl:"Managers", h:"Teams",      p:"Every roster as it locked before the playoffs, with each player's keeper cost, plus last season's final standings."},
     {go:"players", n:"—",        lbl:"Players",  h:"Players",    p:"Every NBA player: season stats, value in our eleven categories, who owns him here, and what he makes against the cap.", id:"hc-players"},
     {go:"plot",    n:"—",        lbl:"Plotted",  h:"Analysis",   p:"Swarms, scatters, leaderboards and tier lists from every stat we track — then copy the picture for the chat.", id:"hc-plot"},
-    {go:"draft",   n:"12",       lbl:"Rounds",   h:"Draft Board",p:"Set the order, see which picks keepers have already taken, and get the list to type into Yahoo. Last year's full board too."},
+    {go:"draft",   n:"120",      lbl:"Picks",    h:"Draft Results",p:"The 2026–27 board as it happened, every pick with who took him, and last year's board beside it."},
     {go:"cap",     n:"30",       lbl:"Per week", h:"Games Cap",  p:"Work out the adjusted cap for short weeks without doing the arithmetic by hand."},
     {go:"keepers", n:String(kCount), lbl:"Declared", h:"Keepers", p:"The calculator that settles arguments, and the ladder every declared keeper has left."},
     {go:"polls",   n:"—",        lbl:"Open",     h:"Polls",      p:"Put a question to the league and vote on everyone else's. Managers only — sign in first.", id:"hc-polls"},
@@ -2391,6 +2418,12 @@ document.getElementById("watch").innerHTML=K.map(function(k){
     td.className=""; td.innerHTML=esc(day(d))+'<small id="cd-draft">'+esc(daysTo(d.getFullYear(),d.getMonth()+1,d.getDate()))+' · '+esc(tm)+' · offline, 12 rounds</small>';
     tk.className="hot"; tk.innerHTML=esc(day(k))+'<small id="cd-keep">'+esc(daysTo(k.getFullYear(),k.getMonth()+1,k.getDate()))+' · a week before the draft</small>';
     document.getElementById("tkr-draft").textContent=day(d)+" · "+tm; document.getElementById("tkr-keep").textContent=day(k);
+    /* once the draft has happened the countdowns retire: the ticker points at the results instead */
+    if(Date.now()>d.getTime()+6*3600000){
+      td.className=""; td.innerHTML='Done<small id="cd-draft">'+esc(day(d))+' · the board is on the Draft page</small>';
+      tk.className=""; tk.innerHTML='Done<small id="cd-keep">keepers took their rounds on the board</small>';
+      document.getElementById("tkr-draft").textContent="done · "+day(d); document.getElementById("tkr-keep").parentNode.hidden=true;
+    }
   };
   /* the ticker should read right on first paint, before anyone opens the Draft Day page */
   window.setDraftTiles(window.DRAFT_SET);
@@ -2886,6 +2919,65 @@ document.addEventListener("change",function(e){
 });
 renderOrderControls();
 renderBoard();
+
+/* ---------- this season's draft, read from Yahoo through /api/ledger?draft=1 ----------
+   Same board as last year's below; K marks a declared keeper (from the keeper declarations,
+   matched by name) so his round reads as the pick it cost. */
+var Draft26=(function(){
+  var data=null, view="board", loading=false;
+  function nk(n){ return norm(n); }
+  function keeperSet(){ var ks={}; T.forEach(function(t){ keepersFor(t).forEach(function(k){ ks[nk(k.player)]=t.id; }); }); return ks; }
+  function boardHtml(d){
+    var n=d.teams||10, ks=keeperSet(), rounds=0; d.picks.forEach(function(p){ if(p.round>rounds) rounds=p.round; });
+    var head='<tr><th class="rnd">RD</th>'; for(var s=1;s<=n;s++) head+='<th>Pick '+s+'</th>'; head+='</tr>';
+    var body="";
+    for(var r=1;r<=rounds;r++){
+      var row=d.picks.filter(function(p){return p.round===r;}).sort(function(a,b){return a.pick-b.pick;});
+      body+='<tr><th class="rnd">'+r+'</th>';
+      row.forEach(function(p){
+        var t=p.team_id?byId(p.team_id):null, k=ks[nk(p.player)]&&ks[nk(p.player)]===p.team_id;
+        body+='<td class="cell'+(k?" taken":"")+'"><span class="kp" style="margin-top:0;color:'+(k?"var(--amber)":"var(--ink)")+'">'+esc(p.player)+(k?' <span class="kbadge">K</span>':'')+'</span>'+
+          '<span class="ov">'+(t?esc(t.short).toUpperCase():esc((p.team||"?").slice(0,10)).toUpperCase())+' · #'+p.pick+(p.nba?' · '+esc(p.nba):'')+'</span></td>';
+      });
+      for(var f=row.length;f<n;f++) body+='<td class="cell"></td>';
+      body+='</tr>';
+    }
+    return '<table class="board"><thead>'+head+'</thead><tbody>'+body+'</tbody></table>';
+  }
+  function teamHtml(d){
+    var ks=keeperSet(), by={}; d.picks.forEach(function(p){ (by[p.team_id||p.team]=by[p.team_id||p.team]||[]).push(p); });
+    var ids=T.map(function(t){return t.id;}).filter(function(id){return by[id];}).concat(Object.keys(by).filter(function(k){return !byId(k);}));
+    return '<div class="dteams">'+ids.map(function(id){
+      var t=byId(id), ps=by[id].slice().sort(function(a,b){return a.pick-b.pick;});
+      return '<div class="dteam"><div class="dteam-hd"><b>'+esc(t?t.name:id)+'</b>'+(t?'<span class="sub"> · '+esc(t.short)+'</span>':'')+'</div><table><tbody>'+ps.map(function(p){
+        var k=ks[nk(p.player)]===id;
+        return '<tr'+(k?' class="taken"':'')+'><td class="num sub">'+p.round+'.'+p.slot+'</td><td class="name">'+esc(p.player)+(k?' <span class="kbadge">K</span>':'')+'</td><td class="mgr">'+esc(p.nba)+(p.pos?' · '+esc(p.pos):'')+'</td><td class="num sub">#'+p.pick+'</td></tr>';
+      }).join("")+'</tbody></table></div>';
+    }).join("")+'</div>';
+  }
+  function paint(){
+    var w=document.getElementById("d26wrap"), f=document.getElementById("d26foot"); if(!w) return;
+    if(!data){ return; }
+    if(data.error){ w.innerHTML='<div class="empty" style="padding:18px 16px">Couldn’t read the draft from Yahoo ('+esc(data.error)+'). <button class="back" id="d26retry" style="margin:0;padding:0;font-size:12px;color:var(--amber)">Try again</button></div>'; f.textContent=""; return; }
+    if(!data.picks||!data.picks.length){ w.innerHTML='<div class="empty" style="padding:18px 16px">Yahoo has no picks for this season yet'+(data.status?' (draft status: '+esc(data.status)+')':'')+'.</div>'; f.textContent=""; return; }
+    w.innerHTML=view==="team"?teamHtml(data):boardHtml(data);
+    var eb=document.getElementById("d26eyebrow"); if(eb&&data.picks.length) eb.textContent=(data.season?data.season+'–'+String(Number(data.season)+1).slice(2)+' · ':'')+data.picks.length+' picks · '+Math.ceil(data.picks.length/(data.teams||10))+' rounds · snake';
+    f.innerHTML='Read from Yahoo '+(data.built?new Date(data.built).toLocaleDateString(undefined,{month:"short",day:"numeric"}):"")+' · K = declared keeper, counted as the pick he cost · <a href="https://sports.yahoo.com/fantasy/" target="_blank" rel="noopener">'+esc(data.attribution||"Fantasy data provided by Yahoo Fantasy")+'</a>';
+  }
+  function load(force){
+    if(loading) return; if(data&&!force&&!data.error){ paint(); return; }
+    loading=true;
+    fetch("/api/ledger?draft=1",{cache:force?"no-store":"default"}).then(function(r){ return r.json().then(function(j){ return r.ok?j:{error:j.error||("answered "+r.status)}; }); })
+      .catch(function(e){ return {error:(e&&e.message)||"no answer"}; })
+      .then(function(j){ loading=false; data=j; paint(); });
+  }
+  document.addEventListener("click",function(e){
+    var b=e.target.closest("[data-d26view]"); if(b){ view=b.dataset.d26view; Array.prototype.forEach.call(document.querySelectorAll("[data-d26view]"),function(x){ x.classList.toggle("on",x===b); }); paint(); return; }
+    if(e.target.closest("#d26retry")){ load(true); }
+  });
+  return {onView:function(v){ if(v==="draft") load(false); }, repaint:paint, data:function(){ return data; }};
+})();
+window.Draft26=Draft26;
 
 /* ---------- last year's draft board ---------- */
 (function(){
@@ -6520,6 +6612,7 @@ function go(v,silent){
   if(window.Plot) Plot.onView(v);
   if(window.Badges) Badges.onView(v);
   if(window.Yahoo) Yahoo.onView(v);
+  if(window.Draft26) Draft26.onView(v);
   Array.prototype.forEach.call(document.querySelectorAll("#nav button"),function(b){
     if(b.dataset.go===navKey){b.setAttribute("aria-current","page");}else{b.removeAttribute("aria-current");}
   });
