@@ -2567,7 +2567,8 @@ function renderTeam(id){
       '</div>'+
     '</div>';
   teamTab("locked");
-  if(mine){ var lv=document.getElementById("yh-team"); if(lv){ lv.innerHTML='<div class="panel-hd"><span class="eyebrow">Live from Yahoo</span></div><div class="empty" style="padding:18px 16px">Loading your roster…</div>'; } teamLive(true, true); }
+  /* every team's page opens on this season: the manager's own reads Yahoo live, the rest the games ledger */
+  { var lv=document.getElementById("yh-team"); if(lv){ lv.innerHTML='<div class="panel-hd"><span class="eyebrow">'+(mine?'Live from Yahoo':'This season')+'</span></div><div class="empty" style="padding:18px 16px">'+(mine?'Loading your roster…':'Loading this week…')+'</div>'; } teamLive(true, true); }
   if(window.Court) Court.onTeam(id);
   if(window.Yahoo) Yahoo.onTeam(id);
 }
@@ -3491,6 +3492,12 @@ var Polls=(function(){
         return client.auth.getSession().then(function(r){ var t=r.data.session&&r.data.session.access_token; if(!t) throw new Error("Not signed in.");
           return fetch("/api/issues/notify",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+t},body:JSON.stringify(payload)}); })
           .then(function(r){ return r.json().catch(function(){return {};}).then(function(j){ if(!r.ok) throw new Error(j.error||("mail "+r.status)); return j; }); });
+      },
+      /* the games ledger: the commissioner's session may run the snapshot (every team's lineups from Yahoo, box scores from ESPN) right now */
+      snapshotRun:function(){
+        return client.auth.getSession().then(function(r){ var t=r.data.session&&r.data.session.access_token; if(!t) throw new Error("Not signed in.");
+          return fetch("/api/snapshot",{method:"POST",headers:{Authorization:"Bearer "+t}}); })
+          .then(function(r){ return r.json().catch(function(){return {};}).then(function(j){ if(!r.ok) throw new Error(j.error||("snapshot "+r.status)); return j; }); });
       },
       recordPoll:function(p){
         return client.from("polls").insert({question:p.question,options:p.options,visibility:"named",closed:true,imported:true,asked_on:p.asked_on,created_at:p.created_at,results:p.results}).then(chk);
@@ -6197,24 +6204,36 @@ var Yahoo=(function(){
     try{ history.replaceState(null,"",location.hash.replace(/\?.*$/,"")); }catch(e){}
     return v;
   }
-  /* fetch once, hand the same answer to every panel that asked */
+  /* two sources, one shape: the manager's own team reads Yahoo live through their cookie
+     (/api/yahoo/team); every other team page reads the games ledger (/api/cap), which the
+     nightly snapshot and each manager's own visits keep current */
+  var src={kind:"live", team:null};
+  function urlFor(){ var w=view.week?"week="+view.week:""; return src.kind==="live"?"/api/yahoo/team"+(w?"?"+w:""):"/api/cap?team="+encodeURIComponent(src.team||"")+(w?"&"+w:""); }
+  /* fetch each URL once, hand the same answer to every panel that asked for that URL */
   var cache={}, FRESH=120000, again=[];
+  function take(arr, url){ var out=[]; for(var i=arr.length-1;i>=0;i--){ if(arr[i].url===url){ out.unshift(arr[i]); arr.splice(i,1); } } return out; }
   function load(force, cb){
-    if(cb) waiting.push(cb);
-    var wk=view.week?String(view.week):"cur", c=cache[wk];
+    var url=urlFor();
+    if(cb) waiting.push({cb:cb, url:url});
+    var c=cache[url];
     /* anything we already have paints at once; a stale copy is refreshed behind it and the same panels repaint */
-    if(!force&&c){ cur=c.x; var w=waiting; waiting=[]; w.forEach(function(f){ try{ f(cur); }catch(e){} }); if(Date.now()-c.t<FRESH) return; w.forEach(function(f){ again.push(f); }); }
-    if(busy) return;
-    busy=true; last=Date.now();
-    fetch("/api/yahoo/team"+(view.week?"?week="+view.week:""),{credentials:"same-origin",cache:"no-store"}).then(function(r){ return r.json().then(function(j){ return {ok:r.ok,status:r.status,j:j}; }); })
-      .then(function(x){ busy=false; cur=x; if(x.ok) cache[wk]={t:Date.now(),x:x}; flush(); })
-      .catch(function(){ busy=false; cur={ok:false,status:0,j:{error:"The Yahoo connection only works on crysterbaters.com, not in this preview."}}; flush(); });
+    if(!force&&c){ cur=c.x; var w=take(waiting,url); w.forEach(function(f){ try{ f.cb(c.x); }catch(e){} }); if(Date.now()-c.t<FRESH){ pump(); return; } w.forEach(function(f){ again.push(f); }); }
+    start(url);
   }
-  function flush(){ var w=waiting.concat(again); waiting=[]; again=[]; w.forEach(function(cb){ try{ cb(cur); }catch(e){} }); }
+  function start(url){
+    if(busy) return;
+    busy=url; last=Date.now();
+    var preview=src.kind==="live"?"The Yahoo connection only works on crysterbaters.com, not in this preview.":"The games ledger only answers on crysterbaters.com, not in this preview.";
+    fetch(url,{credentials:"same-origin",cache:"no-store"}).then(function(r){ return r.json().then(function(j){ return {ok:r.ok,status:r.status,j:j}; }); })
+      .then(function(x){ busy=false; cur=x; if(x.ok) cache[url]={t:Date.now(),x:x}; flush(url,x); })
+      .catch(function(){ busy=false; cur={ok:false,status:0,j:{error:preview}}; flush(url,cur); });
+  }
+  function flush(url,x){ var w=take(waiting,url).concat(take(again,url)); w.forEach(function(f){ try{ f.cb(x); }catch(e){} }); pump(); }
+  function pump(){ if(busy) return; var n=waiting[0]||again[0]; if(n) start(n.url); }
 
   function noticeHtml(msg){ return '<div class="notice warn" style="margin:16px 16px 0;border-left-color:var(--red)">'+esc(msg)+'</div>'; }
   function connectHtml(back, again){
-    return '<div style="padding:18px 16px;display:flex;gap:14px;align-items:center;flex-wrap:wrap"><span style="flex:1;font-size:14.5px;color:var(--muted)">'+(again?"Sign in to Yahoo again to reconnect.":"Connect your Yahoo account to see your live roster, lineup and games played here. Yahoo asks you to approve read-only access; nothing is stored.")+'</span><a class="btn sm" href="/api/yahoo/login?back='+encodeURIComponent(back)+'">Connect Yahoo</a></div>';
+    return '<div style="padding:18px 16px;display:flex;gap:14px;align-items:center;flex-wrap:wrap"><span style="flex:1;font-size:14.5px;color:var(--muted)">'+(again?"Sign in to Yahoo again to reconnect.":"Connect your Yahoo account to read your roster and lineup live. Yahoo asks you to approve read-only access; the only thing kept is your day-by-day lineup, so your page stays current for the rest of the league.")+'</span><a class="btn sm" href="/api/yahoo/login?back='+encodeURIComponent(back)+'">Connect Yahoo</a></div>';
   }
   function status(p){
     if(!p.status) return "";
@@ -6317,7 +6336,7 @@ var Yahoo=(function(){
   function dayTable(d, day, showKeepers){
     var byDate={}; (d.days||[]).forEach(function(x){ byDate[x.date]=x; });
     var dd=byDate[day], ps=dd&&dd.players&&dd.players.length?dd.players:null, today=etParts(new Date().toISOString()), past=day<today;
-    if(!ps) return '<div class="empty" style="padding:14px 16px">Yahoo didn’t return a lineup for '+esc(day)+(dd&&dd.error?' ('+esc(dd.error)+')':'')+'.</div>';
+    if(!ps) return '<div class="empty" style="padding:14px 16px">'+(d.source==="stored"?'No lineup stored for '+esc(day)+' yet — it fills in on the next snapshot or the next time this manager opens the page.':'Yahoo didn’t return a lineup for '+esc(day)+(dd&&dd.error?' ('+esc(dd.error)+')':'')+'.')+'</div>';
     var rows=ps.map(function(p){
       var bench=BENCH.test(p.pos||""), gs=gamesOn(day,p.team), g=gs[0], cell;
       if(p.gp) cell='<span class="pill ok">played</span>';
@@ -6338,54 +6357,88 @@ var Yahoo=(function(){
     var facts=[];
     if(st&&st.rank) facts.push('<div class="kv"><dt>Record</dt><dd>'+st.wins+'-'+st.losses+'-'+st.ties+' · '+ordinal(st.rank)+'</dd></div>');
     if(d.team.faab!=null) facts.push('<div class="kv"><dt>FAAB</dt><dd>$'+d.team.faab+'</dd></div>');
-    facts.push('<div class="kv"><dt>Moves</dt><dd>'+d.team.moves+(d.team.trades?' · '+d.team.trades+' trades':'')+'</dd></div>');
+    if(d.source!=="stored") facts.push('<div class="kv"><dt>Moves</dt><dd>'+d.team.moves+(d.team.trades?' · '+d.team.trades+' trades':'')+'</dd></div>');
     if(!pre) facts.push('<div class="kv"><dt>Lineup</dt><dd>'+lu.active+' active · '+lu.bench+' bench · '+lu.il+' IL'+(lu.injuredActive?' · <b style="color:var(--red)">'+lu.injuredActive+' hurt</b>':'')+'</dd></div>');
-    return '<div class="panel-hd" style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap"><span class="eyebrow">Live from Yahoo · '+esc(d.team.name)+'</span><span style="display:flex;gap:8px"><button class="btn quiet sm" id="yh-refresh">Refresh</button><button class="btn quiet sm" id="yh-out">Disconnect</button></span></div>'+
+    var stored=d.source==="stored", isC=!!(window.Polls&&Polls.commish&&Polls.commish());
+    var when=function(iso){ var t=new Date(iso); return isNaN(t)?"":t.toLocaleString([], {weekday:"short",hour:"numeric",minute:"2-digit"}); };
+    var head=stored
+      ?'<span class="eyebrow">This season · '+esc(d.team.name)+'</span><span style="display:flex;gap:8px">'+(isC?'<button class="btn quiet sm" id="yh-snap" title="Read every team’s lineup from Yahoo and the box scores from ESPN now, instead of waiting for tonight’s run">Snapshot all teams now</button>':'')+'<button class="btn quiet sm" id="yh-refresh">Refresh</button></span>'
+      :'<span class="eyebrow">Live from Yahoo · '+esc(d.team.name)+'</span><span style="display:flex;gap:8px"><button class="btn quiet sm" id="yh-refresh">Refresh</button><button class="btn quiet sm" id="yh-out">Disconnect</button></span>';
+    var foot=stored
+      ?'Lineups from Yahoo'+(d.asOf?' as of '+when(d.asOf):'')+' · games played from <a href="https://www.espn.com/nba/" target="_blank" rel="noopener">ESPN box scores</a>'+(d.run&&d.run.finished_at?' · last snapshot '+when(d.run.finished_at):'')+
+        (isC&&(d.unmapped||[]).length?' · <span style="color:var(--red)" title="Their games can’t be counted until the name matches an ESPN player; the matcher retries after each box score">not matched to ESPN yet: '+esc(d.unmapped.join(", "))+'</span>':'')+
+        ' · <a href="https://sports.yahoo.com/fantasy/" target="_blank" rel="noopener">Fantasy data provided by Yahoo Fantasy</a>'
+      :'Fetched '+new Date(d.fetched).toLocaleTimeString([], {hour:"numeric",minute:"2-digit"})+' · read live · your days are kept for the league’s view · <a href="https://sports.yahoo.com/fantasy/" target="_blank" rel="noopener">'+esc(d.attribution)+'</a>';
+    return '<div class="panel-hd" style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap">'+head+'</div>'+
       navHtml(d)+
-      (pre?'<div class="empty" style="padding:14px 16px 18px">No roster yet — it fills in after the draft'+(d.league.start?' (season starts '+esc(d.league.start)+')':'')+'.</div>'
+      (pre?'<div class="empty" style="padding:14px 16px 18px">'+(stored?'No lineup in the ledger for this week yet.':'No roster yet — it fills in after the draft'+(d.league.start?' (season starts '+esc(d.league.start)+')':'')+'.')+'</div>'
           :meterHtml(d)+daysHtml(d)+'<div id="yh-table">'+(view.day?dayTable(d,view.day,showKeepers):weekTable(d,showKeepers))+'</div>')+
       '<div class="yh-facts">'+facts.join("")+'</div>'+
-      '<p class="sub" style="padding:10px 16px 14px;margin:0">Fetched '+new Date(d.fetched).toLocaleTimeString([], {hour:"numeric",minute:"2-digit"})+' · read live, nothing saved · <a href="https://sports.yahoo.com/fantasy/" target="_blank" rel="noopener">'+esc(d.attribution)+'</a>'+
+      '<p class="sub" style="padding:10px 16px 14px;margin:0">'+foot+
       ((d.warn||[]).length?' · <details style="display:inline"><summary style="display:inline;cursor:pointer;color:var(--amber)">what Yahoo sent</summary><span style="display:block;font-family:var(--mono);font-size:10.5px;white-space:pre-wrap;margin-top:6px">'+esc((d.warn||[]).join("\n"))+'</span></details>':'')+'</p>';
   }
   function panel(id, html){ var el=$(id); if(el) el.innerHTML=html; }
-  function show(id, d, showKeepers){ hostId=id; data=d; panel(id, teamHtml(d, showKeepers)); waitStats(); }
+  var extra="";   /* a notice pinned above the panel (a Connect offer, a Yahoo error) that survives repaints */
+  function show(id, d, showKeepers, top){ hostId=id; data=d; extra=top||""; panel(id, extra+teamHtml(d, showKeepers)); var tb=$("ttab-live"); if(tb) tb.textContent=d.source==="stored"?"This season · games ledger":"This season · live from Yahoo"; waitStats(); }
   var statsWait=0;
   function waitStats(){ if(!window.Players||!Players.rows||Players.rows().length||statsWait>20) return; Players.ensure&&Players.ensure(); statsWait++; setTimeout(function(){ if(Players.rows().length){ statsWait=0; repaint(); } else waitStats(); },500); }
-  function repaint(){ if(!data||!hostId||!$(hostId)) return; panel(hostId, teamHtml(data, true)); }
+  function repaint(){ if(!data||!hostId||!$(hostId)) return; panel(hostId, extra+teamHtml(data, true)); }
 
   /* Manager page: the commissioner's own view */
   function manager(){
     var flag=flagFromHash(), note=flag&&flag!=="connected"?noticeHtml(flag):"";
-    backTo="manager";
+    backTo="manager"; src={kind:"live", team:null};
     load(!!flag, function(x){
       if(x.status===401){ panel("yh-panel", note+connectHtml("manager")); return; }
       if(!x.ok){ panel("yh-panel", note+noticeHtml(x.j.error+(x.j.detail?' '+x.j.detail:''))+connectHtml("manager",true)); return; }
       show("yh-panel", x.j, true); schedule(x.j);
     });
   }
-  /* Team page: only the page of the team this Yahoo login owns gets the live panel */
+  /* Team page: the manager's own page reads Yahoo live; every other page (and the manager's own
+     until Yahoo is connected) reads the games ledger. Either way the "This season" tab shows. */
   function team(id){
     var host=$("yh-team"); if(!host) return;
     var flag=flagFromHash(), note=flag&&flag!=="connected"?noticeHtml(flag):"";
     var isMine=mine()===id, live=function(on, select){ if(typeof teamLive==="function") teamLive(on, select); else host.hidden=!on; };
+    var isC=!!(window.Polls&&Polls.commish&&Polls.commish());
     backTo="team/"+id;
+    var hd='<div class="panel-hd"><span class="eyebrow">This season</span></div>';
+    function stored(top){
+      src={kind:"stored", team:id};
+      load(false, function(x){
+        if(x.ok){ live(true, true); show("yh-team", x.j, true, top); schedule(x.j); return; }
+        /* nothing in the ledger yet: the tab is there, but the locked roster stays in front unless this page has something to say (a Connect offer) */
+        var front=function(){ if(!top&&typeof teamTab==="function") teamTab("locked"); };
+        if(x.status===404){ live(true, !!top); front(); host.innerHTML=hd+(top||'')+'<div class="empty" style="padding:16px">'+esc(x.j.detail||"No snapshot yet.")+(isC?' <button class="btn sm" id="yh-snap" style="margin-left:8px">Snapshot all teams now</button>':'')+'</div>'; return; }
+        /* the ledger didn't answer (a preview, an outage): keep last season's list in front, the tab still there */
+        live(true, false); if(typeof teamTab==="function") teamTab("locked"); host.innerHTML=hd+(top||'')+noticeHtml(x.j.error+(x.j.detail?' '+x.j.detail:''));
+      });
+    }
+    /* Yahoo first, whoever is looking: a connected manager sees their own page live even when signed
+       out of the site. Anything else — not connected, an error, a different team — falls back to the ledger. */
+    src={kind:"live", team:id};
     load(!!flag, function(x){
-      if(x.status===401){ live(isMine, true); if(isMine) host.innerHTML='<div class="panel-hd"><span class="eyebrow">Live from Yahoo</span></div>'+note+connectHtml("team/"+id); return; }
-      if(!x.ok){ live(isMine); if(isMine){ host.innerHTML='<div class="panel-hd"><span class="eyebrow">Live from Yahoo</span></div>'+note+noticeHtml(x.j.error+(x.j.detail?' '+x.j.detail:''))+connectHtml("team/"+id,true); if(typeof teamTab==="function") teamTab("locked"); } return; }
+      if(x.status===401){ stored(isMine?note+connectHtml("team/"+id):""); return; }
+      if(!x.ok){ stored(isMine?note+noticeHtml(x.j.error+(x.j.detail?' '+x.j.detail:''))+connectHtml("team/"+id,true):""); return; }
       var st=siteTeamFor(x.j);
-      if(st&&st.id===id){ live(true, true); show("yh-team", x.j, true); if(note) host.insertAdjacentHTML("afterbegin",note); schedule(x.j); return; }
-      if(isMine){ live(true, true); host.innerHTML='<div class="panel-hd"><span class="eyebrow">Live from Yahoo</span></div><div class="empty" style="padding:16px">Your Yahoo login owns <b>'+esc(x.j.team.name)+'</b>'+(st?', which is <a href="#team/'+st.id+'">its own page</a>':', which doesn’t match a team here yet')+'.</div>'; return; }
-      live(false);
+      if(st&&st.id===id){ live(true, true); show("yh-team", x.j, true, note); schedule(x.j); return; }
+      stored(isMine?'<div class="empty" style="padding:12px 16px 0">Your Yahoo login owns <b>'+esc(x.j.team.name)+'</b>'+(st?', which is <a href="#team/'+st.id+'">its own page</a>':', which doesn’t match a team here yet')+'; this is the league’s stored view of this team.</div>':"");
     });
   }
   function bind(){
     document.addEventListener("click",function(e){
       var b;
-      if(e.target.closest("#yh-refresh")){ var p=e.target.closest(".panel"); if(p) p.innerHTML='<div class="empty">Asking Yahoo…</div>'; cache={}; rerun(true); return; }
+      if(e.target.closest("#yh-refresh")){ var p=e.target.closest(".panel"); if(p) p.innerHTML='<div class="empty">'+(src.kind==="live"?"Asking Yahoo…":"Reading the ledger…")+'</div>'; cache={}; rerun(true); return; }
       if(e.target.closest("#yh-out")){ fetch("/api/yahoo/logout",{credentials:"same-origin"}).then(function(){ cache={}; cur=null; rerun(true); },function(){ cache={}; cur=null; rerun(true); }); return; }
-      if((b=e.target.closest("[data-yhweek]"))){ if(b.disabled) return; view.week=+b.dataset.yhweek||null; view.day=null; sched=null; var p2=e.target.closest(".panel"); if(p2){ var nav=p2.querySelector(".yh-nav"); if(nav) nav.insertAdjacentHTML("beforeend",'<span class="sub" style="margin-left:auto">Asking Yahoo…</span>'); } rerun(false); return; }
+      if((b=e.target.closest("[data-yhweek]"))){ if(b.disabled) return; view.week=+b.dataset.yhweek||null; view.day=null; sched=null; var p2=e.target.closest(".panel"); if(p2){ var nav=p2.querySelector(".yh-nav"); if(nav) nav.insertAdjacentHTML("beforeend",'<span class="sub" style="margin-left:auto">'+(src.kind==="live"?"Asking Yahoo…":"Reading the ledger…")+'</span>'); } rerun(false); return; }
       if((b=e.target.closest("[data-yhday]"))){ view.day=b.dataset.yhday||null; repaint(); return; }
+      if((b=e.target.closest("#yh-snap"))){
+        b.disabled=true; b.textContent="Reading Yahoo and ESPN…";
+        var st=window.Polls&&Polls.store&&Polls.store(), run=st&&st.snapshotRun?st.snapshotRun():Promise.reject(new Error("sign in on the site first"));
+        run.then(function(r){ b.textContent="Done — "+r.teams+" teams, "+r.days+" days, "+r.box+" box-score lines"+((r.notes||[]).length?" · "+r.notes.join("; "):""); cache={}; setTimeout(function(){ rerun(true); },1200); })
+           .catch(function(err){ b.disabled=false; b.textContent="Couldn’t run it ("+(err&&err.message||"no answer")+") — try again"; });
+        return;
+      }
       if((b=e.target.closest("#yh-roll"))){ if(typeof capRollTo!=="function") return; b.disabled=true; b.textContent="Counting this season’s games…"; capRollTo(b.dataset.mon).then(function(r){ repaint(); var w=$(hostId)&&$(hostId).querySelector(".yh-mfoot"); if(w) w.insertAdjacentHTML("beforeend",' <span style="color:var(--green)">· table rolled forward: '+r.total+' games across '+r.weeks+' weeks. Check the short weeks on the Games Cap page.</span>'); }).catch(function(e){ b.disabled=false; b.textContent="Couldn’t count ("+(e&&e.message||"no answer")+") — try again"; }); return; }
     });
   }

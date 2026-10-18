@@ -971,3 +971,114 @@ begin
     execute format('create trigger %I after insert or update on public.%I for each row execute function public.site_notify()', t || '_site_notify', t);
   end loop;
 end $$;
+
+-- ----------------------------------------------------------------------
+-- 13. Games ledger (added 2026-10-18): the league's lineups from Yahoo,
+--     everything else from ESPN, stored so every team's cap meter and
+--     day-by-day lineups work for everyone without a Yahoo login.
+--
+--     lineup_days   one row per team × date × player: the slot Yahoo held
+--                   for him that day. Written by /api/snapshot (all teams,
+--                   nightly and on the commissioner's button) and by
+--                   /api/yahoo/team (the signed-in manager's own team).
+--     player_links  Yahoo player key → ESPN athlete id, matched by name and
+--                   NBA team; `how` = 'auto' or 'manual' (a manual row is
+--                   never overwritten by the matcher).
+--     nba_box       ESPN box-score line per athlete × date; `played` is what
+--                   the cap counts.
+--     nba_days      which dates' box scores are complete.
+--     league_meta   the Yahoo league's weeks and dates (one row).
+--     snapshot_runs a log line per run, for the "as of" note on the page.
+--     All service-role only: the page reads them through /api/cap.
+-- ----------------------------------------------------------------------
+create table if not exists public.lineup_days (
+  team_id     text not null check (team_id ~ '^[a-z0-9]{2,20}$'),
+  date        date not null,
+  yahoo_key   text not null,
+  player      text not null,
+  nba         text not null default '',
+  pos         text not null default '',
+  status      text not null default '',
+  espn_id     integer,
+  updated_at  timestamptz not null default now(),
+  primary key (team_id, date, yahoo_key)
+);
+create index if not exists lineup_days_date on public.lineup_days (date);
+
+create table if not exists public.player_links (
+  yahoo_key   text primary key,
+  player      text not null,
+  nba         text not null default '',
+  espn_id     integer,
+  how         text not null default 'auto' check (how in ('auto','manual','none')),
+  updated_at  timestamptz not null default now()
+);
+
+create table if not exists public.nba_box (
+  espn_id     integer not null,
+  date        date not null,
+  name        text not null default '',
+  nba         text not null default '',
+  opp         text not null default '',
+  home        boolean not null default false,
+  played      boolean not null default false,
+  min         integer not null default 0,
+  pts         integer not null default 0,
+  reb         integer not null default 0,
+  ast         integer not null default 0,
+  stl         integer not null default 0,
+  blk         integer not null default 0,
+  tpm         integer not null default 0,
+  fgm         integer not null default 0,
+  fga         integer not null default 0,
+  ftm         integer not null default 0,
+  fta         integer not null default 0,
+  tov         integer not null default 0,
+  event_id    text not null default '',
+  updated_at  timestamptz not null default now(),
+  primary key (espn_id, date)
+);
+create index if not exists nba_box_date on public.nba_box (date);
+
+create table if not exists public.nba_days (
+  date        date primary key,
+  games       integer not null default 0,
+  finals      integer not null default 0,
+  done        boolean not null default false,
+  fetched_at  timestamptz not null default now()
+);
+
+create table if not exists public.league_meta (
+  id            text primary key default 'current' check (id = 'current'),
+  league_key    text not null default '',
+  season        text not null default '',
+  name          text not null default '',
+  current_week  integer not null default 1,
+  start_week    integer not null default 1,
+  end_week      integer not null default 1,
+  start_date    date,
+  end_date      date,
+  weeks         jsonb not null default '{}'::jsonb,
+  updated_at    timestamptz not null default now()
+);
+
+create table if not exists public.snapshot_runs (
+  id          bigint generated always as identity primary key,
+  started_at  timestamptz not null default now(),
+  finished_at timestamptz,
+  source      text not null default 'cron',
+  teams       integer not null default 0,
+  days        integer not null default 0,
+  box         integer not null default 0,
+  note        text not null default ''
+);
+
+do $$
+declare t text;
+begin
+  foreach t in array array['lineup_days','player_links','nba_box','nba_days','league_meta','snapshot_runs'] loop
+    execute format('alter table public.%I enable row level security', t);
+    execute format('revoke all on public.%I from anon, authenticated', t);
+    execute format('grant all on public.%I to service_role', t);
+  end loop;
+end $$;

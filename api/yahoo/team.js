@@ -1,5 +1,7 @@
 // The signed-in manager's own team in league 33689, this week, read live from Yahoo.
-// Nothing is cached or stored; the response is marked no-store.
+// The response is marked no-store. The one thing kept is the day-by-day lineup it
+// just read, written to the games ledger (lineup_days) so the team's page shows the
+// same days to everyone else; see _lib/ledger.js.
 const L = require("./_lib");
 const BENCH = { BN: 1, IL: 1, "IL+": 1, IR: 1, NA: 1 };
 const list = v => Array.isArray(v) ? v : (v && typeof v === "object" ? [v] : []);
@@ -143,6 +145,16 @@ module.exports = async (req, res) => {
       players.forEach(p => { p.gp = gpByKey[p.key] || 0; });
       gamesOut.active = days.reduce((a, d) => a + (d.active || 0), 0);
       gamesOut.bench = days.reduce((a, d) => a + (d.bench || 0), 0);
+      // keep the ledger current for this team: what this visit read is what everyone else sees
+      // on its page until the next nightly run (service role only; a failure is just a warning)
+      if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
+        try {
+          const supa = require("../_lib/supa"), ledger = require("../_lib/ledger");
+          const map = await supa.one("team_map", "select=team_id&yahoo_team_key=eq." + encodeURIComponent(key));
+          if (map && map.team_id) { const n = await ledger.writeLineups(map.team_id, days); warn.push("stored " + n + " lineup rows for " + map.team_id); }
+          else warn.push("not stored: this Yahoo team isn't mapped to a site team yet (the nightly snapshot maps it)");
+        } catch (e) { warn.push("store: " + e.message); }
+      }
     }
 
     L.json(res, 200, {

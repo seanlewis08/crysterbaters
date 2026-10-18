@@ -1,8 +1,9 @@
-// Server-side Yahoo reads for the Discord functions (no browser cookie).
-// Uses the one refresh token the commissioner shared via /api/yahoo/share,
-// kept in discord_settings (service role only). Only team names and
-// manager nicknames are read, on demand; nothing from Yahoo is stored
-// except which Yahoo team key is which site team (team_map).
+// Server-side Yahoo reads with no browser cookie: the Discord functions and
+// the games ledger (/api/snapshot). Uses the one refresh token the
+// commissioner shared via /api/yahoo/share, kept in discord_settings (service
+// role only). What gets stored from Yahoo is limited to which Yahoo team key
+// is which site team (team_map) and each team's daily lineup slots
+// (lineup_days, see _lib/ledger.js); stats and games come from ESPN.
 "use strict";
 
 const L = require("../yahoo/_lib");
@@ -105,6 +106,43 @@ async function leagueRosters() {
   });
 }
 
+// The league's calendar: season, current/start/end week, start and end dates.
+async function leagueMeta() {
+  const at = await accessToken();
+  const lg = L.fold((await L.yahoo({ at }, "/league/" + LEAGUE)).fantasy_content.league);
+  return {
+    league_key: lg.league_key || LEAGUE, season: String(lg.season || ""), name: lg.name || "",
+    current_week: Number(lg.current_week) || 1, start_week: Number(lg.start_week) || 1, end_week: Number(lg.end_week) || Number(lg.current_week) || 1,
+    start_date: lg.start_date || null, end_date: lg.end_date || null,
+  };
+}
+
+// Yahoo's own dates for one week, from the scoreboard: [start, end] or null.
+async function weekDates(week) {
+  const at = await accessToken();
+  try {
+    const sb = L.fold((await L.yahoo({ at }, "/league/" + LEAGUE + "/scoreboard;week=" + week)).fantasy_content.league);
+    const m = list(sb.scoreboard && (sb.scoreboard.matchups || (sb.scoreboard["0"] && sb.scoreboard["0"].matchups))).map((x) => x.matchup || x)[0];
+    return m && m.week_start && m.week_end ? [m.week_start, m.week_end] : null;
+  } catch (e) { return null; }
+}
+
+// Every team's lineup for one date: [{ key, name, players:[{key,name,nba,pos,status}] }]
+// (one call for the whole league; the per-team fallback is the caller's business).
+async function leagueRostersOn(date) {
+  const at = await accessToken();
+  const raw = await L.yahoo({ at }, "/league/" + LEAGUE + "/teams/roster;type=date;date=" + date);
+  const league = L.fold(raw.fantasy_content.league);
+  return list(league.teams).map((x) => x.team || x).filter(Boolean).map((t) => {
+    const ro = t.roster || {};
+    const players = list(ro.players || (ro["0"] && ro["0"].players)).map((p) => {
+      const pl = p.player || p;
+      return { key: pl.player_key || "", name: pl.name && pl.name.full, nba: pl.editorial_team_abbr || "", pos: (pl.selected_position && pl.selected_position.position) || "", status: pl.status || "" };
+    }).filter((p) => p.name && p.key);
+    return { key: t.team_key, name: t.name, date: (ro.date || date), players };
+  });
+}
+
 // Current Yahoo name for a site team id (for messages), falling back to the site's name.
 async function teamName(teamId) {
   try {
@@ -115,4 +153,4 @@ async function teamName(teamId) {
   return s ? s.name : teamId;
 }
 
-module.exports = { leagueTeams, leagueRosters, mappedTeams, linkChoices, teamName, _reset: () => { cached = null; } };
+module.exports = { leagueTeams, leagueRosters, mappedTeams, linkChoices, teamName, leagueMeta, weekDates, leagueRostersOn, _reset: () => { cached = null; } };

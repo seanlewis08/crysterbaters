@@ -1,6 +1,10 @@
 {
   "cleanUrls": true,
   "crons": [
-    { "path": "/api/poll-sync", "schedule": "0 15 * * *" }
-  ]
+    { "path": "/api/poll-sync", "schedule": "0 15 * * *" },
+    { "path": "/api/snapshot", "schedule": "40 9 * * *" }
+  ],
+  "functions": {
+    "api/snapshot.js": { "maxDuration": 60 }
+  }
 }
