@@ -84,10 +84,21 @@ module.exports = async (req, res) => {
 
     // the lineup Yahoo holds for each day of the week, with that day's games played: past days are
     // what actually counted, today and later are the lineups as set now
+    // the week's dates: from the matchup when Yahoo gives them, else from the league's start date
+    // (week 1 runs opening day to the following Sunday; every later week is Monday to Sunday)
+    let wkStart = matchup && matchup.start, wkEnd = matchup && matchup.end;
+    if (!(wkStart && wkEnd) && league.start_date) {
+      const s0 = new Date(league.start_date + "T12:00:00Z");
+      const sun1 = new Date(s0); sun1.setUTCDate(sun1.getUTCDate() + ((7 - sun1.getUTCDay()) % 7));
+      if (week <= 1) { wkStart = s0.toISOString().slice(0, 10); wkEnd = sun1.toISOString().slice(0, 10); }
+      else { const a = new Date(sun1); a.setUTCDate(a.getUTCDate() + 1 + 7 * (week - 2)); const b = new Date(a); b.setUTCDate(b.getUTCDate() + 6); wkStart = a.toISOString().slice(0, 10); wkEnd = b.toISOString().slice(0, 10); }
+      if (matchup) { matchup.start = matchup.start || wkStart; matchup.end = matchup.end || wkEnd; }
+      warn.push("week dates derived from the league start (matchup carried none)");
+    }
     let days = null;
-    if (wantDays && matchup && matchup.start && matchup.end) {
+    if (wantDays && wkStart && wkEnd) {
       days = [];
-      const d0 = new Date(matchup.start + "T12:00:00Z"), d1 = new Date(matchup.end + "T12:00:00Z");
+      const d0 = new Date(wkStart + "T12:00:00Z"), d1 = new Date(wkEnd + "T12:00:00Z");
       const dates = [];
       for (let d = new Date(d0); d <= d1; d.setUTCDate(d.getUTCDate() + 1)) dates.push(d.toISOString().slice(0, 10));
       // the league context only returns the scoring categories (no GP), so each day's lineup
@@ -121,6 +132,8 @@ module.exports = async (req, res) => {
         days.push({ date: dates[i], active: ps.filter(p => !BENCH[p.pos]).reduce((a, p) => a + p.gp, 0), bench: ps.filter(p => BENCH[p.pos]).reduce((a, p) => a + p.gp, 0), players: ps, error: dayErr || undefined });
       }
       if (rawDay) warn.push("rawDay: " + rawDay);
+      // a one-line picture of what Yahoo gave per day, so a flat week is easy to tell from a stuck one
+      warn.push("days: " + days.map(d => d.date.slice(5) + ":" + (d.error ? "ERR" : ((d.players || []).filter(p => !BENCH[p.pos]).map(p => (p.name || "").split(" ").pop()).join("/") || "none"))).join(" | "));
       // the week's games played come from the days (the league context carries no GP stat)
       const gpByKey = {};
       days.forEach(d => (d.players || []).forEach(p => { gpByKey[p.key] = (gpByKey[p.key] || 0) + p.gp; }));
