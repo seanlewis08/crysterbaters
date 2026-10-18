@@ -30,8 +30,19 @@ module.exports = async (req, res) => {
       return L.json(res, 404, { error: "no_team", detail: "This Yahoo account has no team in league " + L.LEAGUE_ID + ". Yahoo returned — " + (seen.join(" | ") || "no NBA seasons") });
     }
     const key = team.team_key, lk = key.replace(/\.t\.\d+$/, "");
+    let warnDraft = "";
     const league = L.fold((await L.yahoo(s, "/league/" + lk)).fantasy_content.league);
-    const week = wantWeek || Number(league.current_week) || 1;
+    const curWeek = Number(league.current_week) || 1, startWeek = Number(league.start_week) || 1, endWeek = Number(league.end_week) || curWeek;
+    const week = Math.min(Math.max(wantWeek || curWeek, startWeek), endWeek);
+
+    // this season's draft, so each player's keeper cost follows the pick that actually bought him
+    // (round − 2; rounds 1–2 can't be kept; an undrafted pickup is a round-11 keeper)
+    let draft = {}, draftDone = false;
+    try {
+      const dr = L.fold((await L.yahoo(s, "/league/" + lk + "/draftresults")).fantasy_content.league);
+      list(dr.draft_results).map(x => x.draft_result || x).forEach(d => { if (d && d.player_key) draft[d.player_key] = { round: Number(d.round) || 0, pick: Number(d.pick) || 0, team: d.team_key || "" }; });
+      draftDone = Object.keys(draft).length > 0;
+    } catch (e) { warnDraft = e.message; }
 
     // roster with this week's games played
     const roster = L.fold((await L.yahoo(s, "/team/" + key + "/roster;week=" + week + "/players/stats;type=week;week=" + week)).fantasy_content.team);
@@ -44,7 +55,8 @@ module.exports = async (req, res) => {
       return {
         key: pl.player_key, name: pl.name && pl.name.full, team: pl.editorial_team_abbr, pos: pl.selected_position && pl.selected_position.position,
         elig: elig, status: pl.status || "", note: pl.injury_note || pl.status_full || "",
-        gp: gp ? Number(gp.value) || 0 : 0
+        gp: gp ? Number(gp.value) || 0 : 0,
+        draft: draft[pl.player_key] || null
       };
     });
     const activeP = players.filter(p => !BENCH[p.pos]), benchP = players.filter(p => p.pos === "BN"), ilP = players.filter(p => BENCH[p.pos] && p.pos !== "BN");
@@ -52,6 +64,7 @@ module.exports = async (req, res) => {
 
     // standings and this week's matchup are extras: a hiccup there must not hide the roster
     let standing = null, matchup = null, warn = [];
+    if (warnDraft) warn.push("draft: " + warnDraft);
     try {
       const st = L.fold((await L.yahoo(s, "/team/" + key + "/standings")).fantasy_content.team);
       const ts = st.team_standings || {}, ot = ts.outcome_totals || {};
@@ -117,7 +130,7 @@ module.exports = async (req, res) => {
     }
 
     L.json(res, 200, {
-      league: { id: L.LEAGUE_ID, name: league.name, week: week, season: game.season, start: league.start_date, end: league.end_date, draft: league.draft_status || "" },
+      league: { id: L.LEAGUE_ID, name: league.name, week: week, currentWeek: curWeek, startWeek: startWeek, endWeek: endWeek, season: game.season, start: league.start_date, end: league.end_date, draft: league.draft_status || "", draftResults: draftDone },
       team: {
         key: key, id: team.team_id, name: team.name,
         logo: (list(team.team_logos).map(x => x.team_logo || x)[0] || {}).url || "",
