@@ -417,12 +417,20 @@ tr.keeprow td{background:var(--amber-glow)!important;border-bottom-color:var(--a
 .yh-mrow{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:13.5px;color:var(--muted);margin-bottom:8px}
 .yh-mrow b{font-family:var(--disp);font-size:22px;color:var(--ink);font-weight:700}
 .yh-mcap{font-family:var(--mono);font-size:11px;letter-spacing:.06em;color:var(--ink);display:flex;gap:8px;align-items:center}
-.yh-bar{position:relative;height:14px;border-radius:7px;background:var(--surface-2);border:1px solid var(--line-2);overflow:visible;display:flex}
+.yh-bar{position:relative;height:14px;border-radius:7px;background:var(--surface-2);border:1px solid var(--line-2);overflow:visible;display:flex;margin-top:14px}
 .yh-bar i{display:block;height:100%}
 .yh-bar .pl{background:var(--amber);border-radius:7px 0 0 7px}
-.yh-bar .tc{background:repeating-linear-gradient(135deg,var(--amber-dim) 0 4px,transparent 4px 8px)}
+.yh-bar .tc{background:var(--amber-dim);opacity:.55}
 .yh-bar .cm{position:absolute;top:-5px;bottom:-5px;width:2px;background:var(--ink);transform:translateX(-1px)}
-.yh-meter.over .yh-bar .tc{background:repeating-linear-gradient(135deg,var(--red) 0 4px,transparent 4px 8px)}
+.yh-bar .cm em{position:absolute;top:-16px;left:50%;transform:translateX(-50%);font-style:normal;font-family:var(--mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink);white-space:nowrap}
+.yh-meter.over .yh-bar .tc{background:var(--red);opacity:.6}
+.yh-legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:8px;font-family:var(--mono);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim)}
+.yh-legend span{display:inline-flex;align-items:center;gap:6px}
+.yh-legend i{display:inline-block;width:14px;height:8px;border-radius:2px}
+.yh-legend i.pl{background:var(--amber)}.yh-legend i.tc{background:var(--amber-dim);opacity:.55}.yh-legend i.cm{width:2px;height:12px;background:var(--ink);border-radius:0}
+.yh-warn{margin-top:10px;padding:8px 10px;border:1px solid var(--amber-dim);border-left:3px solid var(--amber);border-radius:3px;background:var(--amber-glow);font-size:13px;color:var(--ink)}
+.yh-tw td.yh-st,.yh-tw th.yh-st{font-size:11.5px;padding-left:6px;padding-right:6px}
+.yh-tw td.name{white-space:nowrap}
 .yh-meter.over .yh-mrow b:last-child{color:var(--red)}
 .yh-mfoot{margin-top:8px;font-size:13.5px;color:var(--muted)}
 .yh-dtabs{display:flex;gap:4px;padding:10px 16px 0;flex-wrap:wrap;border-bottom:1px solid var(--line)}
@@ -2559,6 +2567,7 @@ function renderTeam(id){
       '</div>'+
     '</div>';
   teamTab("locked");
+  if(mine){ var lv=document.getElementById("yh-team"); if(lv){ lv.innerHTML='<div class="panel-hd"><span class="eyebrow">Live from Yahoo</span></div><div class="empty" style="padding:18px 16px">Asking Yahoo for your roster…</div>'; } teamLive(true, true); }
   if(window.Court) Court.onTeam(id);
   if(window.Yahoo) Yahoo.onTeam(id);
 }
@@ -6219,9 +6228,15 @@ var Yahoo=(function(){
   }
   /* the Games Cap table for a Yahoo week: the number, whether the commissioner has set it, whether he's locked it */
   function capInfo(d, week){
-    var out={cap:30, set:false, locked:false, aligned:capAligned(d)};
-    try{ var w=out.aligned&&CAP&&CAP.weeks&&CAP.weeks[week-1]; if(w&&w.set!=null&&w.set!==""){ out.cap=Number(w.set)||30; out.set=true; out.locked=!!w.locked; } }catch(e){}
+    var out={cap:30, set:false, locked:false, stale:false};
+    try{ var a=parseYmd(CAP.start), b=parseYmd(d.league.start); out.stale=(b-a)/86400000>60||(a-b)/86400000>6; }catch(e){}
+    try{ var w=CAP&&CAP.weeks&&CAP.weeks[week-1]; if(w&&w.set!=null&&w.set!==""){ out.cap=Number(w.set)||30; out.set=true; out.locked=!!w.locked; } }catch(e){}
     return out;
+  }
+  function staleNote(d, ci){
+    if(!ci.stale) return "";
+    var b=parseYmd(d.league.start), mon=new Date(b); mon.setDate(mon.getDate()-((mon.getDay()+6)%7));
+    return '<div class="yh-warn">Games Cap table still starts '+esc(CAP&&CAP.start||"?")+' — on the Games Cap page set Week 1 to Mon '+ymd(mon)+', count the games and set the caps.</div>';
   }
   function capPill(ci){
     return ci.locked?'<span class="pill ok" title="Set by the commissioner on the Games Cap page">cap '+ci.cap+' · set</span>'
@@ -6237,14 +6252,15 @@ var Yahoo=(function(){
     var ci=capInfo(d, d.league.week), played=d.games.active, left=sched?sched.left:null, proj=left==null?null:played+left;
     var scale=Math.max(ci.cap, proj||0, 1), pw=Math.min(100, played/scale*100), tw=left==null?0:Math.min(100-pw, left/scale*100), capx=ci.cap/scale*100;
     var overBy=proj==null?0:proj-ci.cap, cls=overBy>0?"over":(proj!=null&&ci.cap-proj<=1?"tight":"");
-    var right=left==null?'<b>…</b> to come':'<b>'+left+'</b> to come';
+    var right=left==null?'<b>…</b> scheduled':'<b>'+left+'</b> scheduled';
     var foot=proj==null?'Checking the NBA schedule for the rest of the week…'
             :(overBy>0?'<b style="color:var(--red)">'+proj+' projected · '+overBy+' over the cap</b> — sit '+overBy+' starter'+(overBy>1?'s':'')+' on a game day'
                       :'<b style="color:var(--green)">'+proj+' projected</b> · '+(ci.cap-proj)+' under the cap'+(ci.cap-proj<=1?' · no room for a streamer':''));
     return '<div class="yh-meter '+cls+'">'+
       '<div class="yh-mrow"><span><b>'+played+'</b> played</span><span class="yh-mcap">'+played+' / '+ci.cap+' games · '+capPill(ci)+'</span><span>'+right+'</span></div>'+
-      '<div class="yh-bar"><i class="pl" style="width:'+pw.toFixed(1)+'%"></i><i class="tc" style="width:'+tw.toFixed(1)+'%"></i><i class="cm" style="left:'+capx.toFixed(1)+'%"></i></div>'+
-      '<div class="yh-mfoot">'+foot+(d.games.bench?' <span class="sub">· bench and IL played '+d.games.bench+' that don’t count</span>':'')+'</div></div>';
+      '<div class="yh-bar"><i class="pl" style="width:'+pw.toFixed(1)+'%"></i><i class="tc" style="width:'+tw.toFixed(1)+'%"></i><i class="cm" style="left:'+capx.toFixed(1)+'%"><em>cap '+ci.cap+'</em></i></div>'+
+      '<div class="yh-legend"><span><i class="pl"></i> played</span><span><i class="tc"></i> scheduled for the lineup as set</span><span><i class="cm"></i> cap</span></div>'+
+      '<div class="yh-mfoot">'+foot+(d.games.bench?' <span class="sub">· bench and IL played '+d.games.bench+' that don’t count</span>':'')+'</div>'+staleNote(d,ci)+'</div>';
   }
   function navHtml(d){
     var lg=d.league, w=lg.week, r=weekRange(d), a=parseYmd(r[0]), b=parseYmd(r[1]), fmt=function(x){ return x.toLocaleDateString(undefined,{month:"short",day:"numeric"}); };
@@ -6265,14 +6281,29 @@ var Yahoo=(function(){
     });
     return '<div class="yh-dtabs">'+tabs+'</div>';
   }
+  /* last season's per-game line for a player, from the Players snapshot (loads lazily; the panel repaints when it lands) */
+  var STATC=[["MPG","min",1],["FG%","fgp",3],["FT%","ftp",3],["3PM","tpm",1],["PTS","pts",1],["REB","reb",1],["AST","ast",1],["ST","stl",1],["BLK","blk",1],["DD","ddpg",2]];
+  function statLine(name){
+    if(!window.Players||!Players.rows) return null;
+    var rows=Players.rows(); if(!rows.length){ Players.ensure&&Players.ensure(); return null; }
+    var k=nrmName(name), r=null; for(var i=0;i<rows.length;i++){ if(rows[i].key===k){ r=rows[i]; break; } }
+    if(!r) return {};
+    return {min:r.min,fgp:r.fga?r.fgm/r.fga:null,ftp:r.fta?r.ftm/r.fta:null,tpm:r.tpm,pts:r.pts,reb:r.reb,ast:r.ast,stl:r.stl,blk:r.blk,ddpg:r.gp?(r.dd||0)/r.gp:0,gp:r.gp};
+  }
+  function nrmName(n){ return String(n||"").normalize("NFKD").replace(/[̀-ͯ]/g,"").toLowerCase().replace(/[.'’]/g,"").replace(/[^a-z ]/g," ").split(" ").filter(function(w){return w&&["jr","sr","ii","iii","iv"].indexOf(w)<0;}).join(" "); }
+  function statCells(name){
+    var l=statLine(name);
+    return STATC.map(function(c){ var v=l?l[c[1]]:null; var t=(v==null||isNaN(v))?(l===null?'…':'–'):(c[2]===3?(+v).toFixed(3).replace(/^0/,""):(+v).toFixed(c[2])); return '<td class="num yh-st'+(v==null?' sub':'')+'">'+t+'</td>'; }).join("");
+  }
+  function statHead(){ return STATC.map(function(c){ return '<th class="num yh-st" title="2025–26 per game">'+c[0]+'</th>'; }).join(""); }
   function weekTable(d, showKeepers){
     var rows=d.players.map(function(p){
-      var bench=BENCH.test(p.pos||""), c=showKeepers?keepCost(d,p):null, left=sched?(sched.leftBy[p.name]||0):null;
+      var bench=BENCH.test(p.pos||""), left=sched?(sched.leftBy[p.name]||0):null;
       return '<tr'+(bench?' style="color:var(--dim)"':'')+'><td class="num sub">'+esc(p.pos||"")+'</td><td class="name" style="font-size:15px">'+esc(p.name||"")+status(p)+'</td><td class="mgr">'+esc(p.team||"")+'</td><td class="num">'+p.gp+'</td>'+
-        '<td class="num'+(left?'':' sub')+'">'+(bench?'–':(left==null?'…':left))+'</td>'+
-        (showKeepers?'<td class="num">'+(c?(c.dead?'<span class="sub">not keepable</span>':'RD '+c.cost+(c.src==="undrafted"?' <span class="sub">undrafted</span>':''))+(c&&!c.dead&&c.src!=="undrafted"?' <span class="sub">'+esc(c.src)+'</span>':''):'')+'</td>':'')+'</tr>';
+        '<td class="num'+(left?'':' sub')+'">'+(bench?'–':(left==null?'…':left))+'</td>'+statCells(p.name)+'</tr>';
     }).join("");
-    return '<div class="tablewrap" style="border:0;border-radius:0"><table><thead><tr><th class="num">Slot</th><th>Player</th><th>NBA</th><th class="num" title="Games played this week in an active slot">GP</th><th class="num" title="Games still to come while in an active slot">Left</th>'+(showKeepers?'<th class="num" title="What keeping him next year would cost, from this season’s draft">Keep cost</th>':'')+'</tr></thead><tbody>'+rows+'</tbody></table></div>';
+    return '<div class="tablewrap yh-tw" style="border:0;border-radius:0"><table><thead><tr><th class="num">Slot</th><th>Player</th><th>NBA</th><th class="num" title="Games played this week in an active slot">GP</th><th class="num" title="Games still scheduled while in an active slot">Left</th>'+statHead()+'</tr></thead><tbody>'+rows+'</tbody></table></div>'+
+      '<p class="sub" style="margin:0;padding:6px 16px 0">Stats are 2025–26 per-game averages from the Players page; this season’s numbers take over once there are games.</p>';
   }
   function dayTable(d, day, showKeepers){
     var byDate={}; (d.days||[]).forEach(function(x){ byDate[x.date]=x; });
@@ -6286,13 +6317,12 @@ var Yahoo=(function(){
       else if(g.started) cell='<span class="pill warn">in progress</span>';
       else cell='<span class="pill '+(bench?'q':'ok')+'">'+(g.home?'vs ':'@ ')+esc(g.opp)+'</span>';
       if(!sched&&!p.gp&&!past) cell='<span class="sub">…</span>';
-      var c=showKeepers?keepCost(d,p):null;
-      return '<tr'+(bench?' style="color:var(--dim)"':'')+'><td class="num sub">'+esc(p.pos||"")+'</td><td class="name" style="font-size:15px">'+esc(p.name||"")+status(p)+'</td><td class="mgr">'+esc(p.team||"")+'</td><td>'+cell+'</td>'+
-        (showKeepers?'<td class="num">'+(c?(c.dead?'<span class="sub">not keepable</span>':'RD '+c.cost):'')+'</td>':'')+'</tr>';
+      return '<tr'+(bench?' style="color:var(--dim)"':'')+'><td class="num sub">'+esc(p.pos||"")+'</td><td class="name" style="font-size:15px">'+esc(p.name||"")+status(p)+'</td><td class="mgr">'+esc(p.team||"")+'</td><td>'+cell+'</td>'+statCells(p.name)+'</tr>';
     }).join("");
     var n=ps.filter(function(p){ return !BENCH.test(p.pos||""); }), act=n.reduce(function(a,p){ return a+(p.gp||0); },0), toCome=sched?(sched.perDay[day]||0):null;
-    return '<div class="yh-daysum">'+(past?'<b>'+act+'</b> game'+(act===1?'':'s')+' counted from the lineup that day':'<b>'+act+'</b> played'+(toCome==null?'':' · <b>'+toCome+'</b> still to come')+' · lineup as set now')+'</div>'+
-      '<div class="tablewrap" style="border:0;border-radius:0"><table><thead><tr><th class="num">Slot</th><th>Player</th><th>NBA</th><th>Game</th>'+(showKeepers?'<th class="num">Keep cost</th>':'')+'</tr></thead><tbody>'+rows+'</tbody></table></div>';
+    var lbl=parseYmd(day).toLocaleDateString(undefined,{weekday:"short",month:"numeric",day:"numeric"});
+    return '<div class="yh-daysum">'+(past?'<b>'+act+'</b> game'+(act===1?'':'s')+' counted from the lineup Yahoo had for '+esc(lbl):'<b>'+act+'</b> played · <b>'+(toCome==null?'…':toCome)+'</b> scheduled · the lineup Yahoo holds for '+esc(lbl)+(dd&&dd.players&&dd.players.length?'':' (fallback: today’s lineup)'))+'</div>'+
+      '<div class="tablewrap yh-tw" style="border:0;border-radius:0"><table><thead><tr><th class="num">Slot</th><th>Player</th><th>NBA</th><th>Game</th>'+statHead()+'</tr></thead><tbody>'+rows+'</tbody></table></div>';
   }
   function teamHtml(d, showKeepers){
     var pre=!d.players.length, st=d.standing, lu=d.lineup||{};
@@ -6306,10 +6336,12 @@ var Yahoo=(function(){
       (pre?'<div class="empty" style="padding:14px 16px 18px">No roster yet — it fills in after the draft'+(d.league.start?' (season starts '+esc(d.league.start)+')':'')+'.</div>'
           :meterHtml(d)+daysHtml(d)+'<div id="yh-table">'+(view.day?dayTable(d,view.day,showKeepers):weekTable(d,showKeepers))+'</div>')+
       '<div class="yh-facts">'+facts.join("")+'</div>'+
-      '<p class="sub" style="padding:10px 16px 14px;margin:0">Fetched '+new Date(d.fetched).toLocaleTimeString([], {hour:"numeric",minute:"2-digit"})+' · read live, nothing saved'+(d.league.draftResults?' · keeper costs from this season’s draft':'')+' · <a href="https://sports.yahoo.com/fantasy/" target="_blank" rel="noopener">'+esc(d.attribution)+'</a></p>';
+      '<p class="sub" style="padding:10px 16px 14px;margin:0">Fetched '+new Date(d.fetched).toLocaleTimeString([], {hour:"numeric",minute:"2-digit"})+' · read live, nothing saved'+' · <a href="https://sports.yahoo.com/fantasy/" target="_blank" rel="noopener">'+esc(d.attribution)+'</a></p>';
   }
   function panel(id, html){ var el=$(id); if(el) el.innerHTML=html; }
-  function show(id, d, showKeepers){ hostId=id; data=d; panel(id, teamHtml(d, showKeepers)); }
+  function show(id, d, showKeepers){ hostId=id; data=d; panel(id, teamHtml(d, showKeepers)); waitStats(); }
+  var statsWait=0;
+  function waitStats(){ if(!window.Players||!Players.rows||Players.rows().length||statsWait>20) return; Players.ensure&&Players.ensure(); statsWait++; setTimeout(function(){ if(Players.rows().length){ statsWait=0; repaint(); } else waitStats(); },500); }
   function repaint(){ if(!data||!hostId||!$(hostId)) return; panel(hostId, teamHtml(data, true)); }
 
   /* Manager page: the commissioner's own view */
@@ -6330,7 +6362,7 @@ var Yahoo=(function(){
     backTo="team/"+id;
     load(!!flag, function(x){
       if(x.status===401){ live(isMine, true); if(isMine) host.innerHTML='<div class="panel-hd"><span class="eyebrow">Live from Yahoo</span></div>'+note+connectHtml("team/"+id); return; }
-      if(!x.ok){ live(isMine); if(isMine) host.innerHTML='<div class="panel-hd"><span class="eyebrow">Live from Yahoo</span></div>'+note+noticeHtml(x.j.error+(x.j.detail?' '+x.j.detail:''))+connectHtml("team/"+id,true); return; }
+      if(!x.ok){ live(isMine); if(isMine){ host.innerHTML='<div class="panel-hd"><span class="eyebrow">Live from Yahoo</span></div>'+note+noticeHtml(x.j.error+(x.j.detail?' '+x.j.detail:''))+connectHtml("team/"+id,true); if(typeof teamTab==="function") teamTab("locked"); } return; }
       var st=siteTeamFor(x.j);
       if(st&&st.id===id){ live(true, true); show("yh-team", x.j, true); if(note) host.insertAdjacentHTML("afterbegin",note); schedule(x.j); return; }
       if(isMine){ live(true, true); host.innerHTML='<div class="panel-hd"><span class="eyebrow">Live from Yahoo</span></div><div class="empty" style="padding:16px">Your Yahoo login owns <b>'+esc(x.j.team.name)+'</b>'+(st?', which is <a href="#team/'+st.id+'">its own page</a>':', which doesn’t match a team here yet')+'.</div>'; return; }
