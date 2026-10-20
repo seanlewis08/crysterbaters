@@ -574,7 +574,8 @@ details.archive>section{margin-top:8px;padding-bottom:16px}
 .board.d26 th.rnd{width:54px}
 .board.d26 td.cell{padding:8px 10px;min-width:0}
 .board.d26 .kp{overflow-wrap:anywhere;margin-top:0}
-.board.d26 .ov{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.board.d26 .ov{overflow-wrap:anywhere}
+.board.d26 .ov b{font-weight:600;color:var(--amber)}
 .board.d26 thead th{padding:9px 6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .board.d26 thead th b{display:block;font-family:var(--disp);font-size:13px;letter-spacing:.04em;color:var(--ink)}
 .board.d26 th.rnd .dir{display:block;font-family:var(--mono);font-size:11px;font-weight:400;color:var(--dim);line-height:1;margin-top:2px}
@@ -3001,7 +3002,7 @@ var Draft26=(function(){
         var p=cells[s]; if(!p){ body+='<td class="cell"></td>'; continue; }
         var k=ks[nk(p.player)]&&ks[nk(p.player)]===p.team_id, w=who(p), traded=owner[s]&&w!==owner[s];
         body+='<td class="cell'+(k?" taken":"")+'"><span class="kp" style="color:'+(k?"var(--amber)":"var(--ink)")+'">'+esc(p.player)+(k?' <span class="kbadge">K</span>':'')+'</span>'+
-          '<span class="ov" title="'+esc(w)+' · pick '+p.pick+'">#'+p.pick+(p.nba?' · '+esc(p.nba):'')+(traded?' · '+esc(w).toUpperCase():'')+'</span></td>';
+          '<span class="ov" title="'+esc(w)+' · pick '+p.pick+'">#'+p.pick+(p.nba?' · '+esc(p.nba):'')+(traded?' · <b title="Pick traded: made by '+esc(w)+'">'+esc(w).toUpperCase()+'</b>':'')+'</span></td>';
       }
       body+='</tr>';
     }
