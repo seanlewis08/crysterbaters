@@ -173,6 +173,30 @@ async function draftResults() {
   return draftCache.v;
 }
 
+// Yahoo's draft analysis for the top of the player pool — average pick, average round,
+// % drafted, preseason overall rank — through the shared token, 25 players a page.
+// Cached for six hours; it only moves while drafts are happening.
+let adpCache = null;
+async function draftAnalysis(pages) {
+  const n = Math.min(Number(pages) || 12, 20);
+  if (adpCache && adpCache.n >= n && Date.now() - adpCache.at < 6 * 60 * 60 * 1000) return adpCache.v;
+  const at = await accessToken();
+  const out = [];
+  for (let i = 0; i < n; i++) {
+    const f = L.fold((await L.yahoo({ at }, "/game/nba/players;start=" + (i * 25) + ";count=25;sort=AR;out=ranks,draft_analysis")).fantasy_content.game);
+    const ps = list(f.players || (f["0"] && f["0"].players) || (f[1] && f[1].players)).map((x) => x.player || x);
+    if (!ps.length) break;
+    ps.forEach((pl) => {
+      const da = pl.draft_analysis || {};
+      const orank = list(pl.player_ranks).map((x) => x.player_rank || x).find((x) => x.rank_type === "OR");
+      out.push({ key: pl.player_key, name: pl.name && pl.name.full, team: pl.editorial_team_abbr || "", pos: pl.display_position || "", orank: orank ? Number(orank.rank_value) || null : null, pick: Number(da.average_pick) || null, round: Number(da.average_round) || null, drafted: Number(da.percent_drafted) || null });
+    });
+    if (ps.length < 25) break;
+  }
+  adpCache = { at: Date.now(), n: n, v: { players: out } };
+  return adpCache.v;
+}
+
 // Current Yahoo name for a site team id (for messages), falling back to the site's name.
 async function teamName(teamId) {
   try {
@@ -183,4 +207,4 @@ async function teamName(teamId) {
   return s ? s.name : teamId;
 }
 
-module.exports = { leagueTeams, leagueRosters, mappedTeams, linkChoices, teamName, leagueMeta, weekDates, leagueRostersOn, draftResults, _reset: () => { cached = null; draftCache = null; } };
+module.exports = { leagueTeams, leagueRosters, mappedTeams, linkChoices, teamName, leagueMeta, weekDates, leagueRostersOn, draftResults, draftAnalysis, _reset: () => { cached = null; draftCache = null; adpCache = null; } };

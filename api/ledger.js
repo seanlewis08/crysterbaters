@@ -1,5 +1,6 @@
 // The games ledger, one function (the Hobby plan allows twelve per deployment):
 //   GET  /api/ledger?draft=1                 this season's draft, every pick with names
+//   GET  /api/ledger?adp=1[&pages=12]        Yahoo's draft analysis (ADP, preseason rank) for the top of the pool
 //   GET  /api/ledger?team=jalenba[&week=5]   one team's week, in /api/yahoo/team's
 //        shape, so the page draws stored and live data the same way. Lineups are
 //        what the last snapshot (or that manager's last visit) read from Yahoo;
@@ -141,8 +142,21 @@ async function draft(req, res) {
   }
 }
 
+async function adp(req, res) {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  try {
+    const d = await yahoo.draftAnalysis(req.query.pages);
+    res.setHeader("Cache-Control", "public, s-maxage=21600, stale-while-revalidate=86400");
+    return res.status(200).json(Object.assign({ built: new Date().toISOString(), attribution: "Fantasy data provided by Yahoo Fantasy" }, d));
+  } catch (e) {
+    res.setHeader("Cache-Control", "no-store");
+    return res.status(503).json({ error: e.message || String(e) });
+  }
+}
+
 module.exports = async (req, res) => {
   if (req.method === "GET" && req.query && req.query.team) return read(req, res);
   if (req.method === "GET" && req.query && req.query.draft) return draft(req, res);
+  if (req.method === "GET" && req.query && req.query.adp) return adp(req, res);
   return snapshot(req, res);
 };
