@@ -951,6 +951,12 @@ footer p + p{margin-top:11px}
 .bd-tools{display:flex;gap:8px;flex-wrap:wrap;margin-top:auto;padding-top:4px}
 .bd-form{display:flex;flex-wrap:wrap;gap:12px 16px;padding:14px;border:1px dashed var(--line-2);border-radius:4px;background:var(--surface-2);margin-top:6px;width:100%}
 .bd-form .field.wide{flex-basis:100%}
+.bd-teams{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:4px 12px;margin-top:4px}
+.bd-tm{display:flex;align-items:center;gap:8px;font-family:var(--body);font-size:14px;letter-spacing:0;text-transform:none;color:var(--ink);cursor:pointer;padding:4px 6px;border-radius:4px}
+.bd-tm:hover{background:var(--surface)}
+.bd-tm input{width:16px;height:16px;accent-color:var(--amber);margin:0}
+.bd-tm b{font-weight:600}
+.bd-tm span{color:var(--muted);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .bd-form .field input,.bd-form .field select{font-size:15px;padding:8px 10px}
 .bd-form .hint{flex-basis:100%;font-size:12.5px;color:var(--dim);margin:0}
 .bd-form-out{flex-basis:100%;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
@@ -5814,8 +5820,13 @@ var Badges=(function(){
       Object.keys(cnt).forEach(function(t){ if(!top||cnt[t]>cnt[top]) top=t; });
       return {team_id:top, season:season, n:cnt[top], of:list.filter(function(a){return a.season===season;}).length};
     }
-    return {team_id:list[0].team_id, season:list[0].season, since:list[0].awarded_at, note:list[0].note, n:1};
+    if(b.kind==="legacy") return {team_id:list[0].team_id, teams:[list[0].team_id], season:list[0].season, since:list[0].awarded_at, note:list[0].note, n:1};
+    /* a tie is real: everyone awarded in the latest season shares it (oldest award first) */
+    var season2=list[0].season, same=list.filter(function(a){return a.season===season2;}).slice().reverse(), teams=[];
+    same.forEach(function(a){ if(teams.indexOf(a.team_id)<0) teams.push(a.team_id); });
+    return {team_id:teams[0], teams:teams, season:season2, since:same[0].awarded_at, note:same.map(function(a){return a.note;}).filter(function(x,i,arr){ return x&&arr.indexOf(x)===i; }).join(" · ")||null, n:1};
   }
+  function holderNames(h){ return (h.teams||[h.team_id]).map(function(t){ return '<b data-team="'+esc(t)+'" class="bd-holder">'+esc(teamName(t))+'</b>'; }).join('<span class="sub"> & </span>'); }
   /* badges a team shows on its card: legacy it holds now, every season/draft award, weekly as counts */
   function forTeam(tid){
     var out=[];
@@ -5885,7 +5896,7 @@ var Badges=(function(){
     if(!h) held='<span class="bd-unclaimed">Unclaimed</span>';
     else if(b.kind==="weekly") held='<b data-team="'+esc(h.team_id)+'" class="bd-holder">'+esc(teamName(h.team_id))+'</b><small>'+h.n+' of '+h.of+' this season · '+esc(h.season)+'</small>';
     else if(b.kind==="legacy") held='<b data-team="'+esc(h.team_id)+'" class="bd-holder">'+esc(teamName(h.team_id))+'</b><small>'+(m.claimed?"final holder · prize claimed":"holding since "+esc(h.season))+(h.note?' · '+esc(h.note):'')+'</small>';
-    else held='<b data-team="'+esc(h.team_id)+'" class="bd-holder">'+esc(teamName(h.team_id))+'</b><small>'+esc(h.season)+(h.note?' · '+esc(h.note):'')+'</small>';
+    else held=holderNames(h)+'<small>'+esc(h.season)+(h.teams&&h.teams.length>1?' · shared, '+h.teams.length+' ways':'')+(h.note?' · '+esc(h.note):'')+'</small>';
     var prize=m.prize?'<div class="bd-prize'+(m.claimed?" claimed":"")+'"><span class="eyebrow">Prize</span><span>'+esc(m.prize)+(m.claimed?' · <em>claimed</em>':'')+'</span></div>':(com?'<div class="bd-prize none"><span class="eyebrow">Prize</span><span class="sub">none yet</span></div>':'');
     var tools="";
     if(com){
@@ -5916,12 +5927,16 @@ var Badges=(function(){
   }
   function awardForm(b){
     var h=holder(b.id);
-    var teams=T.slice().sort(function(a,c){return a.short<c.short?-1:1;}).map(function(t){ return '<option value="'+t.id+'"'+(h&&h.team_id===t.id&&b.kind!=="legacy"?"":"")+'>'+esc(t.short)+' · '+esc(t.name)+'</option>'; }).join("");
+    var sorted=T.slice().sort(function(a,c){return a.short<c.short?-1:1;});
+    var teams=sorted.map(function(t){ return '<option value="'+t.id+'">'+esc(t.short)+' · '+esc(t.name)+'</option>'; }).join("");
+    var boxes=sorted.map(function(t){ return '<label class="bd-tm"><input type="checkbox" name="team" value="'+t.id+'"><b>'+esc(t.short)+'</b><span>'+esc(t.name)+'</span></label>'; }).join("");
+    var teamField=b.kind==="legacy"
+      ?'<div class="field"><label>Team</label><select name="team">'+teams+'</select></div>'
+      :'<div class="field wide"><label>Team — tick more than one for a tie</label><div class="bd-teams">'+boxes+'</div></div>';
     var hint=b.kind==="legacy"?(h?"This passes the badge from "+teamShort(h.team_id)+". The old holder stays in the history.":"First holder. Every later holder gets written down under it."):
              b.kind==="weekly"?"Put the week in the note, e.g. “Week 4”. Award it as often as it happens.":
-             b.kind==="draft"?"Put the pick in the note, e.g. “Round 3 · Reed Sheppard”.":"One a season. Put the number in the note if there is one.";
-    return '<form class="bd-form" data-bform="'+b.id+'">'+
-      '<div class="field"><label>Team</label><select name="team">'+teams+'</select></div>'+
+             b.kind==="draft"?"Put the pick in the note, e.g. “Round 3 · Reed Sheppard”. A tie can go to everyone who shares it.":"One a season — or shared, if it ends in a tie. Put the number in the note if there is one.";
+    return '<form class="bd-form" data-bform="'+b.id+'">'+teamField+
       '<div class="field" style="flex:0 0 120px;min-width:120px"><label>Season</label><input name="season" value="'+esc(SEASON_NOW)+'" maxlength="12"></div>'+
       '<div class="field wide"><label>Note (optional)</label><input name="note" maxlength="120" placeholder="'+esc(b.kind==="weekly"?"Week 4":(b.kind==="draft"?"Round 3 · Reed Sheppard":"12-6-1"))+'"></div>'+
       '<p class="hint">'+esc(hint)+'</p>'+
@@ -6013,10 +6028,14 @@ var Badges=(function(){
       if(!f&&!p) return;
       e.preventDefault();
       if(f){
-        var team=f.team.value, season=f.season.value.trim(), note=f.note.value.trim();
+        var sel=f.querySelector('select[name=team]'), teams=sel?[sel.value]:Array.prototype.map.call(f.querySelectorAll('input[name=team]:checked'),function(x){return x.value;});
+        var season=f.season.value.trim(), note=f.note.value.trim();
+        if(!teams.length){ msg(f,"Tick at least one team."); return; }
         if(!season){ msg(f,"Season?"); return; }
         f.querySelector('button[type=submit]').disabled=true;
-        Polls.store().badgeAward({badge_id:f.dataset.bform,team_id:team,season:season,note:note||null}).then(function(){ openForm=null; load(); })
+        /* one award per team, written in order so the history reads left to right */
+        teams.reduce(function(pr,tid){ return pr.then(function(){ return Polls.store().badgeAward({badge_id:f.dataset.bform,team_id:tid,season:season,note:note||null}); }); }, Promise.resolve())
+          .then(function(){ openForm=null; load(); })
           .catch(function(err){ f.querySelector('button[type=submit]').disabled=false; msg(f,(err&&err.message)||"Couldn't save."); });
       } else {
         var prize=p.prize.value.trim(), claimed=p.claimed?p.claimed.checked:false;
