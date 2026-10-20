@@ -569,6 +569,15 @@ details.archive>section{margin-top:8px;padding-bottom:16px}
 .cell.taken{background:var(--amber-glow);border-right-color:var(--amber-dim);border-bottom-color:var(--amber-dim);box-shadow:inset 2px 0 0 var(--amber)}
 .cell.taken .tm{color:var(--amber)}
 .cell .kp{display:block;font-family:var(--body);font-weight:600;font-size:12.5px;color:var(--ink);margin-top:4px;line-height:1.2}
+/* the real draft board: ten equal columns (one per draft slot), names wrap inside their own cell, even rounds run right to left */
+.board.d26{table-layout:fixed;min-width:1180px}
+.board.d26 th.rnd{width:54px}
+.board.d26 td.cell{padding:8px 10px;min-width:0}
+.board.d26 .kp{overflow-wrap:anywhere;margin-top:0}
+.board.d26 .ov{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.board.d26 thead th{padding:9px 6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.board.d26 thead th b{display:block;font-family:var(--disp);font-size:13px;letter-spacing:.04em;color:var(--ink)}
+.board.d26 th.rnd .dir{display:block;font-family:var(--mono);font-size:11px;font-weight:400;color:var(--dim);line-height:1;margin-top:2px}
 
 .checklist{display:flex;flex-direction:column}
 .chk{display:flex;gap:15px;align-items:center;padding:14px 17px;border-bottom:1px solid var(--line)}
@@ -988,6 +997,21 @@ footer p + p{margin-top:11px}
 .hero-head .avatar{width:54px;height:54px;font-size:21px;border-width:2px;box-shadow:0 3px 8px rgba(0,0,0,.3)}
 .hero-head h2{font-size:clamp(26px,4.6vw,44px);font-weight:800;text-transform:uppercase;letter-spacing:.015em;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.5)}
 .hero-head .sub{margin-top:5px;font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#EDE3CE;text-shadow:0 1px 4px rgba(0,0,0,.6)}
+/* who runs the team: a quiet "edit name" on your own page, an inline form while you change it */
+.mg-edit{margin-left:8px;padding:1px 7px;font:inherit;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#fff;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.45);border-radius:2px;cursor:pointer}
+.mg-edit:hover{background:rgba(0,0,0,.55)}
+.mg-sub{color:#F2C97D}
+.mg-form{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:flex-end;margin-top:8px;padding:10px 12px;background:rgba(20,14,8,.72);border:1px solid rgba(255,255,255,.25);border-radius:3px;max-width:520px}
+.mg-form label{display:flex;flex-direction:column;gap:3px;font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:#EDE3CE}
+.mg-form input{font:inherit;font-size:15px;padding:6px 9px;width:200px;max-width:100%;color:var(--ink);background:var(--surface);border:1px solid var(--line-2);border-radius:2px}
+.mg-form label:nth-child(2) input{width:120px}
+.mg-form .mg-out{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.mg-form small{flex-basis:100%;font-size:12px;color:#D9CDB6}
+@media (max-width:640px){ .mg-form input{width:100%} .mg-form label{flex:1 1 100%} }
+/* while the name is being edited the hero grows instead of the form climbing over the team name */
+.hero.naming{height:auto;min-height:clamp(230px,32vw,340px)}
+.hero.naming .hero-head{position:relative;left:auto;right:auto;bottom:auto;padding:150px 22px 18px;align-items:flex-end}
+@media (max-width:700px){.hero.naming{height:auto}.hero.naming .hero-head{padding:120px 14px 14px}}
 .hero-tag{position:absolute;right:18px;top:14px;font-family:var(--mono);font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:#fff;background:rgba(0,0,0,.42);padding:6px 10px;border-radius:2px;border:1px solid rgba(255,255,255,.35);backdrop-filter:blur(4px)}
 .hero-tag b{display:block;font-family:var(--disp);font-size:16px;letter-spacing:.04em;margin-top:2px}
 .hero-jersey{position:absolute;right:23%;top:-6px;width:clamp(110px,15%,172px);filter:drop-shadow(0 10px 14px rgba(0,0,0,.4))}
@@ -1311,7 +1335,7 @@ footer p + p{margin-top:11px}
     <section>
       <div class="sec-head"><h2>2026–27 Draft</h2><span class="eyebrow cool" id="d26eyebrow">Oct 17, 2026 · 12 rounds · snake</span></div>
       <div class="rulebar"></div>
-      <p class="lede">The board as it happened, straight from Yahoo. Amber cells are keepers taking their round; the small line under each name is who made the pick and the overall number. Next season's keeper costs come from this board — a player's cost is his round here, minus two.</p>
+      <p class="lede">The board as it happened, straight from Yahoo. Each column is a draft slot and the board snakes: odd rounds read left to right, even rounds right to left. Amber cells are keepers taking their round; the small line under each name is the overall pick and his NBA team. Next season's keeper costs come from this board — a player's cost is his round here, minus two.</p>
       <div class="panel" style="margin-top:20px;overflow:hidden">
         <div class="ttabs" style="padding:12px 16px 0"><button class="ttab on" data-d26view="board">By round</button><button class="ttab" data-d26view="team">By team</button></div>
         <div id="d26wrap" style="overflow:auto;max-height:72vh"><div class="empty" style="padding:18px 16px">Reading the draft from Yahoo…</div></div>
@@ -2514,11 +2538,34 @@ function applyLiveTeams(data){
   if(!changed) return false;
   LIVE_TEAMS=data; window.cbLive={data:data,T:T,byId:byId,keepersFor:keepersFor};
   try{ applyKeepers(Object.keys(KEEPER_ROWS).map(function(k){return KEEPER_ROWS[k];}), KEEPER_REQS); }catch(e){ rebuildKeeperViews(); }
-  renderStandings();
   if(typeof renderOrderControls==="function") try{ renderOrderControls(); }catch(e){}
   ["pl-owner","po-owner"].forEach(function(id){ var sel=document.getElementById(id); if(!sel) return;
     Array.prototype.forEach.call(sel.options,function(o){ var t=byId(o.value); if(t) o.textContent=t.short+" — "+t.name; }); });
   document.dispatchEvent(new CustomEvent("cb:liveteams",{detail:data}));
+  return true;
+}
+/* ---------- who runs each team this season ----------
+   team_prefs.manager / manager_short (set from the team page by that manager or the commissioner)
+   override the names typed into T[] above, everywhere a manager is named: cards, standings,
+   boards, badges, pickers. Clearing them puts the original name back. */
+function managerDefaults(t){ if(!t._orig) t._orig={mgr:t.mgr,short:t.short,ini:t.ini}; return t._orig; }
+function initialsOf(name){ return String(name||"").trim().split(/\s+/).map(function(w){return w.charAt(0).toUpperCase();}).slice(0,3).join("")||"?"; }
+function applyManagers(list){
+  var changed=false;
+  (list||[]).forEach(function(p){
+    var t=p&&byId(p.team_id); if(!t) return;
+    var o=managerDefaults(t), full=(p.manager||"").trim(), shortName=(p.manager_short||"").trim()||(full?full.split(/\s+/)[0]:"");
+    var mgr=full||o.mgr, sh=full?(shortName||o.short):o.short, ini=full?initialsOf(full):o.ini;
+    if(t.mgr!==mgr||t.short!==sh||t.ini!==ini){ t.mgr=mgr; t.short=sh; t.ini=ini; changed=true; }
+  });
+  if(!changed) return false;
+  try{ rebuildKeeperViews(); }catch(e){}
+  if(typeof renderOrderControls==="function") try{ renderOrderControls(); }catch(e){}
+  ["pl-owner","po-owner"].forEach(function(id){ var sel=document.getElementById(id); if(!sel) return;
+    Array.prototype.forEach.call(sel.options,function(o){ var t=byId(o.value); if(t) o.textContent=t.short+" — "+t.name; }); });
+  if(window.Draft26&&Draft26.repaint) Draft26.repaint();
+  if(window.Badges&&Badges.onView) try{ Badges.onView("badges"); }catch(e){}
+  document.dispatchEvent(new CustomEvent("cb:managers"));
   return true;
 }
 function loadLiveTeams(){
@@ -2938,22 +2985,27 @@ var Draft26=(function(){
   var data=null, view="board", loading=false;
   function nk(n){ return norm(n); }
   function keeperSet(){ var ks={}; T.forEach(function(t){ keepersFor(t).forEach(function(k){ ks[nk(k.player)]=t.id; }); }); return ks; }
+  function who(p){ var t=p.team_id?byId(p.team_id):null; return t?t.short:(p.team||"?").slice(0,10); }
+  /* Snake board: one column per draft slot (the team that owned it in round 1), odd rounds
+     read left to right, even rounds right to left — the way the room saw it. */
   function boardHtml(d){
     var n=d.teams||10, ks=keeperSet(), rounds=0; d.picks.forEach(function(p){ if(p.round>rounds) rounds=p.round; });
-    var head='<tr><th class="rnd">RD</th>'; for(var s=1;s<=n;s++) head+='<th>Pick '+s+'</th>'; head+='</tr>';
+    var col=function(p){ return p.round%2?p.slot:n+1-p.slot; };
+    var owner={}; d.picks.filter(function(p){return p.round===1;}).forEach(function(p){ owner[col(p)]=who(p); });
+    var head='<tr><th class="rnd">RD</th>'; for(var s=1;s<=n;s++) head+='<th title="Draft slot '+s+(owner[s]?' · '+esc(owner[s]):'')+'">'+s+(owner[s]?'<b>'+esc(owner[s])+'</b>':'')+'</th>'; head+='</tr>';
     var body="";
     for(var r=1;r<=rounds;r++){
-      var row=d.picks.filter(function(p){return p.round===r;}).sort(function(a,b){return a.pick-b.pick;});
-      body+='<tr><th class="rnd">'+r+'</th>';
-      row.forEach(function(p){
-        var t=p.team_id?byId(p.team_id):null, k=ks[nk(p.player)]&&ks[nk(p.player)]===p.team_id;
-        body+='<td class="cell'+(k?" taken":"")+'"><span class="kp" style="margin-top:0;color:'+(k?"var(--amber)":"var(--ink)")+'">'+esc(p.player)+(k?' <span class="kbadge">K</span>':'')+'</span>'+
-          '<span class="ov">'+(t?esc(t.short).toUpperCase():esc((p.team||"?").slice(0,10)).toUpperCase())+' · #'+p.pick+(p.nba?' · '+esc(p.nba):'')+'</span></td>';
-      });
-      for(var f=row.length;f<n;f++) body+='<td class="cell"></td>';
+      var cells=[]; d.picks.filter(function(p){return p.round===r;}).forEach(function(p){ cells[col(p)]=p; });
+      body+='<tr><th class="rnd">'+r+'<span class="dir" aria-label="'+(r%2?'left to right':'right to left')+'">'+(r%2?'→':'←')+'</span></th>';
+      for(var s=1;s<=n;s++){
+        var p=cells[s]; if(!p){ body+='<td class="cell"></td>'; continue; }
+        var k=ks[nk(p.player)]&&ks[nk(p.player)]===p.team_id, w=who(p), traded=owner[s]&&w!==owner[s];
+        body+='<td class="cell'+(k?" taken":"")+'"><span class="kp" style="color:'+(k?"var(--amber)":"var(--ink)")+'">'+esc(p.player)+(k?' <span class="kbadge">K</span>':'')+'</span>'+
+          '<span class="ov" title="'+esc(w)+' · pick '+p.pick+'">#'+p.pick+(p.nba?' · '+esc(p.nba):'')+(traded?' · '+esc(w).toUpperCase():'')+'</span></td>';
+      }
       body+='</tr>';
     }
-    return '<table class="board"><thead>'+head+'</thead><tbody>'+body+'</tbody></table>';
+    return '<table class="board d26"><thead>'+head+'</thead><tbody>'+body+'</tbody></table>';
   }
   function teamHtml(d){
     var ks=keeperSet(), by={}; d.picks.forEach(function(p){ (by[p.team_id||p.team]=by[p.team_id||p.team]||[]).push(p); });
@@ -3386,7 +3438,7 @@ var Polls=(function(){
       capSave:function(data){ if(!commish()) return Promise.reject(new Error("Commissioner only.")); db.cap=JSON.parse(JSON.stringify(data)); save(); return Promise.resolve(); },
       /* home courts */
       prefsLoad:function(){ return Promise.resolve((db.prefs||[]).slice()); },
-      prefsSet:function(team_id,o){ var p=myProf(); if(!(commish()||(p&&p.team_id===team_id))) return Promise.reject(new Error("That's not your team.")); if(!db.prefs) db.prefs=[]; var row=db.prefs.filter(function(x){return x.team_id===team_id;})[0]; if(!row){ row={team_id:team_id}; db.prefs.push(row); } row.nba_team=o.nba_team||null; row.jersey_player=o.jersey_player||null; row.jersey_num=o.jersey_num||null; row.jersey_team=o.jersey_team||null; row.updated_by=db.me.id; row.updated_at=new Date().toISOString(); save(); return Promise.resolve(); },
+      prefsSet:function(team_id,o){ var p=myProf(); if(!(commish()||(p&&p.team_id===team_id))) return Promise.reject(new Error("That's not your team.")); if(!db.prefs) db.prefs=[]; var row=db.prefs.filter(function(x){return x.team_id===team_id;})[0]; if(!row){ row={team_id:team_id}; db.prefs.push(row); } row.nba_team=o.nba_team||null; row.jersey_player=o.jersey_player||null; row.jersey_num=o.jersey_num||null; row.jersey_team=o.jersey_team||null; row.manager=o.manager||null; row.manager_short=o.manager_short||null; row.updated_by=db.me.id; row.updated_at=new Date().toISOString(); save(); return Promise.resolve(); },
       schedChoose:function(eid,slot){ if(!commish()) return Promise.reject(new Error("Commissioner only.")); var ev=db.sched.events.filter(function(x){return x.id===eid;})[0]; if(ev){ ev.chosen=slot; ev.status=slot?"closed":"open"; } save(); return Promise.resolve(); },
       agendaVote:function(id,on){
         var p=myProf(); if(!p) return Promise.reject(new Error("Claim your team first."));
@@ -3575,8 +3627,9 @@ var Polls=(function(){
       capLoad:function(){ return client.from("cap_table").select("data,updated_at").eq("id","current").maybeSingle().then(function(r){ chk(r); return r.data?r.data.data:null; }); },
       capSave:function(data){ return client.from("cap_table").upsert({id:"current",data:data,updated_at:new Date().toISOString()},{onConflict:"id"}).then(chk); },
       /* home courts */
-      prefsLoad:function(){ return client.from("team_prefs").select("team_id,nba_team,jersey_player,jersey_num,jersey_team,updated_at").then(function(r){ chk(r); return r.data||[]; }); },
-      prefsSet:function(team_id,o){ return client.from("team_prefs").upsert({team_id:team_id,nba_team:o.nba_team||null,jersey_player:o.jersey_player||null,jersey_num:o.jersey_num||null,jersey_team:o.jersey_team||null,updated_at:new Date().toISOString()},{onConflict:"team_id"}).then(chk); },
+      prefsLoad:function(){ return client.from("team_prefs").select("team_id,nba_team,jersey_player,jersey_num,jersey_team,manager,manager_short,updated_at").then(function(r){ chk(r); return r.data||[]; }); },
+      /* o is the whole row (court + manager); callers merge what they aren't changing */
+      prefsSet:function(team_id,o){ return client.from("team_prefs").upsert({team_id:team_id,nba_team:o.nba_team||null,jersey_player:o.jersey_player||null,jersey_num:o.jersey_num||null,jersey_team:o.jersey_team||null,manager:o.manager||null,manager_short:o.manager_short||null,updated_at:new Date().toISOString()},{onConflict:"team_id"}).then(chk); },
       schedChoose:function(eid,slot){ return client.from("avail_events").update({chosen:slot,status:slot?"closed":"open"}).eq("id",eid).then(chk); },
       agendaAdd:function(a){ return client.from("agenda").insert({title:a.title,details:a.details||null}).then(chk); },
       agendaDecide:function(id,outcome){ return client.from("agenda").update(outcome==null?{status:"open",outcome:null,decided_at:null}:{status:"decided",outcome:outcome,decided_at:new Date().toISOString()}).eq("id",id).then(chk); },
@@ -6170,11 +6223,11 @@ var Court=(function(){
   }
 
   /* ----- prefs: one row per league team ----- */
-  var prefs={}, loaded=false, curTid=null, editing=false;
+  var prefs={}, loaded=false, curTid=null, editing=false, naming=false;
   function prefOf(tid){ return prefs[tid]||{}; }
   function load(){
     if(!window.Polls||!Polls.store||!Polls.store()) return;
-    Polls.store().prefsLoad().then(function(list){ prefs={}; (list||[]).forEach(function(p){ prefs[p.team_id]=p; }); loaded=true; paint(); }).catch(function(){ loaded=true; paint(); });
+    Polls.store().prefsLoad().then(function(list){ prefs={}; (list||[]).forEach(function(p){ prefs[p.team_id]=p; }); loaded=true; if(typeof applyManagers==="function") applyManagers(list); paint(); }).catch(function(e){ console.warn("team prefs:",e&&e.message); loaded=true; paint(); });
   }
   function canEdit(tid){
     if(!window.Polls) return false;
@@ -6189,13 +6242,26 @@ var Court=(function(){
     var court=courtSvg(floor,{logo:nba?logo(nba.abbr):"",top:"HOME COURT · "+t.name.toUpperCase()});
     var jersey="";
     if(p.jersey_player){ var pr=findRow(p.jersey_player); var jt=team(p.jersey_team)||(pr&&team(pr.team))||nba||HOME; jersey='<div class="hero-jersey" title="'+esc(p.jersey_player+(p.jersey_num?" · #"+p.jersey_num:"")+(jt.abbr?" · "+jt.city+" "+jt.name:""))+'">'+jerseySvg(jt,p.jersey_player,p.jersey_num||"")+'</div>'; }
-    return '<div class="hero'+(nba?"":" plain")+'" style="--h1:'+floor.c1+';--h2:'+floor.c2+'">'+court+
+    return '<div class="hero'+(nba?"":" plain")+(naming&&canEdit(t.id)?" naming":"")+'" style="--h1:'+floor.c1+';--h2:'+floor.c2+'">'+court+
       '<div class="hero-fade"></div>'+
       (nba?'<div class="hero-tag">Home court<b>'+esc(nba.city+" "+nba.name)+'</b></div>':'')+
       jersey+
       '<div class="hero-head"><div class="avatar" style="background:'+floor.c2+';color:#fff;border-color:#fff">'+esc(t.ini)+'</div>'+
-        '<div><h2>'+esc(t.name)+'</h2><p class="sub">'+esc(t.mgr)+' · '+s.rec+' · finished '+ordinal(s.fin)+(s.fin===1?' · reigning champion':'')+'</p></div></div>'+
+        '<div><h2>'+esc(t.name)+'</h2>'+managerLine(t,s)+'</div></div>'+
       '</div>';
+  }
+  /* the manager's name under the team name; his own page (or the commissioner) can change it */
+  function managerLine(t,s){
+    var p=prefOf(t.id), can=canEdit(t.id), o=(typeof managerDefaults==="function")?managerDefaults(t):{mgr:t.mgr,short:t.short};
+    if(naming&&can){
+      return '<form class="mg-form" id="mg-form" autocomplete="off">'+
+        '<label>Manager<input name="name" id="mg-name" maxlength="40" value="'+esc(p.manager||t.mgr)+'" placeholder="'+esc(o.mgr)+'"></label>'+
+        '<label>Goes by<input name="short" id="mg-short" maxlength="12" value="'+esc(p.manager_short||t.short)+'" placeholder="'+esc(o.short)+'"></label>'+
+        '<span class="mg-out"><button class="btn sm" type="submit">Save</button><button class="btn quiet sm" type="button" id="mg-cancel">Cancel</button>'+(p.manager?'<button class="btn quiet sm" type="button" id="mg-reset" title="Back to '+esc(o.mgr)+'">Use '+esc(o.short)+' again</button>':'')+'<span class="bd-msg" id="mg-msg"></span></span>'+
+        '<small>The short name is what boards, tables and badges use.</small></form>';
+    }
+    return '<p class="sub">'+esc(t.mgr)+(p.manager&&p.manager!==o.mgr?' <span class="mg-sub" title="'+esc(o.mgr)+'’s team">for '+esc(o.short)+'</span>':'')+' · '+s.rec+' · finished '+ordinal(s.fin)+(s.fin===1?' · reigning champion':'')+
+      (can?' <button type="button" class="mg-edit" id="mg-edit" title="Change who runs this team">edit name</button>':'')+'</p>';
   }
   /* the Home court panel in the side column */
   function panelHtml(t){
@@ -6275,14 +6341,34 @@ var Court=(function(){
     });
     document.addEventListener("submit",function(e){
       var f=e.target.closest("#hc-form"); if(!f) return; e.preventDefault();
-      var o={nba_team:f.nba.value||null,jersey_player:f.player.value||null,jersey_num:(f.num.value||"").trim()||null,jersey_team:f.team.value||null};
+      var o=Object.assign({},prefOf(curTid),{nba_team:f.nba.value||null,jersey_player:f.player.value||null,jersey_num:(f.num.value||"").trim()||null,jersey_team:f.team.value||null});
       f.querySelector("button[type=submit]").disabled=true;
       Polls.store().prefsSet(curTid,o).then(function(){ editing=false; load(); }).catch(function(err){ f.querySelector("button[type=submit]").disabled=false; var m=$("hc-msg"); if(m){ m.style.color="var(--red)"; m.textContent=(err&&err.message)||"Couldn't save."; } });
     });
+    /* manager name */
+    document.addEventListener("click",function(e){
+      if(e.target.closest("#mg-edit")){ naming=true; paint(); var i=$("mg-name"); if(i){ i.focus(); i.select(); } return; }
+      if(e.target.closest("#mg-cancel")){ naming=false; paint(); return; }
+      if(e.target.closest("#mg-reset")){ saveManager(null,null); return; }
+    });
+    document.addEventListener("submit",function(e){
+      var f=e.target.closest("#mg-form"); if(!f) return; e.preventDefault();
+      var name=(f.name.value||"").trim(), sh=(f.short.value||"").trim();
+      if(name&&name.length<2){ var m=$("mg-msg"); if(m){ m.style.color="var(--red)"; m.textContent="Type a name."; } return; }
+      saveManager(name||null, name?(sh||null):null);
+    });
     if(window.Players) Players.sub(function(){ if(editing) paint(); });
   }
+  function saveManager(name,sh){
+    var f=$("mg-form"); if(f) Array.prototype.forEach.call(f.querySelectorAll("button"),function(b){ b.disabled=true; });
+    var o=Object.assign({},prefOf(curTid),{manager:name,manager_short:sh});
+    Polls.store().prefsSet(curTid,o).then(function(){ naming=false; load(); }).catch(function(err){
+      if(f) Array.prototype.forEach.call(f.querySelectorAll("button"),function(b){ b.disabled=false; });
+      var m=$("mg-msg"); if(m){ m.style.color="var(--red)"; m.textContent=(err&&err.message)||"Couldn't save."; }
+    });
+  }
   var started=false;
-  function onTeam(tid){ curTid=tid; editing=false; if(!started){ started=true; bind(); } paint(); }
+  function onTeam(tid){ curTid=tid; editing=false; naming=false; if(!started){ started=true; bind(); } paint(); }
   if(window.Polls&&Polls.onAuth) Polls.onAuth(load);
   background();
   return {onTeam:onTeam, load:load, court:courtSvg, jersey:jerseySvg, team:team, logo:logo, NBA:NBA};

@@ -637,6 +637,12 @@ create table if not exists public.team_prefs (
   updated_at       timestamptz not null default now()
 );
 alter table public.team_prefs add column if not exists jersey_team text check (jersey_team is null or jersey_team ~ '^[A-Z]{2,4}$');   -- the player's own NBA team, so his jersey wears the right colours
+-- Who runs the team this season, when it isn't the name typed into the site (a sub managing
+-- for a season, a manager who goes by something else). manager = full name shown on the team
+-- page and cards; manager_short = the one word used on boards, tables and badges. Null = the
+-- site's own name for that team. Edited from the team page by that team's manager or the commissioner.
+alter table public.team_prefs add column if not exists manager text check (manager is null or (length(manager) between 2 and 40));
+alter table public.team_prefs add column if not exists manager_short text check (manager_short is null or (length(manager_short) between 2 and 12));
 alter table public.team_prefs enable row level security;
 create or replace function public.owns_team(p_team_id text)
 returns boolean language sql stable security definer set search_path = public as $$
