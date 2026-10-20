@@ -531,13 +531,17 @@ output.led{
 .podium div:first-child dd{color:var(--amber)}
 .warnbar{padding:12px 20px;background:var(--red-glow);color:var(--red);font-size:14px;border-bottom:1px solid rgba(255,81,71,.4);font-family:var(--mono);letter-spacing:.04em}
 
-.dteams{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:0;border-top:1px solid var(--line)}
-.dteam{border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:10px 14px 12px}
-.dteam-hd{font-size:14px;margin:0 0 6px}
-.dteam table{width:100%;border-collapse:collapse}
-.dteam td{padding:3px 4px;font-size:13px;border:0;vertical-align:baseline}
-.dteam td.name{font-weight:600}
-.dteam tr.taken td.name{color:var(--amber)}
+.dteams{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:0;border-top:1px solid var(--line)}
+.dteam{min-width:0;border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:12px 14px 14px}
+.dteam-hd{font-size:14px;margin:0 0 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dteam table{width:100%;min-width:0;border-collapse:collapse;table-layout:fixed}
+.dteam td{padding:4px 4px;font-size:13px;border:0;vertical-align:baseline;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dteam td.dp{width:38px;font-family:var(--mono);font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.dteam td.dn{font-family:var(--disp);font-weight:600;font-size:14.5px;letter-spacing:.01em}
+.dteam td.dm{width:68px;font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.06em;text-align:right}
+.dteam td.do{width:36px;font-family:var(--mono);font-size:11px;color:var(--dim);text-align:right}
+.dteam tr.taken td.dn{color:var(--amber)}
+.dteam tr:nth-child(even) td{background:rgba(0,0,0,.025)}
 details.archive{margin:28px 0 0;border:1px dashed var(--line);border-radius:6px;padding:0 16px}
 details.archive>summary{cursor:pointer;padding:12px 0;list-style:none;display:flex;gap:12px;align-items:baseline;flex-wrap:wrap}
 details.archive>summary::-webkit-details-marker{display:none}
@@ -2951,7 +2955,7 @@ var Draft26=(function(){
       var t=byId(id), ps=by[id].slice().sort(function(a,b){return a.pick-b.pick;});
       return '<div class="dteam"><div class="dteam-hd"><b>'+esc(t?t.name:id)+'</b>'+(t?'<span class="sub"> · '+esc(t.short)+'</span>':'')+'</div><table><tbody>'+ps.map(function(p){
         var k=ks[nk(p.player)]===id;
-        return '<tr'+(k?' class="taken"':'')+'><td class="num sub">'+p.round+'.'+p.slot+'</td><td class="name">'+esc(p.player)+(k?' <span class="kbadge">K</span>':'')+'</td><td class="mgr">'+esc(p.nba)+(p.pos?' · '+esc(p.pos):'')+'</td><td class="num sub">#'+p.pick+'</td></tr>';
+        return '<tr'+(k?' class="taken"':'')+'><td class="dp">'+p.round+'.'+p.slot+'</td><td class="dn" title="'+esc(p.player)+'">'+esc(p.player)+(k?' <span class="kbadge">K</span>':'')+'</td><td class="dm">'+esc(p.nba)+(p.pos?' · '+esc(p.pos):'')+'</td><td class="do">#'+p.pick+'</td></tr>';
       }).join("")+'</tbody></table></div>';
     }).join("")+'</div>';
   }
