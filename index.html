@@ -938,12 +938,13 @@ footer p + p{margin-top:11px}
 .bd-id h3{font-family:var(--disp);font-size:22px;font-weight:700;text-transform:uppercase;letter-spacing:.02em;line-height:1;margin:0}
 .bd-rule{font-size:14.5px;color:var(--muted);margin:0}
 .bd-special{font-size:13.5px;color:var(--amber);margin:0;font-style:italic}
-.bd-held{display:flex;flex-direction:column;gap:2px;padding:10px 12px;border:1px solid var(--line);border-radius:3px;background:var(--surface-2)}
+.bd-held{display:flex;flex-direction:column;gap:2px;padding:2px 0}
 .bd-held b{font-family:var(--disp);font-size:17px;font-weight:700;text-transform:uppercase;letter-spacing:.02em}
 .bd-holder{cursor:pointer}
 .bd-holder:hover{color:var(--amber)}
 .bd-held small{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
 .bd-unclaimed{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.bd-unclaimed.on{color:var(--amber)}
 .bd-prize{display:flex;gap:10px;align-items:baseline;font-size:14px}
 .bd-prize .eyebrow{flex-shrink:0}
 .bd-prize.claimed em{color:var(--green);font-style:normal;font-weight:600}
@@ -1843,7 +1844,7 @@ footer p + p{margin-top:11px}
         <span class="sub" id="pl-src"></span>
         <span class="sub" id="pl-adp-note"></span>
       </div>
-      <p class="sub" style="margin-top:10px"><b>Value</b> is the sum of z-scores across our eleven categories (FG%, FT%, 3PTM, 3PT%, PTS, REB, AST, ST, BLK, A/T, DD), per game, measured against the top 200 players by minutes — the Basketball Monster way. A player needs ten games (a fifth of the season early on) to be ranked. Switch Stats to <b>Z-scores</b> and every category column becomes that player's z-score against whoever is currently listed — filter to free agents, or one position, and the numbers re-centre on that group. <b>FPTS</b> is Yahoo's default points formula (PTS 1, REB 1.2, AST 1.5, STL 3, BLK 3, TO −1). <b>Owner</b> is whoever had him when rosters locked; K marks a flagged keeper. Salaries are this season's figure from Basketball-Reference (ESPN where they lack one); stats are ESPN's.</p>
+      <p class="sub" style="margin-top:10px"><b>Value</b> is the sum of z-scores across our nine categories (FG%, FT%, 3PTM, PTS, REB, AST, ST, BLK, DD), per game, measured against the top 200 players by minutes — the Basketball Monster way. A player needs ten games (a fifth of the season early on) to be ranked. Switch Stats to <b>Z-scores</b> and every category column becomes that player's z-score against whoever is currently listed — filter to free agents, or one position, and the numbers re-centre on that group. <b>FPTS</b> is Yahoo's default points formula (PTS 1, REB 1.2, AST 1.5, STL 3, BLK 3, TO −1). <b>Owner</b> is whoever had him when rosters locked; K marks a flagged keeper. Salaries are this season's figure from Basketball-Reference (ESPN where they lack one); stats are ESPN's.</p>
     </section>
   </div>
 
@@ -1923,7 +1924,7 @@ footer p + p{margin-top:11px}
       <div class="sec-head" style="margin-top:30px"><h3 style="margin:0">League gallery</h3><span class="eyebrow cool">Saved charts</span></div>
       <div class="pgallery" id="po-gallery"></div>
 
-      <p class="sub" style="margin-top:14px">Everyone with at least one game this season is on the chart; the Min GP and Min MPG boxes cut the tail. <b>Value</b> is the sum of z-scores across our eleven categories and <b>FPTS</b> is Yahoo's points formula — the same numbers as the Players page. The swarm packs bubbles so nothing overlaps, which is why a crowded group spreads wide. Fantasy-team charts roll each roster up (totals for counting stats, averages for rates and age). The list doubles as the table, so every number on the chart is readable without hovering. Stats from ESPN, salaries from Basketball-Reference.</p>
+      <p class="sub" style="margin-top:14px">Everyone with at least one game this season is on the chart; the Min GP and Min MPG boxes cut the tail. <b>Value</b> is the sum of z-scores across our nine categories and <b>FPTS</b> is Yahoo's points formula — the same numbers as the Players page. The swarm packs bubbles so nothing overlaps, which is why a crowded group spreads wide. Fantasy-team charts roll each roster up (totals for counting stats, averages for rates and age). The list doubles as the table, so every number on the chart is readable without hovering. Stats from ESPN, salaries from Basketball-Reference.</p>
     </section>
   </div>
 
@@ -2069,7 +2070,7 @@ footer p + p{margin-top:11px}
           <thead><tr><th>Setting</th><th>Value</th></tr></thead>
           <tbody>
             <tr><td class="name">Scoring</td><td class="sub">Head-to-head, one win per week</td></tr>
-            <tr><td class="name">Categories</td><td class="sub">FG%, FT%, 3PTM, 3PT%, PTS, REB, AST, ST, BLK, A/T, DD — eleven</td></tr>
+            <tr><td class="name">Categories</td><td class="sub">FG%, FT%, 3PTM, PTS, REB, AST, ST, BLK, DD — nine (3PT% and A/T dropped for 2026–27)</td></tr>
             <tr><td class="name">Roster</td><td class="sub">G, G, F, F, C, Util, six bench, one IL</td></tr>
             <tr><td class="name">Draft</td><td class="sub">Offline, twelve rounds, snake · order is the reverse of the regular-season standings · day and time picked on the <button class="back" data-go="sched" style="margin:0;padding:0;font-size:inherit;color:var(--amber)">Draft Day page</button></td></tr>
             <tr><td class="name">Keeper eligibility</td><td class="sub">Decided by the pre-playoff roster lock, not a date in October</td></tr>
@@ -2106,7 +2107,7 @@ footer p + p{margin-top:11px}
       <div class="next" style="margin-top:18px">
         <div class="next-item"><h3>Games counter</h3><p>The number nobody wants to count. Games used and games left for every team, daily, flagging anyone about to blow the cap.</p></div>
         <div class="next-item"><h3>Your team</h3><p>Sign in and land on your own roster, each player's keeper cost and years left sitting next to him.</p></div>
-        <div class="next-item"><h3>Matchups</h3><p>All eleven categories, who's winning each one, both rosters, who still has games tonight.</p></div>
+        <div class="next-item"><h3>Matchups</h3><p>All nine categories, who's winning each one, both rosters, who still has games tonight.</p></div>
         <div class="next-item"><h3>Roster lock</h3><p>Freeze all ten rosters at the moment you choose and keep them forever. No more screenshots.</p></div>
         <div class="next-item"><h3>League polls</h3><p>Put a rule change, a veto or a punishment to a vote. Results public, history kept.</p></div>
         <div class="next-item"><h3>Standings</h3><p>Records, FAB left and moves made, live instead of copied from Yahoo at season's end.</p></div>
@@ -2381,7 +2382,7 @@ document.getElementById("watch").innerHTML=K.map(function(k){
   var kCount=K.length;
   var cards=[
     {go:"teams",   n:"10",       lbl:"Managers", h:"Teams",      p:"Every roster as it locked before the playoffs, with each player's keeper cost, plus last season's final standings."},
-    {go:"players", n:"—",        lbl:"Players",  h:"Players",    p:"Every NBA player: season stats, value in our eleven categories, who owns him here, and what he makes against the cap.", id:"hc-players"},
+    {go:"players", n:"—",        lbl:"Players",  h:"Players",    p:"Every NBA player: season stats, value in our nine categories, who owns him here, and what he makes against the cap.", id:"hc-players"},
     {go:"plot",    n:"—",        lbl:"Plotted",  h:"Analysis",   p:"Swarms, scatters, leaderboards and tier lists from every stat we track — then copy the picture for the chat.", id:"hc-plot"},
     {go:"draft",   n:"120",      lbl:"Picks",    h:"Draft Results",p:"The 2026–27 board as it happened, every pick with who took him, and last year's board beside it."},
     {go:"cap",     n:"30",       lbl:"Per week", h:"Games Cap",  p:"Work out the adjusted cap for short weeks without doing the arithmetic by hand."},
@@ -4481,11 +4482,11 @@ var Players=(function(){
     {k:"stl",h:"STL",num:true,z:"stl",get:stat("stl"),fmt:d1},
     {k:"blk",h:"BLK",num:true,z:"blk",get:stat("blk"),fmt:d1},
     {k:"tpm",h:"3PM",num:true,z:"tpm",get:stat("tpm"),fmt:d1},
-    {k:"tpp",h:"3P%",num:true,z:"tpp",get:function(r){return r.tpp;},fmt:pct},
+    {k:"tpp",h:"3P%",num:true,get:function(r){return r.tpp;},fmt:pct},
     {k:"fgp",h:"FG%",num:true,z:"fgp",get:function(r){return r.fgp;},fmt:pct},
     {k:"ftp",h:"FT%",num:true,z:"ftp",get:function(r){return r.ftp;},fmt:pct},
     {k:"to",h:"TO",num:true,get:function(r){return f.mode==="tot"?r.to*r.gp:r.to;},fmt:function(v){return f.mode==="tot"?String(Math.round(v)):(+v).toFixed(1);},asc:true},
-    {k:"at",h:"A/T",num:true,z:"at",get:function(r){return r.at;},fmt:function(v){return v?v.toFixed(2):"—";}},
+    {k:"at",h:"A/T",num:true,get:function(r){return r.at;},fmt:function(v){return v?v.toFixed(2):"—";}},
     {k:"dd",h:"DD",num:true,z:"dd",get:function(r){return f.mode==="tot"?r.dd:r.ddpg;},fmt:function(v){return f.mode==="tot"?v:(v?v.toFixed(2):"0");}},
     {k:"val",h:"Value",num:true,cls:"val",get:function(r){return f.mode==="z"?r.zval:r.val;},fmt:function(v){ v=v<-500?v+1000:v; return "<b>"+(v>0?"+":"")+v.toFixed(1)+"</b>"; }},
     {k:"fpts",h:"FPTS",num:true,get:function(r){return f.mode==="tot"?r.fpts*r.gp:r.fpts;},fmt:d1},
@@ -4640,14 +4641,13 @@ var Players=(function(){
     el.textContent=ADP.yahooState==="not_connected"?"Yahoo ADP shows once you\u2019ve connected Yahoo on your team page.":(ADP.yahooState==="error"?"Yahoo ADP isn\u2019t available right now.":"");
   }
 
-  /* z-scores across the league's eleven categories, per game, population = top 200 by minutes */
+  /* z-scores across the league's nine categories (2026-27: FG%, FT%, 3PTM, PTS, REB, AST, ST, BLK, DD), per game, population = top 200 by minutes */
   function zmodel(pool){
     function sum(k){ return pool.reduce(function(a,r){return a+r[k];},0); }
-    var lgFG=sum("fgm")/(sum("fga")||1), lgFT=sum("ftm")/(sum("fta")||1), lg3=sum("tpm")/(sum("tpa")||1), lgAT=sum("ast")/(sum("to")||1);
+    var lgFG=sum("fgm")/(sum("fga")||1), lgFT=sum("ftm")/(sum("fta")||1);
     var cats={
       pts:function(r){return r.pts;}, reb:function(r){return r.reb;}, ast:function(r){return r.ast;}, stl:function(r){return r.stl;}, blk:function(r){return r.blk;}, tpm:function(r){return r.tpm;},
-      fgp:function(r){return r.fgm-r.fga*lgFG;}, ftp:function(r){return r.ftm-r.fta*lgFT;}, tpp:function(r){return r.tpm-r.tpa*lg3;},
-      at:function(r){return r.ast-r.to*lgAT;}, dd:function(r){return r.ddpg;}
+      fgp:function(r){return r.fgm-r.fga*lgFG;}, ftp:function(r){return r.ftm-r.fta*lgFT;}, dd:function(r){return r.ddpg;}
     };
     var stats={};
     Object.keys(cats).forEach(function(k){
@@ -4882,7 +4882,7 @@ var Plot=(function(){
     {k:"ftp",   s:"FT%",  h:"Free throw %",        g:"Yahoo categories", get:function(r){return r.ftp;}, fmt:pc3, ax:pcax, flat:true, agg:"mean"},
     {k:"tpa",   s:"3PA",  h:"Threes attempted",    g:"Yahoo categories", get:cnt("tpa"), fmt:n1, ax:ax},
     {k:"tpm",   s:"3PM",  h:"Threes made",         g:"Yahoo categories", get:cnt("tpm"), fmt:n1, ax:ax},
-    {k:"tpp",   s:"3P%",  h:"Three point %",       g:"Yahoo categories", get:function(r){return r.tpp;}, fmt:pc3, ax:pcax, flat:true, agg:"mean"},
+    {k:"tpp",   s:"3P%",  h:"Three point %",       g:"More shooting", get:function(r){return r.tpp;}, fmt:pc3, ax:pcax, flat:true, agg:"mean"},
     {k:"pts",   s:"PTS",  h:"Points",              g:"Yahoo categories", get:cnt("pts"), fmt:n1, ax:ax},
     {k:"oreb",  s:"OREB", h:"Offensive rebounds",  g:"Yahoo categories", get:cntn("oreb"), fmt:n1, ax:ax, snap:true},
     {k:"dreb",  s:"DREB", h:"Defensive rebounds",  g:"Yahoo categories", get:cntn("dreb"), fmt:n1, ax:ax, snap:true},
@@ -4891,7 +4891,7 @@ var Plot=(function(){
     {k:"stl",   s:"STL",  h:"Steals",              g:"Yahoo categories", get:cnt("stl"), fmt:n1, ax:ax},
     {k:"blk",   s:"BLK",  h:"Blocks",              g:"Yahoo categories", get:cnt("blk"), fmt:n1, ax:ax},
     {k:"to",    s:"TO",   h:"Turnovers",           g:"Yahoo categories", get:cnt("to"),  fmt:n1, ax:ax, neg:true},
-    {k:"at",    s:"A/T",  h:"Assist to turnover",  g:"Yahoo categories", get:function(r){return r.at;}, fmt:function(v){return v?v.toFixed(2):"—";}, ax:function(v){return v.toFixed(1);}, flat:true, agg:"mean"},
+    {k:"at",    s:"A/T",  h:"Assist to turnover",  g:"More shooting", get:function(r){return r.at;}, fmt:function(v){return v?v.toFixed(2):"—";}, ax:function(v){return v.toFixed(1);}, flat:true, agg:"mean"},
     {k:"pf",    s:"PF",   h:"Personal fouls",      g:"Yahoo categories", get:cnt("pf"), fmt:n1, ax:ax, neg:true},
     {k:"tech",  s:"TECH", h:"Technical fouls",     g:"Yahoo categories", get:function(r){return r.tech;}, fmt:whole, ax:ax, flat:true, neg:true},
     {k:"ejct",  s:"EJCT", h:"Ejections",           g:"Yahoo categories", get:function(r){return r.ejct;}, fmt:whole, ax:ax, flat:true, neg:true},
@@ -5888,11 +5888,12 @@ var Badges=(function(){
   }
   function card(b,com){
     var m=metaOf(b.id), h=holder(b.id), hist=awardsOf(b.id), open=openHist[b.id];
+    /* one quiet line: whether it's been claimed. Who has it, and why, lives in the history. */
     var held;
     if(!h) held='<span class="bd-unclaimed">Unclaimed</span>';
-    else if(b.kind==="weekly") held='<b data-team="'+esc(h.team_id)+'" class="bd-holder">'+esc(teamName(h.team_id))+'</b><small>'+h.n+' of '+h.of+' this season · '+esc(h.season)+'</small>';
-    else if(b.kind==="legacy") held='<b data-team="'+esc(h.team_id)+'" class="bd-holder">'+esc(teamName(h.team_id))+'</b><small>'+(m.claimed?"final holder · prize claimed":"holding since "+esc(h.season))+(h.note?' · '+esc(h.note):'')+'</small>';
-    else held=holderNames(h)+'<small>'+esc(h.season)+(h.teams&&h.teams.length>1?' · shared, '+h.teams.length+' ways':'')+(h.note?' · '+esc(h.note):'')+'</small>';
+    else if(b.kind==="weekly") held='<span class="bd-unclaimed on">'+h.of+' awarded this season · '+esc(h.season)+'</span>';
+    else if(b.kind==="legacy") held='<span class="bd-unclaimed on">'+(m.claimed?"Final holder · prize claimed":"Held since "+esc(h.season))+'</span>';
+    else held='<span class="bd-unclaimed on">Claimed · '+esc(h.season)+(h.teams&&h.teams.length>1?' · shared '+h.teams.length+' ways':'')+'</span>';
     var prize=m.prize?'<div class="bd-prize'+(m.claimed?" claimed":"")+'"><span class="eyebrow">Prize</span><span>'+esc(m.prize)+(m.claimed?' · <em>claimed</em>':'')+'</span></div>':(com?'<div class="bd-prize none"><span class="eyebrow">Prize</span><span class="sub">none yet</span></div>':'');
     var tools="";
     if(com){

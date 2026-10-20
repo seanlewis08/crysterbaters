@@ -304,24 +304,23 @@ var COLS=[
   {k:"stl",h:"STL",z:"stl",get:function(p){return line(p).stl||0;},fmt:d1},
   {k:"blk",h:"BLK",z:"blk",get:function(p){return line(p).blk||0;},fmt:d1},
   {k:"tpm",h:"3PM",z:"tpm",get:function(p){return line(p).tpm||0;},fmt:d1},
-  {k:"tpp",h:"3P%",z:"tpp",get:function(p){return line(p).tpp||0;},fmt:pct},
+  {k:"tpp",h:"3P%",get:function(p){return line(p).tpp||0;},fmt:pct},
   {k:"fgp",h:"FG%",z:"fgp",get:function(p){return line(p).fgp||0;},fmt:pct},
   {k:"ftp",h:"FT%",z:"ftp",get:function(p){return line(p).ftp||0;},fmt:pct},
   {k:"to",h:"TO",get:function(p){return line(p).to||0;},fmt:d1,asc:true},
-  {k:"at",h:"A/T",z:"at",get:function(p){return line(p).at||0;},fmt:function(v){return v?(+v).toFixed(2):"—";}},
+  {k:"at",h:"A/T",get:function(p){return line(p).at||0;},fmt:function(v){return v?(+v).toFixed(2):"—";}},
   {k:"dd",h:"DD",z:"dd",get:function(p){return line(p).dd||0;},fmt:function(v){return v?(+v).toFixed(2):"0";}},
   {k:"val",h:"Value",get:function(p){return p.zval==null?-99:p.zval;},fmt:function(v){return v<=-99?"—":fz(v);}}
 ];
 function d1(v){return (+v).toFixed(1);} function pct(v){return v?(+v).toFixed(3).replace(/^0/,""):"—";} function fz(v){return (v>0?"+":"")+(+v).toFixed(2);}
-/* z-scores across the league's eleven categories, per game, population = top 200 by minutes (same recipe as the Players tab) */
-var ZCATS=["pts","reb","ast","stl","blk","tpm","fgp","ftp","tpp","at","dd"];
+/* z-scores across the league's nine categories (3PT% and A/T dropped for 2026-27), per game, population = top 200 by minutes (same recipe as the Players tab) */
+var ZCATS=["pts","reb","ast","stl","blk","tpm","fgp","ftp","dd"];
 function zmodel(pool){
   function sum(k){ return pool.reduce(function(a,p){return a+(line(p)[k]||0);},0); }
-  var lgFG=sum("fgm")/(sum("fga")||1), lgFT=sum("ftm")/(sum("fta")||1), lg3=sum("tpm")/(sum("tpa")||1), lgAT=sum("ast")/(sum("to")||1);
+  var lgFG=sum("fgm")/(sum("fga")||1), lgFT=sum("ftm")/(sum("fta")||1);
   var cats={
     pts:function(l){return l.pts||0;}, reb:function(l){return l.reb||0;}, ast:function(l){return l.ast||0;}, stl:function(l){return l.stl||0;}, blk:function(l){return l.blk||0;}, tpm:function(l){return l.tpm||0;},
-    fgp:function(l){return (l.fgm||0)-(l.fga||0)*lgFG;}, ftp:function(l){return (l.ftm||0)-(l.fta||0)*lgFT;}, tpp:function(l){return (l.tpm||0)-(l.tpa||0)*lg3;},
-    at:function(l){return (l.ast||0)-(l.to||0)*lgAT;}, dd:function(l){return l.dd||0;}
+    fgp:function(l){return (l.fgm||0)-(l.fga||0)*lgFG;}, ftp:function(l){return (l.ftm||0)-(l.fta||0)*lgFT;}, dd:function(l){return l.dd||0;}
   };
   var st={};
   ZCATS.forEach(function(k){ var m=0; pool.forEach(function(p){ m+=cats[k](line(p)); }); m/=pool.length||1; var v=0; pool.forEach(function(p){ var d=cats[k](line(p))-m; v+=d*d; }); st[k]={m:m,sd:Math.sqrt(v/(pool.length||1))||1}; });
