@@ -15,7 +15,7 @@ const COLORS = { poll: 0x2f63b5, dues: 0x3c8f4a, badge: 0xb48c18, keeper: 0x1b3f
 const BADGES = {
   "the-belt": "The Belt", "grandfather-clause": "Grandfather Clause", "regular-season-giannis": "Regular Season Giannis",
   "trader-joe": "Trader Joe", "the-hoarder": "The Hoarder", "all-gas": "All Gas", "mr-irrelevant": "Mr. Irrelevant",
-  "sunk-cost": "Sunk Cost", "free-throw-king": "Free Throw King", "the-reach": "The Reach", "the-steal": "The Steal",
+  "sunk-cost": "Sunk Cost", "the-reach": "The Reach", "the-steal": "The Steal",
   "homer": "Homer", "nursery": "Nursery", "the-sweep": "The Sweep", "the-upset": "The Upset", "waffle-house": "Waffle House",
 };
 const badgeName = (id) => BADGES[id] || String(id || "").split("-").map((w) => w[0] ? w[0].toUpperCase() + w.slice(1) : w).join(" ");

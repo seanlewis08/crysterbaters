@@ -1292,7 +1292,7 @@ footer p + p{margin-top:11px}
     <section>
       <div class="sec-head"><h2>Badges</h2><span class="eyebrow cool" id="bd-eyebrow">Loading…</span></div>
       <div class="rulebar"></div>
-      <p class="lede">The trophy case, seventeen badges strong. Nothing here is handed out for what already happened: every badge starts unclaimed and goes to the first manager who earns it from now on. Some are won each season, some are held and passed along, and each one can carry a prize.</p>
+      <p class="lede">The trophy case, sixteen badges strong. Nothing here is handed out for what already happened: every badge starts unclaimed and goes to the first manager who earns it from now on. Some are won each season, some are held and passed along, and each one can carry a prize.</p>
       <div id="bd-admin-note" class="notice" style="margin-top:16px" hidden>You're the commissioner, so you can award any badge, pass a legacy badge to its next holder, set the prize on each one, and take an award back from its history.</div>
       <div class="seg" id="bd-tabs" style="margin-top:16px;flex-wrap:wrap">
         <button type="button" class="on" data-kind="all">All</button>
@@ -5785,9 +5785,6 @@ var Badges=(function(){
      rule:"Best value out of the twelfth round."},
     {id:"sunk-cost", name:"Sunk Cost", mark:"SC", kind:"season",
      rule:"Kept the player who returned the least for the round he cost."},
-    {id:"free-throw-king", name:"Free Throw King", mark:"FK", kind:"season",
-     rule:"Completed the hundred-free-throw punishment."},
-
     {id:"the-reach", name:"The Reach", mark:"RE", kind:"draft",
      rule:"Biggest jump over consensus rank on draft day."},
     {id:"the-steal", name:"The Steal", mark:"ST", kind:"draft",
@@ -5798,7 +5795,7 @@ var Badges=(function(){
      rule:"Most rookies drafted."},
 
     {id:"the-sweep", name:"The Sweep", mark:"SW", kind:"weekly",
-     rule:"Won nine or more of the eleven categories in a week."},
+     rule:"Won all nine categories in a week."},
     {id:"the-upset", name:"The Upset", mark:"UP", kind:"weekly",
      rule:"Lowest seed to beat the highest that week."},
     {id:"waffle-house", name:"Waffle House", mark:"WH", kind:"weekly",
@@ -5855,7 +5852,6 @@ var Badges=(function(){
     "all-gas":'<path d="M26 66 A24 24 0 0 1 74 66" '+S+' stroke-width="6"/><path d="M50 68 L31 54" '+S+' stroke-width="4"/><circle cx="50" cy="68" r="5" '+F+'/><text x="26" y="82" font-family="Saira Condensed,Arial Narrow,sans-serif" font-weight="800" font-size="15" fill="url(#bgm)">E</text><text x="66" y="82" font-family="Saira Condensed,Arial Narrow,sans-serif" font-weight="800" font-size="15" fill="url(#bgm)">F</text>',
     "mr-irrelevant":'<path d="M36 26 L44 22 C46 27 54 27 56 22 L64 26 L72 38 L64 44 V82 H36 V44 L28 38 Z" '+F+'/><text x="50" y="72" text-anchor="middle" font-family="Saira Condensed,Arial Narrow,sans-serif" font-weight="800" font-size="26" fill="'+K+'">12</text>',
     "sunk-cost":'<path d="M22 44 C30 38 36 38 44 44 S58 50 66 44 S78 38 78 44" '+S+' stroke-width="4"/><circle cx="50" cy="66" r="14" '+S+' stroke-width="5"/><text x="50" y="72" text-anchor="middle" font-family="Saira Condensed,Arial Narrow,sans-serif" font-weight="800" font-size="18" fill="url(#bgm)">$</text><path d="M50 80 L50 88 M44 84 L50 90 L56 84" '+S+' stroke-width="4"/>',
-    "free-throw-king":'<path d="M32 40 L28 24 L40 32 L50 20 L60 32 L72 24 L68 40 Z" '+F+'/><circle cx="50" cy="62" r="17" '+S+' stroke-width="4.5"/><path d="M33 62 H67 M50 45 V79 M38 50 C46 58 54 58 62 50 M38 74 C46 66 54 66 62 74" '+S+' stroke-width="3"/>',
     "the-reach":'<rect x="28" y="82" width="44" height="5" rx="2.5" '+F+'/><rect x="47.5" y="42" width="5" height="36" '+F+' opacity=".9"/><path d="M50 16 L54.5 29 L68 29 L57 37 L61 50 L50 42 L39 50 L43 37 L32 29 L45.5 29 Z" '+F+'/>',
     "the-steal":'<path d="M22 44 C30 34 42 34 50 42 C58 34 70 34 78 44 L74 62 C64 70 56 62 50 56 C44 62 36 70 26 62 Z" '+F+'/><ellipse cx="38" cy="50" rx="7" ry="5" fill="'+K+'"/><ellipse cx="62" cy="50" rx="7" ry="5" fill="'+K+'"/><path d="M32 76 H68" '+S+' stroke-width="4"/>',
     "homer":'<path d="M22 54 L50 26 L78 54" '+S+' stroke-width="6"/><path d="M30 50 V82 H70 V50" '+S+' stroke-width="5"/><circle cx="50" cy="66" r="9" '+S+' stroke-width="3.5"/><path d="M41 66 H59 M50 57 V75" '+S+' stroke-width="2.5"/>',
