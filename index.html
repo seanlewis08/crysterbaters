@@ -580,6 +580,74 @@ details.archive>section{margin-top:8px;padding-bottom:16px}
 .board.d26 thead th b{display:block;font-family:var(--disp);font-size:13px;letter-spacing:.04em;color:var(--ink)}
 .board.d26 th.rnd .dir{display:block;font-family:var(--mono);font-size:11px;font-weight:400;color:var(--dim);line-height:1;margin-top:2px}
 
+/* ---------- Rotations ---------- */
+.ro-ctl{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+.ro-chk{display:flex;gap:7px;align-items:center;font-size:13.5px;color:var(--ink)}
+.ro-chk input{accent-color:var(--amber);width:15px;height:15px}
+.ro-sel{font:inherit;font-size:13.5px;color:var(--ink);background:var(--surface);border:1px solid var(--line-2);border-radius:3px;padding:7px 10px;max-width:100%}
+.ro-n{margin-left:auto}
+.ro-table{min-width:980px}
+.ro-table th,.ro-table td{padding:9px 12px}
+.ro-table td.num{font-size:13.5px}
+.ro-table td.num small{display:block;font-family:var(--body);font-size:11px;color:var(--muted);font-weight:400;white-space:nowrap}
+.ro-team{white-space:nowrap}
+.ro-team img{width:22px;height:22px;object-fit:contain;vertical-align:middle;margin-right:8px}
+.ro-team b{font-family:var(--disp);font-size:16px;letter-spacing:.02em;vertical-align:middle}
+.ro-team .sub{display:block;font-size:11.5px;margin-left:30px;white-space:nowrap}
+.ro-team .sub i{font-style:normal;color:var(--red);font-family:var(--mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase}
+.ro-med td{background:var(--surface-2)!important;border-top:2px solid var(--line-2);font-weight:600}
+.ro-hint{margin-top:10px;font-size:12.5px}
+.ro-note{color:var(--red)}
+.ro-flow{text-decoration:none;display:inline-flex;align-items:center}
+.ro-game{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media (max-width:860px){.ro-game{grid-template-columns:1fr}.ro-n{margin-left:0}}
+.ro-side{background:var(--surface);border:1px solid var(--line);border-radius:4px;box-shadow:var(--shadow);min-width:0}
+.ro-side-hd{display:flex;gap:12px;align-items:center;padding:14px 16px;border-bottom:1px solid var(--line);background:var(--surface-2)}
+.ro-side-hd img{width:38px;height:38px;object-fit:contain}
+.ro-side-hd b{display:block;font-family:var(--disp);font-size:20px;text-transform:uppercase;letter-spacing:.02em}
+.ro-tiles{grid-template-columns:repeat(3,1fr);border:0;border-radius:0;box-shadow:none;border-bottom:1px solid var(--line)}
+.ro-tiles.four{grid-template-columns:repeat(4,1fr);border:1px solid var(--line);border-radius:4px;margin-bottom:14px}
+.ro-tiles .stat{padding:12px 14px}
+.ro-tiles .stat dd{font-size:26px}
+.ro-tiles .stat dd small{display:block;margin:4px 0 0}
+.ro-tiles .stat dd.small{font-size:16px}
+@media (max-width:640px){.ro-tiles,.ro-tiles.four{grid-template-columns:1fr 1fr}}
+.ro-block{padding:12px 16px 14px;border-bottom:1px solid var(--line)}
+.ro-block:last-child{border-bottom:0}
+.ro-bh{font-family:var(--mono);font-size:9.5px;letter-spacing:.15em;text-transform:uppercase;color:var(--dim);margin-bottom:8px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.ro-bh .sub{font-family:var(--body);text-transform:none;letter-spacing:0;font-size:11.5px}
+.ro-tl{width:100%;height:48px;display:block;color:var(--dim)}
+.ro-by{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px;font-family:var(--mono);font-size:11px;color:var(--muted)}
+.ro-by span.dim{opacity:.45}
+.ro-by b{color:var(--ink);font-weight:600}
+.ro-units,.ro-min{min-width:0}
+.ro-units th,.ro-units td,.ro-min th,.ro-min td{padding:7px 8px;font-size:13px}
+.ro-unit{display:flex;flex-wrap:wrap;gap:3px 8px}
+.ro-unit i{font-style:normal;font-weight:600;white-space:nowrap}
+.ro-units td small{display:block;font-size:11px}
+td.num.pos{color:var(--green)} td.num.neg{color:var(--red)}
+.ro-min tr.st td:first-child b{color:var(--amber)}
+.ro-s{display:inline-block;font-family:var(--mono);font-size:9px;font-weight:600;letter-spacing:.08em;color:var(--amber);border:1px solid var(--amber-dim);border-radius:2px;padding:0 4px;vertical-align:middle;margin-left:4px}
+.ro-bar{display:inline-block;height:6px;background:var(--amber-dim);border-radius:2px;margin-right:8px;vertical-align:middle;max-width:70px;min-width:2px}
+.ro-bar.low{background:var(--red)}
+.ro-own{margin:0;padding:0;font-size:12px;color:var(--amber)}
+.ro-mine td{vertical-align:middle}
+.ro-pn{cursor:pointer}
+.ro-pn:hover{color:var(--amber)}
+.ro-g{font:inherit;display:inline-flex;flex-direction:column;align-items:center;min-width:38px;padding:3px 5px;margin:2px 3px 2px 0;border:1px solid var(--line-2);border-radius:3px;background:var(--surface);cursor:pointer;line-height:1.1}
+.ro-g b{font-family:var(--mono);font-size:13px;font-weight:600}
+.ro-g small{font-family:var(--mono);font-size:8.5px;color:var(--dim);letter-spacing:.04em}
+.ro-g.s{border-color:var(--amber-dim);background:var(--amber-glow)}
+.ro-g.low{border-color:var(--red);color:var(--red)}
+.ro-g:hover{border-color:var(--ink)}
+.ro-search{position:relative;flex:1;min-width:220px;max-width:380px}
+.ro-search input{width:100%;font:inherit;font-size:14px;padding:8px 11px;color:var(--ink);background:var(--surface);border:1px solid var(--line-2);border-radius:3px}
+.ro-hits{position:absolute;left:0;right:0;top:100%;z-index:5;background:var(--surface);border:1px solid var(--line-2);border-radius:3px;box-shadow:var(--shadow);overflow:hidden}
+.ro-hits button{display:flex;justify-content:space-between;gap:10px;width:100%;font:inherit;font-size:13.5px;text-align:left;padding:8px 11px;background:none;border:0;border-bottom:1px solid var(--line);cursor:pointer;color:var(--ink)}
+.ro-hits button:last-child{border-bottom:0}
+.ro-hits button:hover{background:var(--amber-glow)}
+.ro-hits span{font-family:var(--mono);font-size:11px;color:var(--dim)}
+
 .checklist{display:flex;flex-direction:column}
 .chk{display:flex;gap:15px;align-items:center;padding:14px 17px;border-bottom:1px solid var(--line)}
 .chk:last-child{border-bottom:0}
@@ -1173,6 +1241,7 @@ footer p + p{margin-top:11px}
       <button data-go="teams">Teams</button>
       <button data-go="players">Players</button>
       <button data-go="plot">Analysis</button>
+      <button data-go="rotations">Rotations</button>
       <button data-go="draft">Draft</button>
       <button data-go="sched" id="nav-sched">Draft Day</button>
       <button data-go="cap">Games Cap</button>
@@ -1328,6 +1397,23 @@ footer p + p{margin-top:11px}
         <button type="button" data-kind="weekly">Weekly</button>
       </div>
       <div class="bd-grid" id="bd-grid"></div>
+    </section>
+  </div>
+
+  <!-- ================= ROTATIONS ================= -->
+  <div class="view" id="v-rotations">
+    <section>
+      <div class="sec-head"><h2>Rotations</h2><span class="eyebrow cool" id="ro-eyebrow">Loading…</span></div>
+      <div class="rulebar"></div>
+      <p class="lede">How every NBA team actually uses its players, night by night: how deep the bench goes, how many starters stay on the floor, who carries the load and which five-man units get the minutes. Read from the gameflows on <a href="https://seanlewis08.github.io/popcornmachine/" target="_blank" rel="noopener">popcornmachine</a>, where every game links back to the picture.</p>
+      <div class="seg" id="ro-tabs" style="margin-top:16px;flex-wrap:wrap">
+        <button type="button" class="on" data-rotab="league">League</button>
+        <button type="button" data-rotab="game">Game</button>
+        <button type="button" data-rotab="mine">My guys</button>
+        <button type="button" data-rotab="player">Player</button>
+      </div>
+      <div id="ro-body" style="margin-top:14px"><div class="empty" style="padding:18px">Reading the rotations…</div></div>
+      <p class="sub" id="ro-foot" style="margin-top:12px"></p>
     </section>
   </div>
 
@@ -2409,6 +2495,7 @@ document.getElementById("watch").innerHTML=K.map(function(k){
     {go:"teams",   n:"10",       lbl:"Managers", h:"Teams",      p:"Every roster as it locked before the playoffs, with each player's keeper cost, plus last season's final standings."},
     {go:"players", n:"—",        lbl:"Players",  h:"Players",    p:"Every NBA player: season stats, value in our nine categories, who owns him here, and what he makes against the cap.", id:"hc-players"},
     {go:"plot",    n:"—",        lbl:"Plotted",  h:"Analysis",   p:"Swarms, scatters, leaderboards and tier lists from every stat we track — then copy the picture for the chat.", id:"hc-plot"},
+    {go:"rotations",n:"—",       lbl:"Games",    h:"Rotations",  p:"How deep every NBA bench really goes, who never leaves the floor, and your own guys’ minutes game by game — from the gameflows on popcornmachine.", id:"hc-rot"},
     {go:"draft",   n:"120",      lbl:"Picks",    h:"Draft Results",p:"The 2026–27 board as it happened, every pick with who took him, and last year's board beside it."},
     {go:"cap",     n:"30",       lbl:"Per week", h:"Games Cap",  p:"Work out the adjusted cap for short weeks without doing the arithmetic by hand."},
     {go:"keepers", n:String(kCount), lbl:"Declared", h:"Keepers", p:"The calculator that settles arguments, and the ladder every declared keeper has left."},
@@ -6706,7 +6793,274 @@ window.Yahoo=Yahoo;
 if(typeof capSync==="function") capSync();
 
 /* ---------- routing ---------- */
-var views={home:"v-home",teams:"v-teams",team:"v-team",players:"v-players",plot:"v-plot",draft:"v-draft",cap:"v-cap",keepers:"v-keepers",polls:"v-polls",pollhist:"v-pollhist",agenda:"v-agenda",issues:"v-issues",sched:"v-sched",dues:"v-dues",badges:"v-badges",signup:"v-signup",manager:"v-manager",history:"v-history",rules:"v-rules"};
+/* ---------- Rotations: how every NBA team actually uses its players ----------
+   The numbers come from popcornmachine (seanlewis08.github.io/popcornmachine), Sean's
+   gameflow site: /api/ledger?rotations=sync reads its published gameflow files and keeps
+   rotation_games / rotation_players in Supabase; this page only reads those tables, so a
+   bad night on that site leaves this page showing what it already has. The gameflow
+   pictures themselves stay over there — every game here links to its gameflow. */
+var Rotations=(function(){
+  var PM="https://seanlewis08.github.io/popcornmachine/";
+  var ALIAS={GSW:"GS",NOP:"NO",NYK:"NY",SAS:"SA",UTA:"UTAH",WAS:"WSH",PHO:"PHX"};
+  var NAMES={ATL:"Hawks",BOS:"Celtics",BKN:"Nets",CHA:"Hornets",CHI:"Bulls",CLE:"Cavaliers",DAL:"Mavericks",DEN:"Nuggets",DET:"Pistons",GSW:"Warriors",HOU:"Rockets",IND:"Pacers",LAC:"Clippers",LAL:"Lakers",MEM:"Grizzlies",MIA:"Heat",MIL:"Bucks",MIN:"Timberwolves",NOP:"Pelicans",NYK:"Knicks",OKC:"Thunder",ORL:"Magic",PHI:"76ers",PHX:"Suns",POR:"Trail Blazers",SAC:"Kings",SAS:"Spurs",TOR:"Raptors",UTA:"Jazz",WAS:"Wizards"};
+  var games=null, loaded=false, loadErr="", synced=false, syncNote="", tab="league", started=false;
+  var lg={scope:"season",close:false,team:"",sort:"bench_min",asc:true};
+  var gm={date:"",game:"",detail:null,loading:false};
+  var my={team:"",rows:null,loading:false,err:""};
+  var pl={q:"",name:"",rows:null,ninth:{},loading:false,hits:[]};
+  function $(id){ return document.getElementById(id); }
+  function logo(tri){ return window.Court&&Court.logo?Court.logo(ALIAS[tri]||tri):""; }
+  function teamName(tri){ return NAMES[tri]||tri; }
+  function fmtDate(d){ var p=String(d||"").split("-"); if(p.length<3) return d||""; return new Date(Date.UTC(+p[0],+p[1]-1,+p[2])).toLocaleDateString(undefined,{month:"short",day:"numeric",timeZone:"UTC"}); }
+  function flowUrl(gid){ return PM+"#/game/"+encodeURIComponent(gid)+"/gameflow"; }
+  function pnorm(n){ return String(n||"").normalize("NFKD").replace(/[̀-ͯ]/g,"").toLowerCase().replace(/[.'’]/g,"").replace(/[^a-z ]/g," ").split(" ").filter(function(w){return w&&["jr","sr","ii","iii","iv"].indexOf(w)<0;}).join(" "); }
+  function isLive(){ return /crysterbaters\.(vercel\.app|com)$|^(localhost|127\.0\.0\.1)$/.test(location.hostname)||!!window.CB_FORCE_LIVE; }
+
+  /* ----- data ----- */
+  function rest(path){
+    var headers={apikey:SB.anon,Accept:"application/json"};
+    return fetch(SB.url+"/rest/v1/"+path,{headers:headers}).then(function(r){ if(!r.ok) return r.text().then(function(t){ throw new Error("Supabase answered "+r.status+(t?": "+t.slice(0,120):"")); }); return r.json(); });
+  }
+  var GCOLS="game_id,team,opp,home,date,pts,opp_pts,close,players_used,ninth_min,bench_min,starter_share,max_min,max_who,min_starters,low_starter_min,all_five_min,starter_stints,lineups,by_starters";
+  function loadGames(){
+    return rest("rotation_games?select="+GCOLS+"&order=date.desc,game_id.desc&limit=6000").then(function(rows){
+      games=rows.map(function(r){ ["pts","opp_pts","players_used","ninth_min","bench_min","starter_share","max_min","min_starters","low_starter_min","all_five_min","starter_stints","lineups"].forEach(function(k){ r[k]=Number(r[k]); }); return r; });
+      loaded=true; loadErr="";
+    }).catch(function(e){ loaded=true; loadErr=e.message||"couldn't read"; if(!games) games=[]; });
+  }
+  /* ask the server to pull anything popcornmachine has published since last time, then (re)load */
+  function sync(){
+    if(synced) return Promise.resolve();
+    synced=true;
+    if(!isLive()) return Promise.resolve();
+    return fetch("/api/ledger?rotations=sync",{cache:"no-store"}).then(function(r){ return r.json().then(function(j){ return r.ok?j:{error:j.error||("answered "+r.status)}; }); })
+      .catch(function(e){ return {error:(e&&e.message)||"no answer"}; })
+      .then(function(j){
+        if(j.error) syncNote="Couldn’t reach popcornmachine for new games ("+j.error+"); showing what’s already stored.";
+        else if(j.added&&j.added.length) syncNote="";
+        else if(j.missing) syncNote=j.missing+" more game"+(j.missing>1?"s":"")+" still to pull from popcornmachine; they’ll be in after the nightly run.";
+        return j;
+      });
+  }
+  function ensure(){
+    if(games&&loaded) return Promise.resolve();
+    return sync().then(function(j){ return loadGames().then(function(){ if(j&&j.added&&j.added.length&&games) return null; }); });
+  }
+
+  /* ----- derived ----- */
+  function median(a){ var s=a.slice().sort(function(x,y){return x-y;}); if(!s.length) return 0; var m=Math.floor(s.length/2); return s.length%2?s[m]:(s[m-1]+s[m])/2; }
+  function mean(a){ return a.length?a.reduce(function(s,x){return s+x;},0)/a.length:0; }
+  var NUM=["players_used","ninth_min","bench_min","starter_share","max_min","low_starter_min","all_five_min","starter_stints","lineups"];
+  function filtered(){ return (games||[]).filter(function(g){ return (!lg.close||g.close)&&(!lg.team||g.team===lg.team); }); }
+  function seasonRows(){
+    var by={}; filtered().forEach(function(g){ (by[g.team]=by[g.team]||[]).push(g); });
+    return Object.keys(by).map(function(t){
+      var gs=by[t], o={team:t,gp:gs.length};
+      NUM.forEach(function(k){ o[k]=mean(gs.map(function(g){return g[k];})); });
+      o.min_starters=Math.min.apply(null,gs.map(function(g){return g.min_starters;}));
+      o.floor2=gs.filter(function(g){return g.min_starters>=2;}).length;
+      var top=gs.slice().sort(function(a,b){return b.max_min-a.max_min;})[0]; o.max_min=top.max_min; o.max_who=top.max_who;
+      return o;
+    });
+  }
+  function leagueMedians(rows){ var o={}; NUM.concat(["min_starters"]).forEach(function(k){ o[k]=median(rows.map(function(r){return r[k];})); }); return o; }
+
+  /* ----- league board ----- */
+  var LCOLS=[
+    {k:"team",h:"Team",num:false},
+    {k:"gp",h:"GP",season:true},
+    {k:"players_used",h:"Used",t:"Players who got on the floor"},
+    {k:"ninth_min",h:"9th man",t:"Minutes for the ninth man in the rotation",f:1},
+    {k:"bench_min",h:"Bench min",t:"Minutes that went to non-starters",f:1},
+    {k:"starter_share",h:"Starters’ %",t:"Starters’ share of all minutes",pct:true},
+    {k:"max_min",h:"Heaviest load",t:"Most minutes by one player",f:1,who:true},
+    {k:"min_starters",h:"Floor",t:"Fewest starters ever on the floor at once"},
+    {k:"low_starter_min",h:"0–1 starters",t:"Minutes with no more than one starter out there",f:1},
+    {k:"all_five_min",h:"All five",t:"Minutes with all five starters together",f:1},
+    {k:"starter_stints",h:"Starter stints",t:"Stints by the five starters, added up"},
+    {k:"lineups",h:"Lineups",t:"Distinct five-man units used"}
+  ];
+  function cell(c,r){
+    if(c.k==="team") return '<td class="ro-team"><img src="'+logo(r.team)+'" alt=""><b>'+esc(r.team)+'</b>'+(r.date?'<span class="sub">'+(r.home?"vs":"@")+' '+esc(r.opp)+' · '+fmtDate(r.date)+' · '+(r.pts>r.opp_pts?"W":"L")+' '+r.pts+'–'+r.opp_pts+(r.close?'':' <i title="Decided by more than ten">blowout</i>')+'</span>':'<span class="sub">'+esc(teamName(r.team))+'</span>')+'</td>';
+    var v=r[c.k]; if(v==null) return '<td class="num">—</td>';
+    var s=c.pct?Math.round(v*100)+'%':(c.f?v.toFixed(c.f):String(Math.round(v*10)/10));
+    if(c.who&&r.max_who) s+='<small>'+esc(r.max_who)+'</small>';
+    return '<td class="num">'+s+'</td>';
+  }
+  function boardHtml(){
+    var season=lg.scope==="season", rows=season?seasonRows():filtered().slice();
+    var cols=LCOLS.filter(function(c){ return !(c.season&&!season); });
+    var key=lg.sort, dir=lg.asc?1:-1;
+    rows.sort(function(a,b){ var x=a[key],y=b[key]; if(key==="team") return (a.team<b.team?-1:1)*dir; if(key==="max_min"&&x===y) return 0; return (x-y)*dir||(a.team<b.team?-1:1); });
+    var med=leagueMedians(season?rows:filtered());
+    var teams=Object.keys(games.reduce(function(o,g){o[g.team]=1;return o;},{})).sort();
+    var head='<tr>'+cols.map(function(c){ return '<th class="'+(c.k==="team"?"":"num ")+(c.k===lg.sort?"on"+(lg.asc?" asc":""):"")+'" data-rosort="'+c.k+'"'+(c.t?' title="'+esc(c.t)+'"':'')+'>'+c.h+'</th>'; }).join("")+'</tr>';
+    var body=rows.map(function(r){ return '<tr class="rowlink" data-rorow="'+esc(season?r.team:r.game_id+"|"+r.team)+'">'+cols.map(function(c){return cell(c,r);}).join("")+'</tr>'; }).join("");
+    var medRow='<tr class="ro-med"><td class="ro-team"><b>League median</b><span class="sub">'+(season?"of the team averages":"of every team-game")+(lg.close?", close games only":"")+'</span></td>'+cols.slice(1).map(function(c){ if(c.k==="gp") return '<td class="num">'+Math.round(median(rows.map(function(r){return r.gp;})))+'</td>'; var v=med[c.k]; return '<td class="num">'+(c.pct?Math.round(v*100)+'%':(c.f?v.toFixed(c.f):String(Math.round(v*10)/10)))+'</td>'; }).join("")+'</tr>';
+    return '<div class="ro-ctl">'+
+      '<div class="seg" id="ro-scope"><button type="button"'+(season?' class="on"':'')+' data-scope="season">Season averages</button><button type="button"'+(season?'':' class="on"')+' data-scope="games">Game by game</button></div>'+
+      '<label class="ro-chk"><input type="checkbox" id="ro-close"'+(lg.close?' checked':'')+'> Close games only <span class="sub">(decided by 10 or fewer)</span></label>'+
+      '<select id="ro-team" class="ro-sel"><option value="">Every team</option>'+teams.map(function(t){ return '<option value="'+t+'"'+(lg.team===t?' selected':'')+'>'+t+' · '+esc(teamName(t))+'</option>'; }).join("")+'</select>'+
+      '<span class="sub ro-n">'+rows.length+(season?' teams':' team-games')+'</span></div>'+
+      '<div class="tablewrap ro-wrap"><table class="pltable ro-table"><thead>'+head+'</thead><tbody>'+body+medRow+'</tbody></table></div>'+
+      '<p class="sub ro-hint">Click a column to sort, a team for its games, a game for the breakdown. Low bench minutes and a high floor mean a tight, planned rotation; the extremes on the other end are usually blowouts.</p>';
+  }
+
+  /* ----- game drill-down ----- */
+  function dates(){ var o={}; (games||[]).forEach(function(g){ o[g.date]=1; }); return Object.keys(o).sort().reverse(); }
+  function gamesOn(d){ var o={}; (games||[]).forEach(function(g){ if(g.date===d&&g.home) o[g.game_id]=g; }); return Object.keys(o).map(function(k){return o[k];}).sort(function(a,b){return a.game_id<b.game_id?-1:1;}); }
+  function loadDetail(gid){
+    gm.loading=true; gm.detail=null;
+    rest("rotation_games?select="+GCOLS+",detail&game_id=eq."+encodeURIComponent(gid)).then(function(rows){ gm.loading=false; gm.detail={rows:rows}; paint(); })
+      .catch(function(e){ gm.loading=false; gm.detail={error:e.message}; paint(); });
+  }
+  function timeline(seg,total){
+    var W=600,H=34,pad=2, n=total||48; var x=function(m){ return pad+(W-2*pad)*m/n; };
+    var cols=["#B23A2E","#D9823A","#D9B23A","#8FB26B","#5D9C7B","#2E7D64"];
+    var out='<svg class="ro-tl" viewBox="0 0 '+W+' '+(H+14)+'" preserveAspectRatio="none" role="img" aria-label="starters on the floor through the game">';
+    seg.forEach(function(s){ out+='<rect x="'+x(s[0]).toFixed(1)+'" y="2" width="'+Math.max(0.5,x(s[1])-x(s[0])).toFixed(1)+'" height="'+(H-4)+'" fill="'+cols[s[2]]+'"><title>'+s[2]+' starter'+(s[2]===1?'':'s')+' · '+s[0]+'–'+s[1]+' min</title></rect>'; });
+    for(var q=12;q<n;q+=12) out+='<line x1="'+x(q)+'" y1="0" x2="'+x(q)+'" y2="'+H+'" stroke="rgba(0,0,0,.45)" stroke-width="1"/>';
+    [1,2,3,4].forEach(function(q){ if(q*12<=n) out+='<text x="'+x(q*12-6)+'" y="'+(H+11)+'" text-anchor="middle" font-size="9" font-family="monospace" fill="currentColor">Q'+q+'</text>'; });
+    return out+'</svg>';
+  }
+  function ownerOf(name){ var k=pnorm(name); for(var i=0;i<T.length;i++){ var t=T[i]; for(var j=0;j<(t.roster||[]).length;j++){ if(pnorm(t.roster[j][1])===k) return t; } } return null; }
+  function teamPanel(r,other){
+    var d=r.detail||{}, segs=d.segments||[], total=segs.length?segs[segs.length-1][1]:48;
+    var by=r.by_starters||[];
+    var tiles=[["Players used",r.players_used,""],["Bench minutes",r.bench_min.toFixed(1),""],["Starters’ share",Math.round(r.starter_share*100)+"%",""],["Heaviest load",r.max_min.toFixed(1),r.max_who],["Floor",r.min_starters+" starter"+(r.min_starters===1?"":"s"),"fewest on the floor at once"],["All five together",r.all_five_min.toFixed(1)+" min",""]];
+    return '<div class="ro-side"><div class="ro-side-hd"><img src="'+logo(r.team)+'" alt=""><div><b>'+esc(r.team)+' '+esc(teamName(r.team))+'</b><span class="sub">'+(r.home?"home":"away")+' · '+(r.pts>r.opp_pts?"won":"lost")+' '+r.pts+'–'+r.opp_pts+(r.close?'':' · blowout')+'</span></div></div>'+
+      '<dl class="statgrid ro-tiles">'+tiles.map(function(t){ return '<div class="stat"><dt>'+t[0]+'</dt><dd>'+esc(String(t[1]))+(t[2]?'<small>'+esc(t[2])+'</small>':'')+'</dd></div>'; }).join("")+'</dl>'+
+      '<div class="ro-block"><div class="ro-bh">Starters on the floor <span class="sub">0–1 red · 2–3 amber · 4–5 green</span></div>'+timeline(segs,Math.max(48,Math.ceil(total)))+
+      '<div class="ro-by">'+[0,1,2,3,4,5].map(function(k){ return '<span'+(by[k]?'':' class="dim"')+'><b>'+k+'</b> '+(by[k]||0).toFixed(1)+'m</span>'; }).join("")+'</div></div>'+
+      '<div class="ro-block"><div class="ro-bh">Most-used five-man units</div><table class="ro-units"><thead><tr><th>Unit</th><th class="num">Min</th><th class="num">+/−</th><th class="num">Stints</th></tr></thead><tbody>'+
+        (d.units||[]).slice(0,6).map(function(u){ return '<tr><td><span class="ro-unit">'+u.who.map(function(n){ return '<i'+(u.starters>=5?'':'')+'>'+esc(n)+'</i>'; }).join("")+'</span><small class="sub">'+u.starters+' starter'+(u.starters===1?'':'s')+'</small></td><td class="num">'+u.min.toFixed(1)+'</td><td class="num '+(u.pm>0?'pos':(u.pm<0?'neg':''))+'">'+(u.pm>0?'+':'')+u.pm+'</td><td class="num">'+u.stints+'</td></tr>'; }).join("")+'</tbody></table></div>'+
+      '<div class="ro-block"><div class="ro-bh">Minutes</div><table class="ro-min"><thead><tr><th>Player</th><th class="num">Min</th><th class="num">Stints</th><th>Here</th></tr></thead><tbody>'+
+        (d.players||[]).map(function(p){ var o=ownerOf(p.name); return '<tr'+(p.starter?' class="st"':'')+'><td><b>'+esc(p.name)+'</b>'+(p.starter?' <span class="ro-s">S</span>':'')+'</td><td class="num"><span class="ro-bar" style="width:'+Math.round(p.min/48*100)+'%"></span>'+p.min.toFixed(1)+'</td><td class="num">'+p.stints+'</td><td class="sub">'+(o?'<button class="back ro-own" data-team="'+o.id+'" type="button">'+esc(o.short)+'</button>':'<span class="dim">free agent</span>')+'</td></tr>'; }).join("")+'</tbody></table></div></div>';
+  }
+  function gameHtml(){
+    var ds=dates(); if(!ds.length) return '<div class="empty">No games stored yet.</div>';
+    if(!gm.date||ds.indexOf(gm.date)<0) gm.date=ds[0];
+    var list=gamesOn(gm.date); if(!gm.game||!list.some(function(g){return g.game_id===gm.game;})) gm.game=list.length?list[0].game_id:"";
+    var sel='<div class="ro-ctl"><select id="ro-date" class="ro-sel">'+ds.map(function(d){ return '<option value="'+d+'"'+(d===gm.date?' selected':'')+'>'+fmtDate(d)+'</option>'; }).join("")+'</select>'+
+      '<select id="ro-game" class="ro-sel">'+list.map(function(g){ return '<option value="'+g.game_id+'"'+(g.game_id===gm.game?' selected':'')+'>'+esc(g.opp)+' @ '+esc(g.team)+' · '+g.opp_pts+'–'+g.pts+'</option>'; }).join("")+'</select>'+
+      (gm.game?'<a class="btn quiet sm ro-flow" href="'+flowUrl(gm.game)+'" target="_blank" rel="noopener">Gameflow on popcornmachine ↗</a>':'')+'</div>';
+    if(!gm.game) return sel+'<div class="empty">No games that day.</div>';
+    if(!gm.detail||gm.loading||(gm.detail.rows&&gm.detail.rows[0]&&gm.detail.rows[0].game_id!==gm.game)){ if(!gm.loading) loadDetail(gm.game); return sel+'<div class="empty" style="padding:18px">Reading the game…</div>'; }
+    if(gm.detail.error) return sel+'<div class="empty">Couldn’t read that game ('+esc(gm.detail.error)+'). <button class="back" id="ro-retry" type="button" style="margin:0;padding:0;color:var(--amber);font-size:inherit">Try again</button></div>';
+    var rows=gm.detail.rows.map(function(r){ NUM.concat(["pts","opp_pts","min_starters"]).forEach(function(k){ r[k]=Number(r[k]); }); return r; }).sort(function(a,b){ return (a.home?1:0)-(b.home?1:0); });
+    return sel+'<div class="ro-game">'+rows.map(teamPanel).join("")+'</div>';
+  }
+
+  /* ----- my guys ----- */
+  function myTeamId(){ var p=window.Polls&&Polls.profile?Polls.profile():null; return p&&p.team_id?p.team_id:""; }
+  function loadMine(tid){
+    var t=byId(tid); if(!t) return;
+    my.loading=true; my.rows=null; my.err="";
+    var names=(t.roster||[]).map(function(r){return r[1];}).filter(function(n){ return n&&n!=="(Empty)"; });
+    var or="or=("+names.map(function(n){ return "name.eq."+encodeURIComponent('"'+n.replace(/"/g,'')+'"'); }).join(",")+")";
+    rest("rotation_players?select=game_id,date,team,opp,player_id,name,starter,minutes,stints,rank&"+or+"&order=date.desc&limit=2000").then(function(rows){
+      rows.forEach(function(r){ r.minutes=Number(r.minutes); r.rank=Number(r.rank); r.stints=Number(r.stints); });
+      var byName={}; rows.forEach(function(r){ var k=pnorm(r.name); (byName[k]=byName[k]||[]).push(r); });
+      my.rows={team:tid,names:names,byName:byName}; my.loading=false; paint();
+    }).catch(function(e){ my.loading=false; my.err=e.message; paint(); });
+  }
+  function ninthFor(gid,team){ for(var i=0;i<games.length;i++){ var g=games[i]; if(g.game_id===gid&&g.team===team) return g; } return null; }
+  function trend(gs){ if(gs.length<4) return null; var last=mean(gs.slice(0,3).map(function(g){return g.minutes;})), prev=mean(gs.slice(3,8).map(function(g){return g.minutes;})); return last-prev; }
+  function mineHtml(){
+    var mineId=myTeamId(); if(!my.team) my.team=mineId||T[0].id;
+    var t=byId(my.team);
+    var pick='<div class="ro-ctl"><select id="ro-mine" class="ro-sel">'+T.map(function(x){ return '<option value="'+x.id+'"'+(x.id===my.team?' selected':'')+'>'+esc(x.short)+' · '+esc(x.name)+(x.id===mineId?' (you)':'')+'</option>'; }).join("")+'</select>'+
+      (mineId?'':'<span class="sub">Sign in and claim your team to land here on your own roster.</span>')+'</div>';
+    if(!my.rows||my.rows.team!==my.team){ if(!my.loading&&!my.err) loadMine(my.team); return pick+(my.err?'<div class="empty">Couldn’t read minutes ('+esc(my.err)+').</div>':'<div class="empty" style="padding:18px">Reading minutes…</div>'); }
+    var byName=my.rows.byName;
+    var rows=my.rows.names.map(function(n){
+      var gs=(byName[pnorm(n)]||[]).slice().sort(function(a,b){return a.date<b.date?1:-1;});
+      var last=gs.slice(0,6), avg=mean(gs.map(function(g){return g.minutes;})), tr=trend(gs);
+      var role=gs.length?(gs.slice(0,3).every(function(g){return g.starter;})?"Starter":(gs.slice(0,3).some(function(g){return g.starter;})?"Mixed":"Bench")):"—";
+      return {name:n,gs:gs,last:last,avg:avg,tr:tr,role:role,rank:gs.length?Math.round(mean(gs.slice(0,3).map(function(g){return g.rank;}))):null};
+    }).sort(function(a,b){ return (b.avg||0)-(a.avg||0); });
+    return pick+'<div class="tablewrap ro-wrap"><table class="ro-table ro-mine"><thead><tr><th>Player</th><th>Role</th><th class="num" title="Average minutes this season">Avg min</th><th class="num" title="Where he ranks on his team in minutes, last three games">Rank</th><th>Last six games <span class="sub">newest first · minutes, S = started, the 9th man’s minutes that night</span></th><th class="num" title="Last three games against the five before">Trend</th></tr></thead><tbody>'+
+      rows.map(function(r){
+        var cells=r.last.map(function(g){ var n=ninthFor(g.game_id,g.team); return '<button type="button" class="ro-g'+(g.starter?' s':'')+(n&&g.minutes<n.ninth_min+0.05?' low':'')+'" data-rogame="'+g.game_id+'" title="'+esc(fmtDate(g.date)+' '+(g.team)+' vs '+g.opp+' · '+g.minutes.toFixed(1)+' min, '+g.stints+' stint'+(g.stints===1?'':'s')+', #'+g.rank+' on the team'+(n?' · 9th man had '+n.ninth_min.toFixed(1):''))+'"><b>'+g.minutes.toFixed(0)+'</b><small>'+(g.starter?'S':'')+(n?' ·'+n.ninth_min.toFixed(0):'')+'</small></button>'; }).join("");
+        return '<tr><td><b class="ro-pn" data-roplayer="'+esc(r.name)+'">'+esc(r.name)+'</b></td><td><span class="pill '+(r.role==="Starter"?"ok":(r.role==="Bench"?"gone":"warn"))+'">'+r.role+'</span></td><td class="num">'+(r.gs.length?r.avg.toFixed(1):'—')+'</td><td class="num">'+(r.rank?'#'+r.rank:'—')+'</td><td>'+(cells||'<span class="dim">no games stored</span>')+'</td><td class="num '+(r.tr>2?'pos':(r.tr<-2?'neg':''))+'">'+(r.tr==null?'—':(r.tr>0?'+':'')+r.tr.toFixed(1))+'</td></tr>';
+      }).join("")+'</tbody></table></div>'+
+      '<p class="sub ro-hint">A game box turns red when he played no more than his team’s ninth man did — the edge of the rotation. Trend compares his last three games with the five before; it needs at least four games.</p>';
+  }
+
+  /* ----- one player ----- */
+  function searchPlayers(q){
+    pl.loading=true;
+    rest("rotation_players?select=name,team&name=ilike.*"+encodeURIComponent(q.replace(/[%*]/g,""))+"*&order=date.desc&limit=200").then(function(rows){
+      var seen={}; pl.hits=rows.filter(function(r){ if(seen[r.name]) return false; seen[r.name]=1; return true; }).slice(0,8); pl.loading=false; paintHits();
+    }).catch(function(){ pl.loading=false; pl.hits=[]; paintHits(); });
+  }
+  /* the dropdown under the search box, redrawn on its own so typing keeps focus */
+  function hitsHtml(){ return pl.hits.length?'<div class="ro-hits">'+pl.hits.map(function(h){ return '<button type="button" data-ropick="'+esc(h.name)+'"><b>'+esc(h.name)+'</b><span>'+esc(h.team)+'</span></button>'; }).join("")+'</div>':''; }
+  function paintHits(){ var box=document.querySelector("#ro-body .ro-search"); if(!box) return; var old=box.querySelector(".ro-hits"); if(old) old.remove(); box.insertAdjacentHTML("beforeend",hitsHtml());
+  }
+  function loadPlayer(name){
+    pl.name=name; pl.rows=null; pl.loading=true; pl.hits=[];
+    rest("rotation_players?select=game_id,date,team,opp,name,starter,minutes,stints,rank&name=eq."+encodeURIComponent(name)+"&order=date.desc&limit=120").then(function(rows){
+      rows.forEach(function(r){ r.minutes=Number(r.minutes); r.rank=Number(r.rank); r.stints=Number(r.stints); }); pl.rows=rows; pl.loading=false; paint();
+    }).catch(function(e){ pl.rows=[]; pl.loading=false; pl.err=e.message; paint(); });
+  }
+  function playerHtml(){
+    var box='<div class="ro-ctl"><div class="ro-search"><input id="ro-q" placeholder="Type a player’s name…" value="'+esc(pl.q)+'" autocomplete="off">'+hitsHtml()+'</div>'+(pl.name?'<span class="sub">Showing '+esc(pl.name)+'</span>':'')+'</div>';
+    if(!pl.name) return box+'<div class="empty">Pick a player to see his minutes game by game, with his team’s ninth-man line for context.</div>';
+    if(pl.loading||!pl.rows) return box+'<div class="empty" style="padding:18px">Reading…</div>';
+    if(!pl.rows.length) return box+'<div class="empty">No games stored for '+esc(pl.name)+'.</div>';
+    var rows=pl.rows, o=ownerOf(pl.name), mx=Math.max.apply(null,rows.map(function(r){return r.minutes;}).concat([36]));
+    var avg=mean(rows.map(function(r){return r.minutes;})), starts=rows.filter(function(r){return r.starter;}).length;
+    return box+'<div class="ro-ph"><dl class="statgrid ro-tiles four"><div class="stat"><dt>Games</dt><dd>'+rows.length+'</dd></div><div class="stat"><dt>Minutes a game</dt><dd>'+avg.toFixed(1)+'</dd></div><div class="stat"><dt>Starts</dt><dd>'+starts+'</dd></div><div class="stat"><dt>Owned here by</dt><dd class="small">'+(o?'<button class="back ro-own" data-team="'+o.id+'" type="button">'+esc(o.short)+'</button>':'nobody')+'</dd></div></dl></div>'+
+      '<div class="tablewrap ro-wrap"><table class="ro-table"><thead><tr><th>Date</th><th>Game</th><th>Role</th><th class="num">Min</th><th class="num">Stints</th><th class="num" title="Where he ranked on his team in minutes">Rank</th><th class="num" title="His team’s ninth man that night">9th man</th><th></th></tr></thead><tbody>'+
+      rows.map(function(r){ var n=ninthFor(r.game_id,r.team); var low=n&&r.minutes<=n.ninth_min+0.05; return '<tr class="rowlink" data-rogame="'+r.game_id+'"><td class="sub">'+fmtDate(r.date)+'</td><td><b>'+esc(r.team)+'</b> <span class="sub">vs '+esc(r.opp)+'</span></td><td>'+(r.starter?'<span class="pill ok">Start</span>':'<span class="pill gone">Bench</span>')+'</td><td class="num"><span class="ro-bar'+(low?' low':'')+'" style="width:'+Math.round(r.minutes/mx*100)+'%"></span>'+r.minutes.toFixed(1)+'</td><td class="num">'+r.stints+'</td><td class="num">#'+r.rank+'</td><td class="num">'+(n?n.ninth_min.toFixed(1):'—')+'</td><td><a class="sub" href="'+flowUrl(r.game_id)+'" target="_blank" rel="noopener" title="Gameflow on popcornmachine">flow ↗</a></td></tr>'; }).join("")+'</tbody></table></div>';
+  }
+
+  /* ----- paint & events ----- */
+  function paint(){
+    var body=$("ro-body"), eb=$("ro-eyebrow"), foot=$("ro-foot"); if(!body) return;
+    Array.prototype.forEach.call(document.querySelectorAll("#ro-tabs button"),function(b){ b.classList.toggle("on",b.dataset.rotab===tab); });
+    if(!loaded||!games){ body.innerHTML='<div class="empty" style="padding:18px">Reading the rotations…</div>'; return; }
+    var n=games.length/2, ds=dates();
+    if(eb) eb.textContent=n?Math.round(n)+' game'+(n===1?'':'s')+' · '+fmtDate(ds[ds.length-1])+' – '+fmtDate(ds[0]):'no games yet';
+    if(loadErr){ body.innerHTML='<div class="empty">Couldn’t read the rotation tables ('+esc(loadErr)+'). '+(/rotation_games/.test(loadErr)&&/relation|does not exist|404/.test(loadErr)?'The schema hasn’t been run yet.':'')+' <button class="back" id="ro-reload" type="button" style="margin:0;padding:0;color:var(--amber);font-size:inherit">Try again</button></div>'; return; }
+    if(!games.length){ body.innerHTML='<div class="empty">Nothing stored yet. '+(syncNote?esc(syncNote):'The first games arrive the night after popcornmachine publishes them.')+'</div>'; return; }
+    body.innerHTML=tab==="league"?boardHtml():tab==="game"?gameHtml():tab==="mine"?mineHtml():playerHtml();
+    if(foot) foot.innerHTML=(syncNote?'<span class="ro-note">'+esc(syncNote)+'</span> · ':'')+'Rotation numbers computed from <a href="'+PM+'" target="_blank" rel="noopener">popcornmachine</a>’s gameflow files · a close game is one decided by ten or fewer · stints are trips onto the floor.';
+  }
+  function open(){ if(!started){ started=true; bind(); } ensure().then(paint); paint(); }
+  function showGame(gid){ var g=(games||[]).filter(function(x){return x.game_id===gid;})[0]; if(!g) return; tab="game"; gm.date=g.date; gm.game=gid; gm.detail=null; paint(); window.scrollTo({top:$("ro-tabs").getBoundingClientRect().top+window.scrollY-80,behavior:"instant"}); }
+  function bind(){
+    document.addEventListener("click",function(e){
+      var tb=e.target.closest("#ro-tabs [data-rotab]"); if(tb){ tab=tb.dataset.rotab; paint(); return; }
+      var sc=e.target.closest("#ro-scope [data-scope]"); if(sc){ lg.scope=sc.dataset.scope; lg.sort=lg.scope==="season"?lg.sort:(lg.sort==="gp"?"bench_min":lg.sort); paint(); return; }
+      var th=e.target.closest("[data-rosort]"); if(th){ var k=th.dataset.rosort; if(lg.sort===k) lg.asc=!lg.asc; else { lg.sort=k; lg.asc=(k==="team"||k==="bench_min"||k==="players_used"||k==="ninth_min"||k==="low_starter_min"||k==="lineups"); } paint(); return; }
+      var row=e.target.closest("[data-rorow]"); if(row&&!e.target.closest("button,a")){ var v=row.dataset.rorow; if(v.indexOf("|")>0){ showGame(v.split("|")[0]); } else { lg.team=v; lg.scope="games"; paint(); } return; }
+      var rg=e.target.closest("[data-rogame]"); if(rg){ showGame(rg.dataset.rogame); return; }
+      var pk=e.target.closest("[data-ropick]"); if(pk){ pl.q=pk.dataset.ropick; loadPlayer(pk.dataset.ropick); return; }
+      var pn=e.target.closest("[data-roplayer]"); if(pn){ tab="player"; pl.q=pn.dataset.roplayer; loadPlayer(pn.dataset.roplayer); return; }
+      if(e.target.closest("#ro-retry")){ gm.detail=null; paint(); return; }
+      if(e.target.closest("#ro-reload")){ games=null; loaded=false; synced=false; paint(); ensure().then(paint); return; }
+      if(!e.target.closest(".ro-search")&&pl.hits.length){ pl.hits=[]; paintHits(); }
+    });
+    document.addEventListener("change",function(e){
+      if(e.target.id==="ro-close"){ lg.close=e.target.checked; paint(); }
+      else if(e.target.id==="ro-team"){ lg.team=e.target.value; if(lg.team) lg.scope="games"; paint(); }
+      else if(e.target.id==="ro-date"){ gm.date=e.target.value; gm.game=""; gm.detail=null; paint(); }
+      else if(e.target.id==="ro-game"){ gm.game=e.target.value; gm.detail=null; paint(); }
+      else if(e.target.id==="ro-mine"){ my.team=e.target.value; my.rows=null; my.err=""; paint(); }
+    });
+    var tmr=null;
+    document.addEventListener("input",function(e){ if(e.target.id!=="ro-q") return; pl.q=e.target.value; clearTimeout(tmr); var q=pl.q.trim(); if(q.length<2){ pl.hits=[]; paintHits(); return; } tmr=setTimeout(function(){ searchPlayers(q); },220); });
+    document.addEventListener("keydown",function(e){ if(e.target.id==="ro-q"&&e.key==="Enter"&&pl.hits.length){ e.preventDefault(); pl.q=pl.hits[0].name; loadPlayer(pl.hits[0].name); } });
+    document.addEventListener("cb:liveteams",function(){ if(tab==="mine"||tab==="game") paint(); });
+    if(window.Polls&&Polls.onAuth) Polls.onAuth(function(){ if(!my.team&&myTeamId()) my.team=myTeamId(); if(tab==="mine") paint(); });
+  }
+  return {onView:function(v){ if(v==="rotations") open(); }, repaint:paint, games:function(){ return games; }, _metrics:{seasonRows:seasonRows,leagueMedians:leagueMedians}};
+})();
+window.Rotations=Rotations;
+
+var views={home:"v-home",teams:"v-teams",team:"v-team",players:"v-players",plot:"v-plot",rotations:"v-rotations",draft:"v-draft",cap:"v-cap",keepers:"v-keepers",polls:"v-polls",pollhist:"v-pollhist",agenda:"v-agenda",issues:"v-issues",sched:"v-sched",dues:"v-dues",badges:"v-badges",signup:"v-signup",manager:"v-manager",history:"v-history",rules:"v-rules"};
 var curTeam=null;
 function routeFor(v){ return v==="team"&&curTeam ? "team/"+curTeam : v; }
 function go(v,silent){
@@ -6720,6 +7074,7 @@ function go(v,silent){
   if(window.Badges) Badges.onView(v);
   if(window.Yahoo) Yahoo.onView(v);
   if(window.Draft26) Draft26.onView(v);
+  if(window.Rotations) Rotations.onView(v);
   Array.prototype.forEach.call(document.querySelectorAll("#nav button"),function(b){
     if(b.dataset.go===navKey){b.setAttribute("aria-current","page");}else{b.removeAttribute("aria-current");}
   });

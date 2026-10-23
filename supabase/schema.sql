@@ -1088,3 +1088,66 @@ begin
     execute format('grant all on public.%I to service_role', t);
   end loop;
 end $$;
+
+-- ---------------------------------------------------------------------------
+-- 14. Rotations (added 2026-10-23): rotation analysis of every NBA game, read
+-- from popcornmachine's published gameflow files (seanlewis08.github.io/
+-- popcornmachine/data) by /api/ledger?rotations=sync and the nightly run.
+-- One row per team per game with the headline numbers and a detail blob
+-- (top five-man units with minutes and +/-, the starters-on-floor timeline,
+-- every player's minutes and stints); one row per player per game for the
+-- minutes trends. League lore, so anyone can read; only the server writes.
+-- If popcornmachine stops publishing, these tables just stop growing.
+-- ---------------------------------------------------------------------------
+create table if not exists public.rotation_games (
+  game_id          text not null check (game_id ~ '^[0-9]{10}$'),
+  team             text not null check (team ~ '^[A-Z]{2,4}$'),
+  opp              text not null,
+  home             boolean not null default false,
+  date             date not null,
+  pts              integer not null default 0,
+  opp_pts          integer not null default 0,
+  close            boolean not null default false,        -- decided by 10 or fewer
+  players_used     integer not null default 0,
+  ninth_min        numeric(5,1) not null default 0,       -- the 9th man's minutes
+  bench_min        numeric(5,1) not null default 0,
+  starter_share    numeric(5,3) not null default 0,       -- starters' share of all minutes
+  max_min          numeric(5,1) not null default 0,       -- heaviest single load
+  max_who          text not null default '',
+  min_starters     integer not null default 5,            -- fewest starters ever on the floor at once
+  low_starter_min  numeric(5,1) not null default 0,       -- minutes with 0 or 1 starters out there
+  all_five_min     numeric(5,1) not null default 0,       -- minutes with all five starters together
+  starter_stints   integer not null default 0,
+  lineups          integer not null default 0,            -- distinct five-man units
+  by_starters      jsonb not null default '[]'::jsonb,    -- minutes with 0,1,2,3,4,5 starters on the floor
+  detail           jsonb not null default '{}'::jsonb,    -- {units, segments, players}
+  built_at         timestamptz not null default now(),
+  primary key (game_id, team)
+);
+create index if not exists rotation_games_date on public.rotation_games (date desc);
+create index if not exists rotation_games_team on public.rotation_games (team, date desc);
+
+create table if not exists public.rotation_players (
+  game_id    text not null check (game_id ~ '^[0-9]{10}$'),
+  date       date not null,
+  team       text not null,
+  opp        text not null default '',
+  player_id  text not null,
+  name       text not null,
+  starter    boolean not null default false,
+  minutes    numeric(5,1) not null default 0,
+  stints     integer not null default 0,
+  rank       integer not null default 0,                   -- 1 = most minutes on his team that night
+  primary key (game_id, player_id)
+);
+create index if not exists rotation_players_name on public.rotation_players (name, date desc);
+create index if not exists rotation_players_team on public.rotation_players (team, date desc);
+
+alter table public.rotation_games   enable row level security;
+alter table public.rotation_players enable row level security;
+drop policy if exists rotation_games_read on public.rotation_games;
+create policy rotation_games_read on public.rotation_games for select to anon, authenticated using (true);
+drop policy if exists rotation_players_read on public.rotation_players;
+create policy rotation_players_read on public.rotation_players for select to anon, authenticated using (true);
+grant select on public.rotation_games, public.rotation_players to anon, authenticated;
+grant all on public.rotation_games, public.rotation_players to service_role;

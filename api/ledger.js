@@ -1,6 +1,9 @@
 // The games ledger, one function (the Hobby plan allows twelve per deployment):
 //   GET  /api/ledger?draft=1                 this season's draft, every pick with names
 //   GET  /api/ledger?adp=1[&pages=12]        Yahoo's draft analysis (ADP, preseason rank) for the top of the pool
+//   GET  /api/ledger?rotations=sync          bring rotation_games/rotation_players up to date with
+//        popcornmachine's published games (a dozen per call; the Rotations page calls it on open,
+//        the nightly run does the rest). Reads only that site, so its failures stay its own.
 //   GET  /api/ledger?team=jalenba[&week=5]   one team's week, in /api/yahoo/team's
 //        shape, so the page draws stored and live data the same way. Lineups are
 //        what the last snapshot (or that manager's last visit) read from Yahoo;
@@ -21,6 +24,7 @@
 const yahoo = require("./_lib/yahoo-server");
 const supa = require("./_lib/supa");
 const ledger = require("./_lib/ledger");
+const rotation = require("./_lib/rotation");
 
 const BUDGET_MS = 50 * 1000;
 
@@ -105,6 +109,10 @@ async function snapshot(req, res) {
       catch (e) { out.notes.push("ESPN " + date + ": " + e.message); }
     }
 
+    // 4. rotations from popcornmachine (separate source; a failure here is noted, not fatal)
+    try { const r = await rotation.sync({ deadline: deadline, limit: 40 }); out.rotations = r.added.length; if (r.skipped.length) out.notes.push("rotations skipped: " + r.skipped.slice(0, 3).join("; ")); if (r.notes.length) out.notes.push("rotations: " + r.notes.join("; ")); }
+    catch (e) { out.notes.push("popcornmachine: " + e.message); }
+
     out.ms = Date.now() - t0;
     if (runId) await supa.update("snapshot_runs", "id=eq." + runId, { finished_at: new Date().toISOString(), teams: out.teams, days: out.days, box: out.box, note: out.notes.join(" | ").slice(0, 900) }).catch(() => {});
     return res.status(200).json(out);
@@ -154,8 +162,22 @@ async function adp(req, res) {
   }
 }
 
+async function rotations(req, res) {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  try {
+    const r = await rotation.sync({ deadline: Date.now() + 25000, limit: 12 });
+    // the page calls this on open; the edge answers repeats for a while so a busy night can't fan out
+    res.setHeader("Cache-Control", "public, s-maxage=300, stale-while-revalidate=900");
+    return res.status(200).json(Object.assign({ built: new Date().toISOString(), source: rotation._base() }, r));
+  } catch (e) {
+    res.setHeader("Cache-Control", "no-store");
+    return res.status(503).json({ error: e.message || String(e), source: rotation._base() });
+  }
+}
+
 module.exports = async (req, res) => {
   if (req.method === "GET" && req.query && req.query.team) return read(req, res);
+  if (req.method === "GET" && req.query && req.query.rotations) return rotations(req, res);
   if (req.method === "GET" && req.query && req.query.draft) return draft(req, res);
   if (req.method === "GET" && req.query && req.query.adp) return adp(req, res);
   return snapshot(req, res);
