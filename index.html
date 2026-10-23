@@ -6913,7 +6913,7 @@ var Rotations=(function(){
   function cell(c,r){
     var on=c.k===lg.sort?' on':'';
     if(c.k==="team") return '<td class="ro-team'+on+'"><img src="'+logo(r.team)+'" alt=""><b>'+esc(r.team)+'</b>'+(r.date?'<span class="sub">'+(r.home?"vs":"@")+' '+esc(r.opp)+' · '+fmtDate(r.date)+' · '+(r.pts>r.opp_pts?"W":"L")+' '+r.pts+'–'+r.opp_pts+(r.close?'':' <i title="Decided by more than ten">blowout</i>')+'</span>':'<span class="sub">'+esc(teamName(r.team))+'</span>')+'</td>';
-    var v=r[c.k]; if(v==null) return '<td class="num'+on+'">—</td>';
+    var v=r[c.k]; if(v==null||isNaN(v)) return '<td class="num'+on+'" title="Waiting on the schema">—</td>';
     var s=c.pct?Math.round(v*100)+'%':(c.f?v.toFixed(c.f):String(Math.round(v*10)/10));
     if(c.who&&r.max_who) s+='<small>'+esc(r.max_who)+'</small>';
     return '<td class="num'+on+'">'+s+'</td>';
@@ -6928,7 +6928,7 @@ var Rotations=(function(){
     var teams=Object.keys(games.reduce(function(o,g){o[g.team]=1;return o;},{})).sort();
     var head='<tr>'+cols.map(function(c){ return '<th class="'+(c.k==="team"?"":"num ")+(c.k===lg.sort?"on"+(lg.asc?" asc":""):"")+'" data-rosort="'+c.k+'"'+(c.t?' title="'+esc(c.t)+'"':'')+'>'+c.h+'</th>'; }).join("")+'</tr>';
     var body=rows.map(function(r){ return '<tr class="rowlink" data-rorow="'+esc(season?r.team:r.game_id+"|"+r.team)+'">'+cols.map(function(c){return cell(c,r);}).join("")+'</tr>'; }).join("");
-    var medRow='<tr class="ro-med"><td class="ro-team"><b>League median</b><span class="sub">'+(season?"every team’s season average":"every team-game")+', all 30 teams, every game</span></td>'+cols.slice(1).map(function(c){ var on=c.k===lg.sort?' on':''; if(c.k==="gp") return '<td class="num'+on+'">'+Math.round(median(all.map(function(r){return r.gp;})))+'</td>'; var v=med[c.k]; return '<td class="num'+on+'">'+(c.pct?Math.round(v*100)+'%':(c.f?v.toFixed(c.f):String(Math.round(v*10)/10)))+'</td>'; }).join("")+'</tr>';
+    var medRow='<tr class="ro-med"><td class="ro-team"><b>League median</b><span class="sub">'+(season?"every team’s season average":"every team-game")+', all 30 teams, every game</span></td>'+cols.slice(1).map(function(c){ var on=c.k===lg.sort?' on':''; if(c.k==="gp") return '<td class="num'+on+'">'+Math.round(median(all.map(function(r){return r.gp;})))+'</td>'; var v=med[c.k]; if(v==null||isNaN(v)) return '<td class="num'+on+'">—</td>'; return '<td class="num'+on+'">'+(c.pct?Math.round(v*100)+'%':(c.f?v.toFixed(c.f):String(Math.round(v*10)/10)))+'</td>'; }).join("")+'</tr>';
     return '<div class="ro-ctl">'+
       '<div class="seg" id="ro-scope"><button type="button"'+(season?' class="on"':'')+' data-scope="season">Season averages</button><button type="button"'+(season?'':' class="on"')+' data-scope="games">Game by game</button></div>'+
       '<label class="ro-chk"><input type="checkbox" id="ro-close"'+(lg.close?' checked':'')+'> Close games only <span class="sub">(decided by 10 or fewer)</span></label>'+
