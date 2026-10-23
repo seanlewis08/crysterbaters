@@ -6841,7 +6841,10 @@ var Rotations=(function(){
   }
   var GCOLS="game_id,team,opp,home,date,pts,opp_pts,close,players_used,ninth_min,bench_min,starter_share,max_min,max_who,min_starters,low_starter_min,all_five_min,starter_stints,starter_stint_min,lineups,by_starters";
   function loadGames(){
-    return rest("rotation_games?select="+GCOLS+"&order=date.desc,game_id.desc&limit=6000").then(function(rows){
+    /* a column the schema hasn't been given yet (42703) is dropped from the read, so the page still works */
+    var cols=GCOLS;
+    function read(){ return rest("rotation_games?select="+cols+"&order=date.desc,game_id.desc&limit=6000").catch(function(e){ var m=/column rotation_games\.(\w+) does not exist/.exec(e.message||""); if(m&&cols.indexOf(m[1])>=0){ cols=cols.split(",").filter(function(c){return c!==m[1];}).join(","); return read(); } throw e; }); }
+    return read().then(function(rows){
       games=rows.map(function(r){ ["pts","opp_pts","players_used","ninth_min","bench_min","starter_share","max_min","min_starters","low_starter_min","all_five_min","starter_stints","starter_stint_min","lineups"].forEach(function(k){ r[k]=Number(r[k]); }); return r; });
       loaded=true; loadErr="";
     }).catch(function(e){ loaded=true; loadErr=e.message||"couldn't read"; if(!games) games=[]; });
