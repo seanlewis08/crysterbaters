@@ -1124,6 +1124,7 @@ create table if not exists public.rotation_games (
   built_at         timestamptz not null default now(),
   primary key (game_id, team)
 );
+alter table public.rotation_games add column if not exists starter_stint_min numeric(5,1) not null default 0;  -- average length of a starter's stint, minutes
 create index if not exists rotation_games_date on public.rotation_games (date desc);
 create index if not exists rotation_games_team on public.rotation_games (team, date desc);
 

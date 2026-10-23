@@ -84,6 +84,8 @@ function teamMetrics(g, tri) {
     lowStarterMin: r1((starterSec(0) + starterSec(1)) / 60),
     allFiveMin: r1(starterSec(5) / 60),
     starterStints: ids.filter((id) => starters.has(id)).reduce((s, id) => s + nst[id], 0),
+    // how long a starter stays out there per trip: starters' minutes over their stints
+    starterStintMin: (function () { const n = ids.filter((id) => starters.has(id)).reduce((s, id) => s + nst[id], 0); return r1(n ? startMin / n : 0); })(),
     lineups: unitList.length,
     units: unitList.slice(0, 8).map((u) => ({ who: u.ids.slice().sort((x, y) => mins[y] - mins[x]).map((id) => name[id]), min: r1(u.sec / 60), pm: u.pm, stints: u.n, starters: u.ids.filter((id) => starters.has(id)).length })),
     segments: segs.map((s) => [r1(s[0] / 60), r1(s[1] / 60), s[2]]),
@@ -119,7 +121,7 @@ function rows(m, entry) {
     games.push({
       game_id: m.gameId, team: tri, opp: isHome ? m.away : m.home, home: isHome, date: entry.date, pts: pts, opp_pts: opp, close: close,
       players_used: t.playersUsed, ninth_min: t.ninthMin, bench_min: t.benchMin, starter_share: t.starterShare, max_min: t.maxMin, max_who: t.maxWho,
-      min_starters: t.minStarters, low_starter_min: t.lowStarterMin, all_five_min: t.allFiveMin, starter_stints: t.starterStints, lineups: t.lineups,
+      min_starters: t.minStarters, low_starter_min: t.lowStarterMin, all_five_min: t.allFiveMin, starter_stints: t.starterStints, starter_stint_min: t.starterStintMin, lineups: t.lineups,
       by_starters: t.byStarters, detail: { units: t.units, segments: t.segments, players: t.players }, built_at: new Date().toISOString(),
     });
     t.players.forEach((p) => players.push({ game_id: m.gameId, date: entry.date, team: tri, opp: isHome ? m.away : m.home, player_id: p.id, name: p.name, starter: p.starter, minutes: p.min, stints: p.stints, rank: p.rank }));
@@ -137,9 +139,15 @@ async function sync(opts) {
   const entries = [];
   (index.dates || []).forEach((d) => (d.games || []).forEach((g) => entries.push({ gameId: String(g.gameId), date: d.date, home: g.home, away: g.away })));
   out.published = entries.length;
-  const have = new Set((await supa.select("rotation_games", "select=game_id&limit=10000")).map((r) => r.game_id));
+  // stored games; one computed before a column existed (starter_stint_min = 0) is pulled again
+  let stored;
+  try { stored = await supa.select("rotation_games", "select=game_id,starter_stint_min&limit=10000"); }
+  catch (e) { stored = (await supa.select("rotation_games", "select=game_id&limit=10000")).map((r) => ({ game_id: r.game_id, starter_stint_min: 1 })); }
+  const stale = new Set(stored.filter((r) => !(Number(r.starter_stint_min) > 0)).map((r) => r.game_id));
+  const have = new Set(stored.map((r) => r.game_id).filter((g) => !stale.has(g)));
   out.stored = have.size;
-  const missing = entries.filter((e) => !have.has(e.gameId)).sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : a.gameId < b.gameId ? -1 : 1));
+  // newest first: the page is opened for last night, and the older games follow on the next call
+  const missing = entries.filter((e) => !have.has(e.gameId)).sort((a, b) => (a.date > b.date ? -1 : a.date < b.date ? 1 : a.gameId < b.gameId ? -1 : 1));
   out.missing = missing.length;
   for (const e of missing) {
     if (out.added.length >= limit) { out.notes.push("limit of " + limit + " games per call; " + (missing.length - out.added.length - out.skipped.length) + " left"); break; }

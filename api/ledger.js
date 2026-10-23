@@ -165,7 +165,7 @@ async function adp(req, res) {
 async function rotations(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   try {
-    const r = await rotation.sync({ deadline: Date.now() + 25000, limit: 12 });
+    const r = await rotation.sync({ deadline: Date.now() + 25000, limit: 15 });
     // the page calls this on open; the edge answers repeats for a while so a busy night can't fan out
     res.setHeader("Cache-Control", "public, s-maxage=300, stale-while-revalidate=900");
     return res.status(200).json(Object.assign({ built: new Date().toISOString(), source: rotation._base() }, r));
