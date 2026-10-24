@@ -1152,3 +1152,64 @@ drop policy if exists rotation_players_read on public.rotation_players;
 create policy rotation_players_read on public.rotation_players for select to anon, authenticated using (true);
 grant select on public.rotation_games, public.rotation_players to anon, authenticated;
 grant all on public.rotation_games, public.rotation_players to service_role;
+
+-- 15. Usage (added 2026-10-24): who the offense runs through, read from the same
+-- popcornmachine gameflows as §14 and filled by the same sync (api/_lib/usage.js).
+-- One usage_games row per team per game, one usage_players row per player per
+-- game; the page adds rows up for whatever span of games it shows and computes
+-- USG%, possession share and Offensive Load from the sums.
+create table if not exists public.usage_games (
+  game_id   text not null check (game_id ~ '^[0-9]{10}$'),
+  team      text not null,
+  opp       text not null default '',
+  home      boolean not null default false,
+  date      date not null,
+  min       numeric(6,1) not null default 0,     -- player-minutes the team logged (240 in regulation)
+  poss      numeric(6,1) not null default 0,     -- FGA + 0.44·FTA + TOV
+  fga       integer not null default 0,
+  fta       integer not null default 0,
+  tov       integer not null default 0,
+  q         jsonb not null default '[]'::jsonb,  -- per period: {min, pos}; index 4 is overtime
+  pt        jsonb not null default '{}'::jsonb,  -- play type → attempts
+  zone      jsonb not null default '{}'::jsonb,  -- distance band → attempts
+  built_at  timestamptz not null default now(),
+  primary key (game_id, team)
+);
+create index if not exists usage_games_date on public.usage_games (date desc);
+create index if not exists usage_games_team on public.usage_games (team, date desc);
+
+create table if not exists public.usage_players (
+  game_id   text not null check (game_id ~ '^[0-9]{10}$'),
+  date      date not null,
+  team      text not null,
+  opp       text not null default '',
+  player_id text not null,
+  name      text not null,
+  starter   boolean not null default false,
+  min       numeric(5,1) not null default 0,
+  fga       integer not null default 0,
+  fta       integer not null default 0,
+  tov       integer not null default 0,
+  pts       integer not null default 0,
+  ast       integer not null default 0,
+  fgm       integer not null default 0,
+  fg3a      integer not null default 0,
+  fg3m      integer not null default 0,
+  ast_fg    integer not null default 0,          -- made shots that were assisted
+  q         jsonb not null default '[]'::jsonb,  -- per period: {min, pos, fga}
+  pt        jsonb not null default '{}'::jsonb,  -- play type → [attempts, makes]
+  zone      jsonb not null default '{}'::jsonb,  -- distance band → [attempts, makes]
+  z14       jsonb,                               -- NBA shot-chart zone → [attempts, makes]; null without coordinates
+  primary key (game_id, player_id)
+);
+create index if not exists usage_players_name on public.usage_players (name, date desc);
+create index if not exists usage_players_team on public.usage_players (team, date desc);
+
+alter table public.usage_games   enable row level security;
+alter table public.usage_players enable row level security;
+drop policy if exists usage_games_read on public.usage_games;
+create policy usage_games_read on public.usage_games for select to anon, authenticated using (true);
+drop policy if exists usage_players_read on public.usage_players;
+create policy usage_players_read on public.usage_players for select to anon, authenticated using (true);
+grant select on public.usage_games, public.usage_players to anon, authenticated;
+grant all on public.usage_games, public.usage_players to service_role;

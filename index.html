@@ -190,6 +190,102 @@ nav button:focus-visible{outline:1px solid var(--amber);outline-offset:-4px}
 .subnav button[aria-current="page"]::after{content:"";position:absolute;left:10px;right:10px;bottom:0;height:2px;background:var(--amber)}
 .subnav button:focus-visible{outline:1px solid var(--amber);outline-offset:-4px}
 
+/* ---------- usage ---------- */
+:root{--uq1:#F7E8DA;--uq2:#F0CBA8;--uq3:#E8A46E;--uq4:#D9763A;--uq5:#B5491A;--ugrid:#E8DFCF;--umark:#D9763A}
+.us-rail{display:grid;grid-template-columns:auto 1fr;gap:5px 12px;align-items:center;margin:0 0 16px}
+.us-conf{font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;color:var(--muted);text-transform:uppercase}
+.us-row{display:flex;flex-wrap:wrap;gap:4px}
+.us-chip{font:inherit;font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.06em;padding:5px 8px;border:1px solid var(--line-2);border-radius:3px;background:var(--surface);color:var(--muted);cursor:pointer}
+.us-chip:hover{color:var(--ink)}
+.us-chip.on{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.us-chip:disabled{opacity:.35;cursor:default}
+.us-chip:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+.us-hd{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:0 0 14px}
+.us-hd h3{font-family:var(--disp);font-size:26px;font-weight:800;text-transform:uppercase;letter-spacing:.02em;margin:0;line-height:1}
+.us-hd .us-ctl{margin:0 0 0 auto}
+.us-logo{width:44px;height:44px;object-fit:contain}
+.us-ctl{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+.us-kpis.four{grid-template-columns:repeat(4,1fr);margin-bottom:14px}
+.us-kpis .stat{padding:12px 14px 13px;min-width:0}
+.us-kpis .stat dd{font-size:28px}
+.us-kpis .stat>small{display:block;font-family:var(--mono);font-size:10px;color:var(--dim);margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media (max-width:760px){.us-kpis.four{grid-template-columns:1fr 1fr}}
+.us-mix{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px}
+@media (max-width:760px){.us-mix{grid-template-columns:1fr}}
+.us-phd{padding:9px 14px;font-family:var(--mono);font-size:9.5px;letter-spacing:.15em;text-transform:uppercase;color:var(--dim);display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.us-phd b{font-weight:600;color:var(--muted);letter-spacing:.06em;text-transform:none;font-family:var(--body);font-size:12px}
+.us-cmp{display:grid;grid-template-columns:auto 1fr auto auto;gap:6px 10px;align-items:center;padding:12px 14px 6px;font-size:12.5px}
+.us-cmp .lb{white-space:nowrap;color:var(--ink)}
+.us-cmp .tr{position:relative;height:12px;background:var(--ugrid);border-radius:0 4px 4px 0}
+.us-cmp .tr i{display:block;height:100%;background:var(--umark);border-radius:0 4px 4px 0;min-width:2px}
+.us-cmp .tr em{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--ink);border-radius:1px}
+.us-cmp .v{font-family:var(--mono);font-size:12px;font-weight:600;text-align:right;min-width:34px}
+.us-cmp .d{font-family:var(--mono);font-size:10.5px;text-align:right;min-width:40px;color:var(--muted)}
+.us-cmp .d.up{color:var(--green)}.us-cmp .d.dn{color:var(--red)}
+.us-cmpkey{display:flex;gap:14px;padding:2px 14px 12px;font-family:var(--mono);font-size:10px;color:var(--dim);flex-wrap:wrap}
+.us-cmpkey i{display:inline-block;width:10px;height:8px;background:var(--umark);border-radius:0 2px 2px 0;vertical-align:-1px;margin-right:5px}
+.us-cmpkey em{display:inline-block;width:2px;height:11px;background:var(--ink);vertical-align:-2px;margin-right:6px}
+.us-legend{padding:12px 14px;font-family:var(--mono);font-size:10.5px;color:var(--muted)}
+.us-wrap{overflow:auto;max-height:none}
+.us-table{border-collapse:separate;border-spacing:0;width:100%;min-width:1080px;font-size:12.5px}
+.us-table thead th{position:sticky;top:0;z-index:2;font-family:var(--mono);font-size:9px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);background:var(--surface-2);padding:6px 8px;text-align:left;border-bottom:1px solid var(--line-2);white-space:nowrap;cursor:pointer;user-select:none}
+.us-table thead tr.grp th{padding:5px 8px 3px;border-bottom:0;color:var(--muted);letter-spacing:.16em;text-align:center;cursor:default;font-size:8.5px}
+.us-table thead tr.col th{top:22px}
+.us-table thead th.on{color:var(--amber)}
+.us-table thead th.on::after{content:" \25BE";font-size:8px}
+.us-table thead th.on.asc::after{content:" \25B4"}
+.us-table thead th:hover{color:var(--ink)}
+.us-table th.gl,.us-table td.gl{border-left:1px solid var(--line-2)}
+.us-table td{padding:0 8px;height:36px;border-bottom:1px solid var(--line);vertical-align:middle;white-space:nowrap}
+.us-table td.num,.us-table th.num{text-align:right;font-variant-numeric:tabular-nums}
+.us-table td.num{font-family:var(--mono);font-size:12.5px;font-weight:500}
+.us-table td.key{font-weight:600;color:var(--ink)}
+.us-table td.dimmed{color:var(--dim);font-weight:400}
+.us-table tr.pl{cursor:pointer}
+.us-table tr.pl:hover td{background:var(--amber-glow)}
+.us-table tr.pl.open td{background:var(--amber-glow);border-bottom-color:transparent}
+.us-table td.name,.us-table thead th:first-child{position:sticky;left:0;z-index:1;background:var(--surface);border-right:1px solid var(--line)}
+.us-table thead th:first-child{z-index:3;background:var(--surface-2)}
+.us-table tr.pl:hover td.name,.us-table tr.pl.open td.name{background:#F3E4D4}
+.us-table td.name{min-width:190px}
+.us-table td.name b{font-weight:600;font-size:13px}
+.us-table td.name small{font-family:var(--mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);margin-left:7px}
+.us-ss{display:inline-block;font-family:var(--mono);font-size:8.5px;letter-spacing:.08em;color:var(--dim);border:1px dashed var(--line-2);border-radius:2px;padding:0 4px;margin-left:6px;vertical-align:middle}
+.us-tlink{font:inherit;font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.06em;background:none;border:0;padding:0;color:var(--amber);cursor:pointer}
+.us-sb{display:inline-flex;align-items:center;gap:8px;justify-content:flex-end}
+.us-sb i{display:inline-block;height:8px;border-radius:0 4px 4px 0;background:var(--umark);min-width:2px}
+.us-sb b{font-weight:600;min-width:34px;text-align:right}
+.us-heat{display:grid;grid-template-columns:repeat(4,28px);gap:2px;width:118px}
+.us-heat span{display:flex;height:20px;width:28px;border-radius:2px;align-items:center;justify-content:center;font-family:var(--mono);font-size:10px;font-weight:600;color:var(--ink)}
+.us-heat span.na{background:transparent;border:1px dashed var(--line-2)}
+.us-heat span.pk{outline:1.5px solid var(--ink);outline-offset:-1.5px}
+.us-heatkey{display:inline-flex;align-items:center;gap:4px;font-family:var(--mono);font-size:8.5px;letter-spacing:.06em;color:var(--dim);text-transform:none;margin-left:8px}
+.us-heatkey i{display:inline-block;width:10px;height:8px;border-radius:1px}
+.us-table tr.det td{padding:0 0 14px;background:var(--amber-glow);white-space:normal}
+.us-drawer{display:grid;grid-template-columns:1.1fr 1fr 1fr;gap:12px;padding:6px 10px 2px}
+@media (max-width:900px){.us-drawer{grid-template-columns:1fr 1fr}}
+@media (max-width:560px){.us-drawer{grid-template-columns:1fr}}
+.us-card{background:var(--surface);border:1px solid var(--line);border-radius:4px;padding:10px 12px 12px;min-width:0}
+.us-card h4{margin:0 0 8px;font-family:var(--mono);font-size:9.5px;letter-spacing:.15em;text-transform:uppercase;color:var(--dim);font-weight:600;display:flex;justify-content:space-between;gap:8px}
+.us-card h4 span{font-family:var(--body);letter-spacing:0;text-transform:none;color:var(--muted);font-weight:500;font-size:11.5px}
+.us-bars{display:grid;grid-template-columns:auto 1fr auto;gap:7px 10px;align-items:center;font-size:12.5px}
+.us-bars .lb{white-space:nowrap;color:var(--ink)}
+.us-bars .tr{height:12px;background:var(--ugrid);border-radius:0 4px 4px 0}
+.us-bars .tr i{display:block;height:100%;background:var(--umark);border-radius:0 4px 4px 0;min-width:2px}
+.us-bars .v{font-family:var(--mono);font-size:11px;color:var(--muted);white-space:nowrap;text-align:right;min-width:72px}
+.us-bars .v b{color:var(--ink);font-weight:600}
+.us-court{width:100%;height:auto;display:block}
+.us-qgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;align-items:end;height:124px;padding-top:14px;border-bottom:1px solid var(--ugrid);position:relative}
+.us-qgrid::before{content:"";position:absolute;left:0;right:0;top:calc(14px + 50%);border-top:1px solid var(--ugrid)}
+.us-qcol{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:4px;position:relative;z-index:1}
+.us-qcol i{display:block;width:24px;background:var(--umark);border-radius:4px 4px 0 0;min-height:2px}
+.us-qcol i.na{background:transparent;border:1px dashed var(--line-2);border-bottom:0}
+.us-qcol b{font-family:var(--mono);font-size:11.5px;font-weight:600;color:var(--ink)}
+.us-qcol.mute b{color:var(--muted);font-weight:500}
+.us-qlbl{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:5px}
+.us-qlbl small{text-align:center;font-family:var(--mono);font-size:9px;letter-spacing:.1em;color:var(--dim)}
+.us-qnote{font-size:12px;margin:8px 2px 0}
+
 /* ---------- ticker ---------- */
 .ticker{border-bottom:1px solid var(--line);background:var(--surface)}
 .ticker-in{
@@ -1442,6 +1538,21 @@ footer p + p{margin-top:11px}
     </section>
   </div>
 
+  <!-- ================= USAGE ================= -->
+  <div class="view" id="v-usage">
+    <section>
+      <div class="sec-head"><h2>Usage</h2><span class="eyebrow cool" id="us-eyebrow">Loading…</span></div>
+      <div class="rulebar"></div>
+      <p class="lede">Who the offense runs through: how much of each team’s possessions every player finishes, how he gets his shots and where on the floor they come from, and how his usage moves quarter by quarter. Read from the same gameflows on <a href="https://seanlewis08.github.io/popcornmachine/" target="_blank" rel="noopener">popcornmachine</a> as the Rotations page.</p>
+      <div class="seg" id="us-tabs" style="margin-top:16px;flex-wrap:wrap">
+        <button type="button" class="on" data-ustab="team">Team</button>
+        <button type="button" data-ustab="mine">My guys</button>
+      </div>
+      <div id="us-body" style="margin-top:14px"><div class="empty" style="padding:18px">Reading the usage tables…</div></div>
+      <p class="sub" id="us-foot" style="margin-top:12px"></p>
+    </section>
+  </div>
+
   <!-- ================= DRAFT ================= -->
   <div class="view" id="v-draft">
     <section>
@@ -2521,6 +2632,7 @@ document.getElementById("watch").innerHTML=K.map(function(k){
     {go:"players", n:"—",        lbl:"Players",  h:"Players",    p:"Every NBA player: season stats, value in our nine categories, who owns him here, and what he makes against the cap.", id:"hc-players"},
     {go:"plot",    n:"—",        lbl:"Plotted",  h:"Analysis",   p:"Swarms, scatters, leaderboards and tier lists from every stat we track — then copy the picture for the chat.", id:"hc-plot"},
     {go:"rotations",n:"—",       lbl:"Games",    h:"Rotations",  p:"How deep every NBA bench really goes, who never leaves the floor, and your own guys’ minutes game by game — from the gameflows on popcornmachine.", id:"hc-rot"},
+    {go:"usage",   n:"—",        lbl:"Games",    h:"Usage",      p:"Who each NBA offense runs through: possessions, play types, shot zones and usage by quarter for every player — the other half of the gameflows.", id:"hc-usage"},
     {go:"draft",   n:"120",      lbl:"Picks",    h:"Draft Results",p:"The 2026–27 board as it happened, every pick with who took him, and last year's board beside it."},
     {go:"cap",     n:"30",       lbl:"Per week", h:"Games Cap",  p:"Work out the adjusted cap for short weeks without doing the arithmetic by hand."},
     {go:"keepers", n:String(kCount), lbl:"Declared", h:"Keepers", p:"The calculator that settles arguments, and the ladder every declared keeper has left."},
@@ -7098,20 +7210,267 @@ var Rotations=(function(){
     document.addEventListener("cb:liveteams",function(){ if(tab==="mine"||tab==="game") paint(); });
     if(window.Polls&&Polls.onAuth) Polls.onAuth(function(){ if(!my.team&&myTeamId()) my.team=myTeamId(); if(tab==="mine") paint(); });
   }
-  return {onView:function(v){ if(v==="rotations") open(); }, repaint:paint, games:function(){ return games; }, _metrics:{seasonRows:seasonRows,leagueMedians:leagueMedians}};
+  return {onView:function(v){ if(v==="rotations") open(); }, repaint:paint, games:function(){ return games; }, sync:sync, note:function(){ return syncNote; }, pnorm:pnorm, fmtDate:fmtDate, teamName:teamName, logo:logo, _metrics:{seasonRows:seasonRows,leagueMedians:leagueMedians}};
 })();
-window.Rotations=Rotations;
+var Usage=(function(){
+  /* Who the offense runs through. Reads usage_games / usage_players (filled by the same sync as
+     Rotations from popcornmachine's gameflows), adds the rows up for the span of games on show and
+     works out USG%, possession share and Offensive Load from the sums. */
+  var CONF={East:["ATL","BOS","BKN","CHA","CHI","CLE","DET","IND","MIA","MIL","NYK","ORL","PHI","TOR","WAS"],West:["DAL","DEN","GSW","HOU","LAC","LAL","MEM","MIN","NOP","OKC","PHX","POR","SAC","SAS","UTA"]};
+  var PT=[["drive","Drives"],["pullup","Pull-ups"],["spot","Spot-ups"],["finish","Finishes at the rim"],["cut","Cuts"],["post","Post / turnarounds"],["transition","Transition"],["putback","Putbacks"]];
+  var PT6=[["drive","Drives"],["pullup","Pull-ups"],["spot","Spot-ups"],["transition","Transition"],["cut","Cuts"],["other","Post, putbacks, finishes"]];
+  var ZN=[["rim","0–8 ft"],["paint","8–16 ft"],["mid","16 ft to the line"],["three","Three"]];
+  var COLS=[
+    {k:"min",h:"Min",t:"Minutes a game",f:1},
+    {k:"pos",h:"Poss/g",t:"Possessions he finished a game: FGA + 0.44·FTA + TOV",f:1,grp:"Volume",key:true,bar:true},
+    {k:"share",h:"Poss share",t:"His possessions as a share of all the team’s possessions in these games",pct:true,f:1,key:true},
+    {k:"usg",h:"USG%",t:"Usage rate: share of the team’s possessions he finishes while he is on the floor",f:1,grp:"Rate",rate:true},
+    {k:"load",h:"Load",t:"Offensive Load (Ben Taylor): possessions used plus assists and estimated created shots, per 100 team possessions he was on the floor for",f:1,rate:true},
+    {k:"fga",h:"FGA",grp:"Box",f:1},{k:"fta",h:"FTA",f:1},{k:"tov",h:"TOV",f:1},{k:"ast_g",h:"AST",t:"Assists a game",f:1},
+    {k:"ast_rate",h:"Ast’d",t:"Made shots that were assisted",pct:true,f:0,rate:true}
+  ];
+  var games=null, loaded=false, loadErr="", started=false;
+  var teams={};                       /* tri -> {rows, loading, err} */
+  var st={tab:"team",team:"",scope:"season",sort:"pos",asc:false,open:{}};
+  var my={team:"",rows:null,loading:false,err:""};
+  function $(id){ return document.getElementById(id); }
+  function R(){ return window.Rotations||{}; }
+  function pnorm(n){ return R().pnorm?R().pnorm(n):String(n||"").toLowerCase(); }
+  function fmtDate(d){ return R().fmtDate?R().fmtDate(d):d; }
+  function teamName(t){ return R().teamName?R().teamName(t):t; }
+  function logo(t){ return R().logo?R().logo(t):""; }
+  function rest(path){
+    return fetch(SB.url+"/rest/v1/"+path,{headers:{apikey:SB.anon,Accept:"application/json"}}).then(function(r){ if(!r.ok) return r.text().then(function(t){ throw new Error("Supabase answered "+r.status+(t?": "+t.slice(0,120):"")); }); return r.json(); });
+  }
+  function num(r,keys){ keys.forEach(function(k){ r[k]=Number(r[k])||0; }); return r; }
+  var PCOLS="game_id,date,team,opp,player_id,name,starter,min,fga,fta,tov,pts,ast,fgm,fg3a,fg3m,ast_fg,q,pt,zone,z14";
+  var PNUM=["min","fga","fta","tov","pts","ast","fgm","fg3a","fg3m","ast_fg"];
+  function loadGames(){
+    return rest("usage_games?select=game_id,team,opp,home,date,min,poss,fga,fta,tov,q,pt,zone&order=date.desc,game_id.desc&limit=6000").then(function(rows){
+      games=rows.map(function(r){ return num(r,["min","poss","fga","fta","tov"]); }); loaded=true; loadErr="";
+    }).catch(function(e){ loaded=true; loadErr=e.message||"couldn't read"; if(!games) games=[]; });
+  }
+  function ensure(){
+    if(games&&loaded) return Promise.resolve();
+    var s=R().sync?R().sync():Promise.resolve();
+    return s.then(loadGames);
+  }
+  function loadTeam(tri){
+    var t=teams[tri]=teams[tri]||{}; if(t.rows||t.loading) return; t.loading=true; t.err="";
+    rest("usage_players?select="+PCOLS+"&team=eq."+encodeURIComponent(tri)+"&order=date.desc&limit=4000").then(function(rows){ t.rows=rows.map(function(r){ return num(r,PNUM); }); t.loading=false; paint(); })
+      .catch(function(e){ t.loading=false; t.err=e.message; t.rows=[]; paint(); });
+  }
+  function myTeamId(){ var p=window.Polls&&Polls.profile?Polls.profile():null; return p&&p.team_id?p.team_id:""; }
+  function loadMine(tid){
+    var t=byId(tid); if(!t) return;
+    my.loading=true; my.rows=null; my.err="";
+    var names=(t.roster||[]).map(function(r){return r[1];}).filter(function(n){ return n&&n!=="(Empty)"; });
+    var or="or=("+names.map(function(n){ return "name.eq."+encodeURIComponent('"'+n.replace(/"/g,'')+'"'); }).join(",")+")";
+    rest("usage_players?select="+PCOLS+"&"+or+"&order=date.desc&limit=3000").then(function(rows){
+      var byName={}; rows.forEach(function(r){ num(r,PNUM); var k=pnorm(r.name); (byName[k]=byName[k]||[]).push(r); });
+      my.rows={team:tid,names:names,byName:byName}; my.loading=false; paint();
+    }).catch(function(e){ my.loading=false; my.err=e.message; paint(); });
+  }
 
-var views={home:"v-home",teams:"v-teams",team:"v-team",players:"v-players",plot:"v-plot",rotations:"v-rotations",draft:"v-draft",cap:"v-cap",keepers:"v-keepers",polls:"v-polls",pollhist:"v-pollhist",agenda:"v-agenda",issues:"v-issues",sched:"v-sched",dues:"v-dues",badges:"v-badges",signup:"v-signup",manager:"v-manager",history:"v-history",rules:"v-rules"};
+  /* ----- adding games up ----- */
+  function spanIds(tri){ var gs=(games||[]).filter(function(g){return g.team===tri;}); if(st.scope!=="season") gs=gs.slice(0,Number(st.scope)); var o={}; gs.forEach(function(g){ o[g.game_id]=g; }); return o; }
+  function teamSum(ids){
+    var T={gp:0,min:0,poss:0,fga:0,q:[0,1,2,3,4].map(function(){return {min:0,pos:0};}),pt:{},zone:{}};
+    Object.keys(ids).forEach(function(id){ var g=ids[id]; T.gp++; T.min+=g.min; T.poss+=g.poss; T.fga+=g.fga;
+      (g.q||[]).forEach(function(x,i){ if(T.q[i]){ T.q[i].min+=Number(x.min)||0; T.q[i].pos+=Number(x.pos)||0; } });
+      Object.keys(g.pt||{}).forEach(function(k){ T.pt[k]=(T.pt[k]||0)+g.pt[k]; }); Object.keys(g.zone||{}).forEach(function(k){ T.zone[k]=(T.zone[k]||0)+g.zone[k]; }); });
+    return T;
+  }
+  function addPair(o,src){ Object.keys(src||{}).forEach(function(k){ var v=o[k]||(o[k]=[0,0]); v[0]+=src[k][0]||0; v[1]+=src[k][1]||0; }); }
+  function boxCreation(ast,pts,tov,fg3a,fg3m){ var prof=(2/(1+Math.exp(-fg3a))-1)*(fg3a?fg3m/fg3a:0); return ast*0.1843+(pts+tov)*0.0969-2.3021*prof+0.0582*(ast*(pts+tov)*prof)-1.1942; }
+  function r1(x){ return Math.round(x*10)/10; }
+  /* one player's line from his game rows inside a span, against his team's totals for the same span */
+  function playerLine(rows,T){
+    var a={gp:0,starter:0,min:0,fga:0,fta:0,tov:0,pts:0,ast:0,fgm:0,fg3a:0,fg3m:0,ast_fg:0,q:[0,1,2,3,4].map(function(){return {min:0,pos:0,fga:0};}),pt:{},zone:{},z14:{},hasZ:false};
+    rows.forEach(function(r){ a.gp++; if(r.starter) a.starter++; PNUM.forEach(function(k){ a[k]+=r[k]; });
+      (r.q||[]).forEach(function(x,i){ if(a.q[i]){ a.q[i].min+=Number(x.min)||0; a.q[i].pos+=Number(x.pos)||0; a.q[i].fga+=Number(x.fga)||0; } });
+      addPair(a.pt,r.pt); addPair(a.zone,r.zone); if(r.z14){ addPair(a.z14,r.z14); a.hasZ=true; } });
+    if(!a.gp) return null;
+    var poss=a.fga+0.44*a.fta+a.tov, tposs=T.poss||0, tmin=T.min||0, gp=a.gp;
+    var usg=tposs&&a.min?100*poss*(tmin/5)/(a.min*tposs):0;
+    var onfloor=tmin?tposs*a.min/(tmin/5):0, sc=onfloor?100/onfloor:0;
+    var bc=boxCreation(a.ast*sc,a.pts*sc,a.tov*sc,a.fg3a*sc,a.fg3m*sc);
+    var load=(a.ast*sc-0.38*bc)*0.75+a.fga*sc+a.fta*sc*0.44+bc+a.tov*sc;
+    var q=a.q.map(function(x,i){ var tq=T.q[i]; var u=(x.min>=0.5&&tq&&tq.pos>0)?100*x.pos*(tq.min/5)/(x.min*tq.pos):null; return {min:r1(x.min/gp),usg:u==null?null:r1(u),fga:x.fga}; });
+    return {name:rows[0].name,id:rows[0].player_id,team:rows[0].team,gp:gp,starter:a.starter,min:r1(a.min/gp),usg:r1(usg),pos:r1(poss/gp),share:tposs?r1(100*poss/tposs):0,load:r1(load),creation:r1(bc),
+      ast_g:r1(a.ast/gp),fga:r1(a.fga/gp),fta:r1(a.fta/gp),tov:r1(a.tov/gp),pts:a.pts,ast:a.ast,fgaTot:a.fga,ast_rate:a.fgm?Math.round(100*a.ast_fg/a.fgm):null,q:q,pt:a.pt,zone:a.zone,z14:a.hasZ?a.z14:null,last:rows[0]};
+  }
+  function teamLines(tri){
+    var ids=spanIds(tri), T=teamSum(ids), by={};
+    ((teams[tri]&&teams[tri].rows)||[]).forEach(function(r){ if(ids[r.game_id]) (by[r.player_id]=by[r.player_id]||[]).push(r); });
+    var lines=Object.keys(by).map(function(id){ return playerLine(by[id],T); }).filter(Boolean);
+    return {T:T,lines:lines};
+  }
+  function leagueMix(){ var L={pt:{},zone:{}}; (games||[]).forEach(function(g){ var p6=fold6(g.pt); Object.keys(p6).forEach(function(k){ L.pt[k]=(L.pt[k]||0)+p6[k]; }); Object.keys(g.zone||{}).forEach(function(k){ L.zone[k]=(L.zone[k]||0)+g.zone[k]; }); }); return L; }
+  function fold6(pt){ var o={}; PT6.forEach(function(k){o[k[0]]=0;}); Object.keys(pt||{}).forEach(function(k){ var v=Array.isArray(pt[k])?pt[k][0]:pt[k]; if(o[k]!=null) o[k]+=v; else o.other+=v; }); return o; }
+  function pct(m,a){ return a?Math.round(100*m/a)+"%":"—"; }
+
+  /* ----- pieces ----- */
+  function cmpHtml(obj,keys,lg){ var tot=0,ltot=0; keys.forEach(function(k){ tot+=obj[k[0]]||0; ltot+=lg[k[0]]||0; }); if(!tot) return '<div class="us-legend">No shots stored.</div>';
+    var rows=keys.map(function(k){ return {n:k[1],t:100*(obj[k[0]]||0)/tot,l:ltot?100*(lg[k[0]]||0)/ltot:0}; }).sort(function(a,b){return b.t-a.t;});
+    var mx=Math.max.apply(null,rows.map(function(r){return Math.max(r.t,r.l);}).concat([10]))*1.08;
+    return '<div class="us-cmp">'+rows.map(function(r){ var d=r.t-r.l; return '<span class="lb">'+r.n+'</span><span class="tr" title="'+r.n+': team '+r.t.toFixed(1)+'%, league '+r.l.toFixed(1)+'%"><i style="width:'+(100*r.t/mx).toFixed(1)+'%"></i><em style="left:'+(100*r.l/mx).toFixed(1)+'%"></em></span><span class="v">'+Math.round(r.t)+'%</span><span class="d '+(d>=2?'up':(d<=-2?'dn':''))+'">'+(d>0?'+':'')+d.toFixed(0)+'</span>'; }).join("")+'</div>'+
+      '<div class="us-cmpkey"><span><i></i>this team</span><span><em></em>league, every stored game</span><span>± = points above or below the league</span></div>'; }
+  function heatCls(v){ return v==null?0:(v<10?1:(v<18?2:(v<25?3:(v<32?4:5)))); }
+  function qbar(q){ var pk=-1,mx=-1; q.slice(0,4).forEach(function(x,i){ if(x.usg!=null&&x.usg>mx){mx=x.usg;pk=i;} });
+    return '<div class="us-heat" role="img" aria-label="usage by quarter">'+q.slice(0,4).map(function(x,i){ if(x.usg==null) return '<span class="na" title="Q'+(i+1)+': under 30 seconds played"></span>'; var c=heatCls(x.usg); return '<span class="'+(i===pk?'pk':'')+'" style="background:var(--uq'+c+');'+(c>=4?'color:#fff':'')+'" title="Q'+(i+1)+' · '+x.usg+'% usage · '+x.min+' min a game">'+Math.round(x.usg)+'</span>'; }).join("")+'</div>'; }
+  /* the court: NBA half court to scale, 10 units = 1 ft, basket at (250,52.5); fifteen NBA zones as sectors clipped by the paint and the arc */
+  var CX=250,CY=52.5,R3=237.5,CORNER_Y=142,COURT_H=470,WOOD="#D6A76A",WL="#FFFFFF",HUE="#B5491A",INK="#1E1812",INK2="#4A3B2A",MONO="IBM Plex Mono,monospace";
+  function pt(r,deg){ var a=deg*Math.PI/180; return [CX+r*Math.sin(a),CY+r*Math.cos(a)]; }
+  function sector(r1_,r2,a1,a2){ var p1=pt(r1_,a1),p2=pt(r1_,a2),p3=pt(r2,a2),p4=pt(r2,a1),big=(a2-a1)>180?1:0; return 'M'+p1[0].toFixed(1)+' '+p1[1].toFixed(1)+' A'+r1_+' '+r1_+' 0 '+big+' 0 '+p2[0].toFixed(1)+' '+p2[1].toFixed(1)+' L'+p3[0].toFixed(1)+' '+p3[1].toFixed(1)+' A'+r2+' '+r2+' 0 '+big+' 1 '+p4[0].toFixed(1)+' '+p4[1].toFixed(1)+' Z'; }
+  var INNER3='M30 0 L30 '+CORNER_Y+' A'+R3+' '+R3+' 0 0 0 470 '+CORNER_Y+' L470 0 Z', PAINT='M170 0 H330 V190 H170 Z';
+  var ZONES=[
+    {id:"ra",clip:"court",path:'M'+(CX-40)+' '+CY+' A40 40 0 1 0 '+(CX+40)+' '+CY+' A40 40 0 1 0 '+(CX-40)+' '+CY+' Z',lab:[250,76],name:"Restricted area"},
+    {id:"paint",clip:"pnr",path:PAINT,lab:[250,150],name:"In the paint"},
+    {id:"m8l",clip:"mid",path:sector(0,160,-90,-45),lab:[128,70],name:"8–16 ft, left"},{id:"m8c",clip:"mid",path:sector(0,160,-45,45),lab:[250,205],name:"8–16 ft, center"},{id:"m8r",clip:"mid",path:sector(0,160,45,90),lab:[372,70],name:"8–16 ft, right"},
+    {id:"m16l",clip:"mid",path:sector(160,R3,-90,-60),lab:[52,112],name:"16–24 ft, left"},{id:"m16lc",clip:"mid",path:sector(160,R3,-60,-20),lab:[122,195],name:"16–24 ft, left center"},{id:"m16c",clip:"mid",path:sector(160,R3,-20,20),lab:[250,262],name:"16–24 ft, center"},{id:"m16rc",clip:"mid",path:sector(160,R3,20,60),lab:[378,195],name:"16–24 ft, right center"},{id:"m16r",clip:"mid",path:sector(160,R3,60,90),lab:[448,112],name:"16–24 ft, right"},
+    {id:"a3l",clip:"out3",path:sector(R3,600,-90,-30),lab:[82,300],name:"Above the break, left"},{id:"a3c",clip:"out3",path:sector(R3,600,-30,30),lab:[250,372],name:"Above the break, center"},{id:"a3r",clip:"out3",path:sector(R3,600,30,90),lab:[418,300],name:"Above the break, right"},
+    {id:"c3l",clip:"court",path:'M0 0 H30 V'+CORNER_Y+' H0 Z',lab:[15,71],rot:-90,name:"Left corner"},{id:"c3r",clip:"court",path:'M470 0 H500 V'+CORNER_Y+' H470 Z',lab:[485,71],rot:90,name:"Right corner"}
+  ];
+  function courtDefs(u){ return '<defs><clipPath id="'+u+'court"><rect x="0" y="0" width="500" height="'+COURT_H+'"/></clipPath>'+
+    '<clipPath id="'+u+'pnr"><path d="'+PAINT+' M'+(CX-40)+' '+CY+' a40 40 0 1 0 80 0 a40 40 0 1 0 -80 0 Z" clip-rule="evenodd"/></clipPath>'+
+    '<clipPath id="'+u+'mid"><path d="'+INNER3+' '+PAINT+'" clip-rule="evenodd"/></clipPath>'+
+    '<clipPath id="'+u+'out3"><path d="M0 0 H500 V'+COURT_H+' H0 Z '+INNER3+'" clip-rule="evenodd"/></clipPath></defs>'; }
+  function courtLines(){ return '<g fill="none" stroke="'+WL+'" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"><path d="'+INNER3+'"/><path d="'+PAINT+'"/><path d="M190 190 a60 60 0 0 1 120 0"/><path d="M190 190 a60 60 0 0 0 120 0" stroke-dasharray="7 7"/><path d="M190 '+COURT_H+' a60 60 0 0 1 120 0"/><line x1="0" y1="'+COURT_H+'" x2="500" y2="'+COURT_H+'"/><path d="M210 '+CY+' a40 40 0 0 0 80 0"/><line x1="220" y1="40" x2="280" y2="40" stroke-width="4"/></g><circle cx="'+CX+'" cy="'+CY+'" r="7.5" fill="none" stroke="#E8893A" stroke-width="2.5"/>'; }
+  function zoneLabel(z,att,made){ var x=z.lab[0],y=z.lab[1],tr=z.rot?' transform="rotate('+z.rot+' '+x+' '+y+')"':'';
+    if(z.rot&&att) return '<text x="'+x+'" y="'+(y+4)+'" text-anchor="middle" font-family="'+MONO+'" font-size="11" font-weight="600" fill="'+INK+'"'+tr+'>'+made+'-'+att+' · '+(made/att).toFixed(3).replace(/^0/,"")+'</text>';
+    if(!att) return '<text x="'+x+'" y="'+(y+4)+'" text-anchor="middle" font-family="'+MONO+'" font-size="10" fill="'+INK2+'" opacity=".55"'+tr+'>–</text>';
+    return '<g'+tr+'><text x="'+x+'" y="'+y+'" text-anchor="middle" font-family="'+MONO+'" font-size="12.5" font-weight="600" fill="'+INK+'">'+made+'-'+att+'</text><text x="'+x+'" y="'+(y+13)+'" text-anchor="middle" font-family="'+MONO+'" font-size="10.5" fill="'+INK+'">'+(made/att).toFixed(3).replace(/^0/,"")+'</text></g>'; }
+  function fillOp(sh){ return (0.04+0.9*Math.min(1,sh*2.2)).toFixed(2); }
+  function court(p){
+    var u="us"+p.id+"_", z=p.z14, tot=0; if(z) Object.keys(z).forEach(function(k){ tot+=z[k][0]; });
+    if(!tot) return courtRings(p,u);
+    var fills='',labels='';
+    ZONES.forEach(function(zn){ var v=z[zn.id]||[0,0], sh=v[0]/tot;
+      fills+='<path d="'+zn.path+'" clip-path="url(#'+u+zn.clip+')" fill="'+HUE+'" fill-opacity="'+fillOp(sh)+'" stroke="'+WL+'" stroke-opacity=".9" stroke-width="1.5"><title>'+zn.name+': '+v[1]+' of '+v[0]+(v[0]?' ('+Math.round(100*v[1]/v[0])+'%), '+Math.round(100*sh)+'% of his attempts':'')+'</title></path>';
+      labels+=zoneLabel(zn,v[0],v[1]); });
+    return '<svg class="us-court" viewBox="0 0 500 '+COURT_H+'" role="img" aria-label="Shot chart by NBA zone">'+courtDefs(u)+'<rect x="0" y="0" width="500" height="'+COURT_H+'" fill="'+WOOD+'"/>'+fills+courtLines()+labels+
+      '<text x="250" y="'+(COURT_H-10)+'" text-anchor="middle" font-family="'+MONO+'" font-size="9" letter-spacing="1" fill="'+INK2+'">'+(tot<p.fgaTot?tot+' OF '+p.fgaTot+' FGA HAVE A LOCATION · ':'')+'MAKES-ATTEMPTS · FG% · DARKER = MORE OF HIS SHOTS</text></svg>'; }
+  function courtRings(p,u){
+    var zone=p.zone, tot=0; ZN.forEach(function(z){ tot+=(zone[z[0]]||[0,0])[0]; }); function sh(k){ return tot?(zone[k]||[0,0])[0]/tot:0; }
+    var bands=[["three",'M0 0 H500 V'+COURT_H+' H0 Z '+INNER3,"evenodd",[250,360],"THREE"],["mid",INNER3+' M250 -107.5 a160 160 0 1 0 0.01 0 Z',"evenodd",[250,235],"16 FT TO THE LINE"],["paint",'M'+(CX-160)+' '+CY+' a160 160 0 1 0 320 0 a160 160 0 1 0 -320 0 Z',"nonzero",[250,165],"8–16 FT"],["rim",'M'+(CX-80)+' '+CY+' a80 80 0 1 0 160 0 a80 80 0 1 0 -160 0 Z',"nonzero",[250,92],"0–8 FT"]];
+    var fills='',labels='';
+    bands.forEach(function(b){ var v=zone[b[0]]||[0,0]; fills+='<path d="'+b[1]+'" fill-rule="'+b[2]+'" clip-path="url(#'+u+'court)" fill="'+HUE+'" fill-opacity="'+fillOp(sh(b[0]))+'" stroke="'+WL+'" stroke-width="1.5"><title>'+b[4]+': '+v[1]+' of '+v[0]+'</title></path>';
+      labels+='<text x="'+b[3][0]+'" y="'+b[3][1]+'" text-anchor="middle" font-family="'+MONO+'" font-size="12.5" font-weight="600" fill="'+INK+'">'+v[1]+'-'+v[0]+'</text><text x="'+b[3][0]+'" y="'+(b[3][1]+13)+'" text-anchor="middle" font-family="'+MONO+'" font-size="10.5" fill="'+INK+'">'+(v[0]?(v[1]/v[0]).toFixed(3).replace(/^0/,""):"–")+'</text><text x="'+b[3][0]+'" y="'+(b[3][1]+25)+'" text-anchor="middle" font-family="'+MONO+'" font-size="8.5" letter-spacing="1" fill="'+INK2+'">'+b[4]+(tot?' · '+Math.round(100*sh(b[0]))+'%':'')+'</text>'; });
+    return '<svg class="us-court" viewBox="0 0 500 '+COURT_H+'" role="img" aria-label="Attempts by distance from the basket">'+courtDefs(u)+'<rect x="0" y="0" width="500" height="'+COURT_H+'" fill="'+WOOD+'"/>'+fills+courtLines()+labels+
+      '<text x="250" y="'+(COURT_H-10)+'" text-anchor="middle" font-family="'+MONO+'" font-size="9" letter-spacing="1" fill="'+INK2+'">DISTANCE BANDS · NO SHOT COORDINATES IN THESE GAMES</text></svg>'; }
+  function drawer(p){
+    var totPt=0,mxPt=0; PT.forEach(function(k){ var v=(p.pt[k[0]]||[0,0])[0]; totPt+=v; if(v>mxPt) mxPt=v; });
+    var bars='<div class="us-bars">'+PT.filter(function(k){return (p.pt[k[0]]||[0])[0];}).sort(function(a,b){return p.pt[b[0]][0]-p.pt[a[0]][0];}).map(function(k){ var v=p.pt[k[0]]; return '<span class="lb">'+k[1]+'</span><span class="tr" title="'+k[1]+': '+v[0]+' attempts, '+v[1]+' made"><i style="width:'+(100*v[0]/mxPt).toFixed(1)+'%"></i></span><span class="v"><b>'+v[0]+'</b> · '+Math.round(100*v[0]/totPt)+'% · '+pct(v[1],v[0])+' FG</span>'; }).join("")+'</div>';
+    var qmax=45,pkI=-1,pkV=-1; p.q.slice(0,4).forEach(function(x,i){ if(x.usg!=null&&x.usg>pkV){pkV=x.usg;pkI=i;} });
+    var q='<div class="us-qgrid" title="scale 0–'+qmax+'%; the mid line is '+(qmax/2)+'%">'+p.q.slice(0,4).map(function(x,i){ var h=x.usg==null?2:Math.max(3,Math.round(90*Math.min(x.usg,qmax)/qmax)); return '<div class="us-qcol'+(i===pkI?'':' mute')+'"><b>'+(x.usg==null?'—':Math.round(x.usg)+'%')+'</b><i class="'+(x.usg==null?'na':'')+'" style="height:'+h+'px" title="Q'+(i+1)+' · '+(x.usg==null?'under 30 s':x.usg+'% usage')+' · '+x.min+' min a game"></i></div>'; }).join("")+'</div><div class="us-qlbl">'+p.q.slice(0,4).map(function(x,i){ return '<small>Q'+(i+1)+' · '+x.min+'m</small>'; }).join("")+'</div>';
+    var played=p.q.slice(0,4).filter(function(x){return x.usg!=null;}), hi=played.slice().sort(function(a,b){return b.usg-a.usg;})[0], lo=played.slice().sort(function(a,b){return a.usg-b.usg;})[0];
+    var note=hi&&lo&&hi!==lo?'Busiest in Q'+(p.q.indexOf(hi)+1)+' ('+hi.usg+'%), quietest in Q'+(p.q.indexOf(lo)+1)+' ('+lo.usg+'%).':'';
+    return '<div class="us-drawer">'+
+      '<div class="us-card"><h4>How he gets his shots <span>'+totPt+' FGA · '+(p.ast_rate==null?'—':p.ast_rate+'% of makes assisted')+'</span></h4>'+(totPt?bars:'<p class="us-qnote">No shots stored.</p>')+'</div>'+
+      '<div class="us-card"><h4>Where <span>'+(p.z14?'NBA shot-chart zones':'by distance')+'</span></h4>'+court(p)+'</div>'+
+      '<div class="us-card"><h4>Usage by quarter <span>'+scopeLabel()+'</span></h4>'+q+'<p class="us-qnote">'+note+'</p></div></div>'; }
+  function scopeLabel(){ return st.scope==="season"?"season":"last "+st.scope+" games"; }
+  var barMax=1;
+  function cellv(c,p){ var v=p[c.k]; if(v==null) return '—'; if(c.bar){ return '<span class="us-sb"><i style="width:'+Math.round(v/barMax*64)+'px"></i><b>'+v.toFixed(1)+'</b></span>'; } if(c.pct) return v.toFixed(c.f)+'%'; return c.f!=null?v.toFixed(c.f):String(v); }
+  function rolePill(p){ return p.starter>=p.gp?'<span class="pill ok">Starter</span>':(p.starter?'<span class="pill warn">Mixed</span>':'<span class="pill gone">Bench</span>'); }
+  function tableHtml(lines,opts){
+    opts=opts||{}; barMax=Math.max.apply(null,lines.map(function(p){return p.pos;}).concat([1]));
+    var rows=lines.slice().sort(function(a,b){ var x=a[st.sort],y=b[st.sort]; if(st.sort==="name"){ return (st.asc?1:-1)*String(a.name).localeCompare(String(b.name)); } if(x==null) x=-1e9; if(y==null) y=-1e9; return (st.asc?1:-1)*(x-y)||(b.pos-a.pos); });
+    var grp='<tr class="grp"><th></th>'+(opts.team?'<th></th>':'')+'<th></th>'; var lastG="",cnt=0;
+    COLS.forEach(function(c,i){ if(i===0) return; if(c.grp){ if(cnt) grp+='<th colspan="'+cnt+'" class="gl">'+lastG+'</th>'; lastG=c.grp; cnt=1; } else cnt++; });
+    grp+='<th colspan="'+cnt+'" class="gl">'+lastG+'</th><th class="gl"></th></tr>';
+    var head='<tr class="col"><th data-ussort="name"'+(st.sort==="name"?' class="on'+(st.asc?' asc':'')+'"':'')+'>Player</th>'+(opts.team?'<th>Team</th>':'')+'<th>Role</th>'+COLS.map(function(c){ return '<th class="num'+(c.grp?' gl':'')+(c.k===st.sort?' on'+(st.asc?' asc':''):'')+'" data-ussort="'+c.k+'"'+(c.t?' title="'+c.t+'"':'')+'>'+c.h+'</th>'; }).join("")+'<th class="gl" title="USG% inside each quarter; darker is busier, the outlined cell is his peak quarter">Usage by quarter<span class="us-heatkey"><i style="background:var(--uq1)"></i><i style="background:var(--uq3)"></i><i style="background:var(--uq5)"></i> 0 → 32%+</span></th></tr>';
+    var ncol=COLS.length+3+(opts.team?1:0);
+    return '<div class="tablewrap us-wrap"><table class="us-table"><thead>'+grp+head+'</thead><tbody>'+
+      rows.map(function(p){ var small=p.min<15, key=p.team+"|"+p.id, isOpen=!!st.open[key];
+        return '<tr class="pl'+(isOpen?' open':'')+'" data-usrow="'+key+'"><td class="name"><b>'+esc(p.name)+'</b><small>'+p.gp+' gp</small>'+(small?'<span class="us-ss" title="Under 15 minutes a game: rates are a small sample">small sample</span>':'')+'</td>'+(opts.team?'<td><button type="button" class="us-tlink" data-usteam="'+p.team+'">'+p.team+'</button></td>':'')+'<td>'+rolePill(p)+'</td>'+
+          COLS.map(function(c){ return '<td class="num'+(c.grp?' gl':'')+(c.key?' key':'')+(c.rate&&small?' dimmed':'')+'">'+cellv(c,p)+'</td>'; }).join("")+'<td class="gl">'+qbar(p.q)+'</td></tr>'+(isOpen?'<tr class="det"><td colspan="'+ncol+'">'+drawer(p)+'</td></tr>':''); }).join("")+'</tbody></table></div>'+
+      '<p class="sub us-qnote">Click a player for how he gets his shots, where they come from and his usage by quarter. <b>Poss share</b> is volume, his share of every team possession. <b>USG%</b> and <b>Load</b> are rates while he is on the floor, greyed under 15 minutes a game. Load is a per-100 estimate that needs a few weeks of games to settle.</p>';
+  }
+  function pickerHtml(){
+    var have={}; (games||[]).forEach(function(g){ have[g.team]=1; });
+    return '<div class="us-rail">'+Object.keys(CONF).map(function(k){ return '<span class="us-conf">'+k+'</span><div class="us-row">'+CONF[k].map(function(tri){ var on=tri===st.team, ok=!!have[tri]; return '<button type="button" class="us-chip'+(on?' on':'')+'" data-usteam="'+tri+'" aria-pressed="'+on+'"'+(ok?'':' disabled title="No games stored yet"')+'>'+tri+'</button>'; }).join("")+'</div>'; }).join("")+'</div>';
+  }
+  function scopeHtml(){ return '<div class="us-ctl"><span class="sub">Games</span><div class="seg" id="us-scope">'+[["season","Season"],["10","Last 10"],["5","Last 5"]].map(function(s){ return '<button type="button"'+(st.scope===s[0]?' class="on"':'')+' data-usscope="'+s[0]+'">'+s[1]+'</button>'; }).join("")+'</div></div>'; }
+  function teamHtml(){
+    if(!st.team) return pickerHtml()+'<div class="empty">Pick a team.</div>';
+    var t=teams[st.team]; if(!t||(!t.rows&&!t.err)){ loadTeam(st.team); return pickerHtml()+'<div class="empty" style="padding:18px">Reading '+esc(teamName(st.team))+'…</div>'; }
+    if(t.err) return pickerHtml()+'<div class="empty">Couldn’t read '+esc(st.team)+' ('+esc(t.err)+').</div>';
+    var d=teamLines(st.team), T=d.T, lines=d.lines, L=leagueMix();
+    if(!lines.length) return pickerHtml()+'<div class="empty">No games stored for '+esc(teamName(st.team))+' yet.</div>';
+    var top=lines.slice().sort(function(a,b){return b.share-a.share;})[0], zt=T.zone, zsum=0; Object.keys(zt).forEach(function(k){ zsum+=zt[k]; });
+    var lg=logo(st.team);
+    var hd='<div class="us-hd">'+(lg?'<img class="us-logo" src="'+lg+'" alt="">':'')+'<div><h3>'+esc(teamName(st.team))+'</h3><div class="sub">'+T.gp+' game'+(T.gp===1?'':'s')+(st.scope==="season"?' stored':' (last '+st.scope+')')+' · '+lines.filter(function(p){return p.min>=8;}).length+' players at 8+ minutes a game</div></div>'+scopeHtml()+'</div>';
+    var kp='<dl class="statgrid us-kpis four"><div class="stat"><dt>Possessions a game</dt><dd>'+Math.round(T.poss/T.gp)+'</dd><small>FGA + 0.44·FTA + TOV, whole team</small></div>'+
+      '<div class="stat"><dt>Offense runs through</dt><dd>'+esc(top?top.name.split(" ").slice(-1)[0]:"—")+' <small style="display:inline">'+(top?top.share.toFixed(0)+'% of possessions':'')+'</small></dd><small>'+esc(top?top.name:'')+(top?' · '+top.pos.toFixed(1)+' a game':'')+'</small></div>'+
+      '<div class="stat"><dt>Three-point share</dt><dd>'+(zsum?Math.round(100*(zt.three||0)/zsum):0)+'%</dd><small>of all field-goal attempts</small></div>'+
+      '<div class="stat"><dt>At the rim</dt><dd>'+(zsum?Math.round(100*(zt.rim||0)/zsum):0)+'%</dd><small>attempts inside 8 feet</small></div></dl>';
+    var mix='<div class="us-mix"><div class="panel"><div class="panel-hd us-phd">How the team gets its shots <b>share of field-goal attempts vs the league</b></div>'+cmpHtml(fold6(T.pt),PT6,L.pt)+'</div><div class="panel"><div class="panel-hd us-phd">Where the shots come from <b>by distance from the hoop vs the league</b></div>'+cmpHtml(T.zone,ZN,L.zone)+'</div></div>';
+    return pickerHtml()+hd+kp+mix+tableHtml(lines);
+  }
+  function mineHtml(){
+    var mineId=myTeamId(); if(!my.team) my.team=mineId||T[0].id;
+    var t=byId(my.team);
+    var pick='<div class="us-ctl"><select id="us-mine" class="ro-sel">'+T.map(function(x){ return '<option value="'+x.id+'"'+(x.id===my.team?' selected':'')+'>'+esc(x.short)+' · '+esc(x.name)+(x.id===mineId?' (you)':'')+'</option>'; }).join("")+'</select>'+
+      (mineId?'':'<span class="sub">Sign in and claim your team to land here on your own roster.</span>')+'</div>'+scopeHtml();
+    if(!my.rows||my.rows.team!==my.team){ if(!my.loading&&!my.err) loadMine(my.team); return pick+(my.err?'<div class="empty">Couldn’t read usage ('+esc(my.err)+').</div>':'<div class="empty" style="padding:18px">Reading…</div>'); }
+    var lines=[], missing=[], cacheT={};
+    my.rows.names.forEach(function(n){
+      var rs=my.rows.byName[pnorm(n)]||[]; if(!rs.length){ missing.push(n); return; }
+      var tri=rs[0].team, ids=spanIds(tri), T_=cacheT[tri]||(cacheT[tri]=teamSum(ids));
+      var inSpan=rs.filter(function(r){ return ids[r.game_id]&&r.team===tri; });
+      var line=inSpan.length?playerLine(inSpan,T_):null; if(line) lines.push(line); else missing.push(n);
+    });
+    var note=missing.length?'<p class="sub us-qnote">No stored games'+(st.scope==="season"?'':' in this span')+' for: '+missing.map(esc).join(", ")+'.</p>':'';
+    return pick+(lines.length?tableHtml(lines,{team:true}):'<div class="empty">None of '+esc(t?t.name:'this team')+'’s players has a stored game yet.</div>')+note;
+  }
+
+  /* ----- paint & events ----- */
+  function paint(){
+    var body=$("us-body"), eb=$("us-eyebrow"), foot=$("us-foot"); if(!body) return;
+    Array.prototype.forEach.call(document.querySelectorAll("#us-tabs button"),function(b){ b.classList.toggle("on",b.dataset.ustab===st.tab); });
+    if(!loaded||!games){ body.innerHTML='<div class="empty" style="padding:18px">Reading the usage tables…</div>'; return; }
+    var ds=[]; var seen={}; games.forEach(function(g){ if(!seen[g.date]){ seen[g.date]=1; ds.push(g.date); } }); ds.sort();
+    if(eb) eb.textContent=games.length?Math.round(games.length/2)+' game'+(games.length===2?'':'s')+' · '+fmtDate(ds[0])+' – '+fmtDate(ds[ds.length-1]):'no games yet';
+    if(loadErr){ body.innerHTML='<div class="empty">Couldn’t read the usage tables ('+esc(loadErr)+'). '+(/usage_games/.test(loadErr)&&/relation|does not exist|404/.test(loadErr)?'The schema hasn’t been run yet (§15).':'')+' <button class="back" id="us-reload" type="button" style="margin:0;padding:0;color:var(--amber)">Try again</button></div>'; return; }
+    if(!games.length){ var n=R().note?R().note():""; body.innerHTML='<div class="empty">Nothing stored yet. '+(n?esc(n):'The first games arrive the night after popcornmachine publishes them.')+'</div>'; return; }
+    if(!st.team){ try{ st.team=localStorage.getItem("cb-usage-team")||""; }catch(e){} if(!st.team||!games.some(function(g){return g.team===st.team;})) st.team=games[0].team; }
+    var wrap=body.querySelector(".us-wrap"), sx=wrap?wrap.scrollLeft:0;
+    body.innerHTML=st.tab==="mine"?mineHtml():teamHtml();
+    wrap=body.querySelector(".us-wrap"); if(wrap&&sx) wrap.scrollLeft=sx;
+    var n2=R().note?R().note():"";
+    if(foot) foot.innerHTML=(n2?'<span class="ro-note">'+esc(n2)+'</span> · ':'')+'Usage computed from <a href="https://seanlewis08.github.io/popcornmachine/" target="_blank" rel="noopener">popcornmachine</a>’s gameflow files · USG% = 100 × (FGA + 0.44·FTA + TOV) × (team minutes ÷ 5) ÷ (player minutes × team possessions) · play types from the NBA’s own shot descriptors · zones from each shot’s coordinates · Load is Ben Taylor’s Offensive Load.';
+  }
+  function open(){ if(!started){ started=true; bind(); } ensure().then(paint); paint(); }
+  function bind(){
+    document.addEventListener("click",function(e){
+      var tb=e.target.closest("#us-tabs [data-ustab]"); if(tb){ st.tab=tb.dataset.ustab; paint(); return; }
+      var tm=e.target.closest("#v-usage [data-usteam]"); if(tm&&!tm.disabled){ st.team=tm.dataset.usteam; st.tab="team"; st.open={}; try{ localStorage.setItem("cb-usage-team",st.team); }catch(x){} paint(); return; }
+      var sc=e.target.closest("#us-scope [data-usscope]"); if(sc){ st.scope=sc.dataset.usscope; paint(); return; }
+      var th=e.target.closest("#v-usage [data-ussort]"); if(th){ var k=th.dataset.ussort; if(st.sort===k) st.asc=!st.asc; else { st.sort=k; st.asc=(k==="name"); } paint(); return; }
+      var row=e.target.closest("#v-usage tr[data-usrow]"); if(row&&!e.target.closest("button,a")){ var key=row.dataset.usrow; st.open[key]=!st.open[key]; paint(); return; }
+      if(e.target.closest("#us-reload")){ games=null; loaded=false; paint(); ensure().then(paint); return; }
+    });
+    document.addEventListener("change",function(e){ if(e.target.id==="us-mine"){ my.team=e.target.value; my.rows=null; my.err=""; paint(); } });
+    document.addEventListener("cb:liveteams",function(){ if(st.tab==="mine") paint(); });
+    if(window.Polls&&Polls.onAuth) Polls.onAuth(function(){ if(!my.team&&myTeamId()) my.team=myTeamId(); if(st.tab==="mine") paint(); });
+  }
+  return {onView:function(v){ if(v==="usage") open(); }, repaint:paint, _calc:{playerLine:playerLine,teamSum:teamSum,boxCreation:boxCreation}};
+})();
+
+window.Rotations=Rotations; window.Usage=Usage;
+
+var views={home:"v-home",teams:"v-teams",team:"v-team",players:"v-players",plot:"v-plot",rotations:"v-rotations",usage:"v-usage",draft:"v-draft",cap:"v-cap",keepers:"v-keepers",polls:"v-polls",pollhist:"v-pollhist",agenda:"v-agenda",issues:"v-issues",sched:"v-sched",dues:"v-dues",badges:"v-badges",signup:"v-signup",manager:"v-manager",history:"v-history",rules:"v-rules"};
 var curTeam=null;
 /* Sections: the top row holds six words, the row under it the pages of the open section.
    Every page keeps its own #hash, so old links and the home cards still land where they did. */
 var Nav=window.Nav=(function(){
   var GROUPS={
-    nba:   [["players","Players"],["plot","Analysis"],["rotations","Rotations"]],
+    nba:   [["players","Players"],["plot","Analysis"],["rotations","Rotations"],["usage","Usage"]],
     draft: [["draft","Draft board"],["keepers","Keepers"],["sched","Draft Day"]],
-    season:[["cap","Games Cap"],["badges","Badges"],["history","History"]],
-    league:[["polls","Polls"],["issues","Issues"],["dues","Dues"],["rules","Rules"],["manager","Manager"]]
+    season:[["cap","Games Cap"],["badges","Badges"]],
+    league:[["polls","Polls"],["issues","Issues"],["dues","Dues"],["history","History"],["rules","Rules"],["manager","Manager"]]
   };
   var ALIAS={team:"teams",pollhist:"polls",agenda:"polls"};
   var show={sched:true,manager:false}, last={}, cur="home";
@@ -7148,6 +7507,7 @@ function go(v,silent){
   if(window.Yahoo) Yahoo.onView(v);
   if(window.Draft26) Draft26.onView(v);
   if(window.Rotations) Rotations.onView(v);
+  if(window.Usage) Usage.onView(v);
   window.scrollTo({top:0,behavior:"instant"});
 }
 document.addEventListener("click",function(e){

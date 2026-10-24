@@ -16,6 +16,7 @@
 "use strict";
 
 const supa = require("./supa");
+const usage = require("./usage");
 
 const BASE = () => (process.env.POPCORN_URL || "https://seanlewis08.github.io/popcornmachine/data").replace(/\/$/, "");
 
@@ -130,8 +131,10 @@ function rows(m, entry) {
 }
 
 // Bring Supabase up to date with popcornmachine's index: new games only, a few
-// per call (each gameflow is ~130 KB). Returns what happened; never throws for
-// one bad game, only when the index itself can't be read.
+// per call (each gameflow is ~130 KB). Each game also fills usage_games /
+// usage_players (api/_lib/usage.js) from the same file; a game missing from
+// either set is pulled again. Returns what happened; never throws for one bad
+// game, only when the index itself can't be read.
 async function sync(opts) {
   const o = opts || {}, deadline = o.deadline || (Date.now() + 40000), limit = o.limit || 12;
   const out = { published: 0, stored: 0, added: [], skipped: [], notes: [] };
@@ -144,7 +147,11 @@ async function sync(opts) {
   try { stored = await supa.select("rotation_games", "select=game_id,starter_stint_min&limit=10000"); }
   catch (e) { stored = (await supa.select("rotation_games", "select=game_id&limit=10000")).map((r) => ({ game_id: r.game_id, starter_stint_min: 1 })); }
   const stale = new Set(stored.filter((r) => !(Number(r.starter_stint_min) > 0)).map((r) => r.game_id));
-  const have = new Set(stored.map((r) => r.game_id).filter((g) => !stale.has(g)));
+  // usage rows arrived later than rotation rows; a game stored without them is pulled again
+  let usageHave = null;
+  try { usageHave = new Set((await supa.select("usage_games", "select=game_id&limit=10000")).map((r) => r.game_id)); }
+  catch (e) { out.notes.push("usage tables missing (run supabase/schema.sql): " + (e.message || e)); }
+  const have = new Set(stored.map((r) => r.game_id).filter((g) => !stale.has(g) && (!usageHave || usageHave.has(g))));
   out.stored = have.size;
   // newest first: the page is opened for last night, and the older games follow on the next call
   const missing = entries.filter((e) => !have.has(e.gameId)).sort((a, b) => (a.date > b.date ? -1 : a.date < b.date ? 1 : a.gameId < b.gameId ? -1 : 1));
@@ -159,6 +166,11 @@ async function sync(opts) {
       const rw = rows(m, e);
       await supa.upsert("rotation_games", rw.games, "game_id,team");
       await supa.upsert("rotation_players", rw.players, "game_id,player_id");
+      if (usageHave) {
+        const uw = usage.rows(g, e);
+        await supa.upsert("usage_games", uw.games, "game_id,team");
+        await supa.upsert("usage_players", uw.players, "game_id,player_id");
+      }
       out.added.push(e.gameId);
     } catch (err) {
       out.skipped.push(e.gameId + ": " + (err.message || String(err)));
