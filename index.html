@@ -7250,11 +7250,19 @@ var Usage=(function(){
       games=rows.map(function(r){ return num(r,["min","poss","fga","fta","tov"]); }); loaded=true; loadErr="";
     }).catch(function(e){ loaded=true; loadErr=e.message||"couldn't read"; if(!games) games=[]; });
   }
+  /* the shared sync may ride a five-minute edge cache; if the usage tables are still empty
+     while the rotation tables have games (the schema was just run), ask the server directly */
+  function backfill(n){
+    var rot=R().games?R().games():null; if(!rot||!rot.length||n>3) return Promise.resolve();
+    return fetch("/api/ledger?rotations=sync&n="+Date.now(),{cache:"no-store"}).then(function(r){ return r.json(); }).catch(function(){ return {}; })
+      .then(function(j){ if(j.added&&j.added.length&&(j.missing||0)>j.added.length) return backfill(n+1); });
+  }
   function ensure(){
     if(games&&loaded) return Promise.resolve();
     var s=R().sync?R().sync():Promise.resolve();
-    return s.then(loadGames);
+    return s.then(loadGames).then(function(){ if(games&&!games.length&&!loadErr&&isLive()) return backfill(0).then(loadGames); });
   }
+  function isLive(){ return /crysterbaters\.(vercel\.app|com)$|^(localhost|127\.0\.0\.1)$/.test(location.hostname)||!!window.CB_FORCE_LIVE; }
   function loadTeam(tri){
     var t=teams[tri]=teams[tri]||{}; if(t.rows||t.loading) return; t.loading=true; t.err="";
     rest("usage_players?select="+PCOLS+"&team=eq."+encodeURIComponent(tri)+"&order=date.desc&limit=4000").then(function(rows){ t.rows=rows.map(function(r){ return num(r,PNUM); }); t.loading=false; paint(); })
