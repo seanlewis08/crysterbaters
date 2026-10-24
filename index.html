@@ -176,6 +176,19 @@ nav button:hover{color:var(--ink)}
 nav button[aria-current="page"]{color:var(--amber)}
 nav button[aria-current="page"]::after{background:var(--amber)}
 nav button:focus-visible{outline:1px solid var(--amber);outline-offset:-4px}
+/* second row: the pages inside the open section */
+.subnav{border-top:1px solid var(--line);background:var(--surface)}
+.subnav-in{max-width:1200px;margin:0 auto;padding:0 12px;display:flex;overflow-x:auto;scrollbar-width:none}
+.subnav-in::-webkit-scrollbar{display:none}
+.subnav button{
+  background:none;border:0;cursor:pointer;position:relative;
+  font-family:var(--mono);font-size:10.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;
+  padding:9px 10px 10px;color:var(--muted);white-space:nowrap;
+}
+.subnav button:hover{color:var(--ink)}
+.subnav button[aria-current="page"]{color:var(--amber)}
+.subnav button[aria-current="page"]::after{content:"";position:absolute;left:10px;right:10px;bottom:0;height:2px;background:var(--amber)}
+.subnav button:focus-visible{outline:1px solid var(--amber);outline-offset:-4px}
 
 /* ---------- ticker ---------- */
 .ticker{border-bottom:1px solid var(--line);background:var(--surface)}
@@ -998,8 +1011,10 @@ footer p + p{margin-top:11px}
 @media (max-width:760px){.newpoll .calc-in{grid-template-columns:1fr}}
 @media (max-width:600px){
   .topbar-in{padding-top:11px}
-  nav{margin-left:-12px}
-  nav button{padding:9px 12px 11px}
+  nav{margin-left:-8px;justify-content:space-between}
+  nav button{padding:9px 5px 11px;font-size:12.5px;letter-spacing:.03em}
+  nav button::after{left:5px;right:5px}
+  .subnav-in{padding:0 12px}
   .acct .who b{font-size:12.5px}
   .champ{padding:24px 20px}
   .scoreline div{border-right:0;padding-right:0;margin-right:22px}
@@ -1254,27 +1269,19 @@ footer p + p{margin-top:11px}
       </svg>
       <span class="brand-txt"><b>Kids That Read Good</b><span>Crysterbaters · est 2012</span></span>
     </button>
-    <nav id="nav">
+    <nav id="nav" aria-label="Sections">
       <button data-go="home">Home</button>
       <button data-go="teams">Teams</button>
-      <button data-go="players">Players</button>
-      <button data-go="plot">Analysis</button>
-      <button data-go="rotations">Rotations</button>
-      <button data-go="draft">Draft</button>
-      <button data-go="sched" id="nav-sched">Draft Day</button>
-      <button data-go="cap">Games Cap</button>
-      <button data-go="keepers">Keepers</button>
-      <button data-go="polls">Polls</button>
-      <button data-go="issues">Issues</button>
-      <button data-go="dues">Dues</button>
-      <button data-go="badges">Badges</button>
-      <button data-go="history">History</button>
-      <button data-go="rules">Rules</button>
+      <button data-grp="nba">NBA</button>
+      <button data-grp="draft">Draft</button>
+      <button data-grp="season">Season</button>
+      <button data-grp="league">League</button>
     </nav>
     <div class="acct" id="acct">
       <button class="btn ghost sm" data-go="polls">Sign in</button>
     </div>
   </div>
+  <div class="subnav" id="subnav" hidden><div class="subnav-in" aria-label="Pages in this section"></div></div>
 </header>
 
 <div class="modal" id="signin-modal" hidden>
@@ -3791,11 +3798,7 @@ var Polls=(function(){
     } else {
       el.innerHTML='<button class="btn ghost sm" data-signin>Sign in</button>';
     }
-    var nav=document.getElementById("nav"), mb=document.getElementById("nav-manager");
-    if(isCommish&&!mb){
-      mb=document.createElement("button"); mb.id="nav-manager"; mb.dataset.go="manager"; mb.textContent="Manager";
-      nav.insertBefore(mb, nav.querySelector('[data-go="history"]'));
-    } else if(!isCommish&&mb){ mb.remove(); }
+    if(window.Nav) Nav.set("manager", !!isCommish);
   }
   function signOut(){ store.signOut().then(function(){ setMe(null); go("home"); }).catch(fail); }
   function openSignin(){ $("signin-modal").hidden=false; say("si-msg",""); setTimeout(function(){ $("si-email").focus(); },30); }
@@ -4560,7 +4563,8 @@ var Polls=(function(){
     KEEPERS_LOCKED=!!(f&&f.keepers_locked);
     var lk=$("se-lock"); if(lk) lk.checked=KEEPERS_LOCKED;
     showSched=!f||f.show_draft_day!==false;
-    ["nav-sched","hc-sched","tile-sched-link"].forEach(function(id){ var el=$(id); if(el) el.hidden=!showSched; });
+    ["hc-sched","tile-sched-link"].forEach(function(id){ var el=$(id); if(el) el.hidden=!showSched; });
+    if(window.Nav) Nav.set("sched", showSched);
     var cb=$("se-show"); if(cb) cb.checked=showSched;
   }
   function loadFlags(){ store.flags().then(applyFlags).catch(function(){}); if(store.keepersLoad) Promise.all([store.keepersLoad(), store.keeperRequestsLoad?store.keeperRequestsLoad():Promise.resolve([])]).then(function(rs){ applyKeepers(rs[0], rs[1]); }).catch(function(){}); }
@@ -7100,12 +7104,43 @@ window.Rotations=Rotations;
 
 var views={home:"v-home",teams:"v-teams",team:"v-team",players:"v-players",plot:"v-plot",rotations:"v-rotations",draft:"v-draft",cap:"v-cap",keepers:"v-keepers",polls:"v-polls",pollhist:"v-pollhist",agenda:"v-agenda",issues:"v-issues",sched:"v-sched",dues:"v-dues",badges:"v-badges",signup:"v-signup",manager:"v-manager",history:"v-history",rules:"v-rules"};
 var curTeam=null;
+/* Sections: the top row holds six words, the row under it the pages of the open section.
+   Every page keeps its own #hash, so old links and the home cards still land where they did. */
+var Nav=window.Nav=(function(){
+  var GROUPS={
+    nba:   [["players","Players"],["plot","Analysis"],["rotations","Rotations"]],
+    draft: [["draft","Draft board"],["keepers","Keepers"],["sched","Draft Day"]],
+    season:[["cap","Games Cap"],["badges","Badges"],["history","History"]],
+    league:[["polls","Polls"],["issues","Issues"],["dues","Dues"],["rules","Rules"],["manager","Manager"]]
+  };
+  var ALIAS={team:"teams",pollhist:"polls",agenda:"polls"};
+  var show={sched:true,manager:false}, last={}, cur="home";
+  function groupOf(v){ var k=ALIAS[v]||v, g=null; Object.keys(GROUPS).forEach(function(n){ if(GROUPS[n].some(function(p){return p[0]===k;})) g=n; }); return g; }
+  function visible(p){ return !(p[0]==="sched"&&!show.sched) && !(p[0]==="manager"&&!show.manager); }
+  function paint(){
+    var k=ALIAS[cur]||cur, g=groupOf(cur);
+    Array.prototype.forEach.call(document.querySelectorAll("#nav button"),function(b){
+      var on=b.dataset.grp ? b.dataset.grp===g : b.dataset.go===k;
+      if(on) b.setAttribute("aria-current","page"); else b.removeAttribute("aria-current");
+    });
+    var box=document.getElementById("subnav"), row=box&&box.firstElementChild; if(!box) return;
+    if(!g){ box.hidden=true; row.innerHTML=""; return; }
+    row.innerHTML=GROUPS[g].filter(visible).map(function(p){ return '<button data-go="'+p[0]+'"'+(p[0]===k?' aria-current="page"':'')+(p[0]==="sched"?' id="nav-sched"':'')+'>'+p[1]+'</button>'; }).join("");
+    box.hidden=false;
+  }
+  return {
+    groups:GROUPS, groupOf:groupOf,
+    onView:function(v){ cur=v; var g=groupOf(v); if(g) last[g]=ALIAS[v]||v; paint(); },
+    open:function(g){ var want=last[g]||GROUPS[g].filter(visible)[0][0]; return want; },
+    set:function(k,val){ show[k]=!!val; paint(); }
+  };
+})();
 function routeFor(v){ return v==="team"&&curTeam ? "team/"+curTeam : v; }
 function go(v,silent){
   if(!views[v]) v="home";
   Object.keys(views).forEach(function(k){document.getElementById(views[k]).classList.toggle("on",k===v);});
   if(!silent){ var r="#"+routeFor(v); if(location.hash!==r&&!(v==="plot"&&/^#plot\?/.test(location.hash))){ try{ history.pushState(null,"",r); }catch(e){ location.hash=r; } } }
-  var navKey=(v==="team")?"teams":((v==="pollhist"||v==="agenda")?"polls":v);
+  Nav.onView(v);
   if(window.Polls) Polls.onView(v);
   if(window.Players) Players.onView(v);
   if(window.Plot) Plot.onView(v);
@@ -7113,12 +7148,10 @@ function go(v,silent){
   if(window.Yahoo) Yahoo.onView(v);
   if(window.Draft26) Draft26.onView(v);
   if(window.Rotations) Rotations.onView(v);
-  Array.prototype.forEach.call(document.querySelectorAll("#nav button"),function(b){
-    if(b.dataset.go===navKey){b.setAttribute("aria-current","page");}else{b.removeAttribute("aria-current");}
-  });
   window.scrollTo({top:0,behavior:"instant"});
 }
 document.addEventListener("click",function(e){
+  var grp=e.target.closest("[data-grp]"); if(grp){e.preventDefault();go(Nav.open(grp.dataset.grp));return;}
   var g=e.target.closest("[data-go]"); if(g){e.preventDefault();go(g.dataset.go);return;}
   var t=e.target.closest("[data-team]"); if(t&&byId(t.dataset.team)){renderTeam(t.dataset.team);go("team");}
 });
