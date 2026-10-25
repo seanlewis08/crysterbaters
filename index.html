@@ -327,7 +327,8 @@ nav button:focus-visible{outline:1px solid var(--amber);outline-offset:-4px}
 .sb-mark.a{background:var(--sb-link)}.sb-mark.b{background:var(--amber)}
 .sb-mh h3{font-size:24px;font-weight:700;margin:0;line-height:1.1;color:var(--sb-link);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:var(--body);text-transform:none;letter-spacing:0}
 .sb-mh .sub{color:var(--muted);font-size:12.5px;margin-top:2px}
-.sb-meter{margin-top:7px;max-width:300px}
+.sb-mh .sb-side>div{flex:1;min-width:0}
+.sb-meter{margin-top:7px;width:100%;max-width:300px}
 .sb-mh .sb-side.r .sb-meter{margin-left:auto}
 .sb-meter .lb{display:flex;justify-content:space-between;gap:10px;font-size:11px;color:var(--muted);flex-wrap:wrap}
 .sb-meter .lb b{color:var(--ink)}
@@ -373,7 +374,23 @@ nav button:focus-visible{outline:1px solid var(--amber);outline-offset:-4px}
 .sb-syncbtn svg{width:13px;height:13px}
 .sb-lineup{width:100%;border-collapse:separate;border-spacing:0;font-size:12.5px;min-width:840px;font-variant-numeric:tabular-nums}
 .sb-lineup th{font-weight:600;font-size:10.5px;letter-spacing:.03em;color:var(--muted);padding:8px 4px;text-align:right;background:var(--sb-band);border-bottom:1px solid var(--line);white-space:nowrap;position:static}
-.sb-lineup th.pl{text-align:left}
+.sb-lineup th.pl{text-align:left;overflow:hidden;text-overflow:ellipsis}
+/* the two-team table: fixed columns so both sides get the same widths whatever the team names and numbers */
+.sb-lineup:not(.one):not(.box){table-layout:fixed;min-width:880px}
+.sb-lineup:not(.one):not(.box) th.pos{width:36px}
+.sb-lineup:not(.one):not(.box) th.c-pts,.sb-lineup:not(.one):not(.box) th.c-reb,.sb-lineup:not(.one):not(.box) th.c-ast,.sb-lineup:not(.one):not(.box) th.c-st,.sb-lineup:not(.one):not(.box) th.c-blk,.sb-lineup:not(.one):not(.box) th.c-dd{width:28px}
+.sb-lineup:not(.one):not(.box) th.c-fg,.sb-lineup:not(.one):not(.box) th.c-ft{width:36px}
+.sb-lineup:not(.one):not(.box) th.c-3pm{width:28px}
+.sb-lineup:not(.one):not(.box) td.pl{padding-left:8px}
+.sb-lineup:not(.one):not(.box) th:not(.pl):not(.pos){font-size:9.5px;padding-left:1px;padding-right:1px;letter-spacing:0}
+.sb-lineup:not(.one):not(.box) td:not(.pl):not(.pos){padding-left:1px;padding-right:1px}
+.sb-lineup:not(.one):not(.box) td.c-fg,.sb-lineup:not(.one):not(.box) td.c-ft{font-size:11.5px}
+.sb-lineup:not(.one):not(.box) td.pl{overflow:hidden;text-overflow:ellipsis}
+.sb-lineup:not(.one):not(.box) td.pl b{display:inline-block;max-width:calc(100% - 32px);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;vertical-align:bottom}
+.sb-lineup:not(.one):not(.box) td.pl small{margin-left:4px;font-size:10.5px}
+.sb-lineup:not(.one):not(.box) td.pl:has(.sb-ball) b{max-width:calc(100% - 50px)}
+.sb-lineup:not(.one):not(.box) td.pl:has(.sb-ddm) b,.sb-lineup:not(.one):not(.box) td.pl:has(.sb-inj) b{max-width:calc(100% - 60px)}
+.sb-lineup:not(.one):not(.box) td.pl:has(.sb-ball):has(.sb-ddm) b,.sb-lineup:not(.one):not(.box) td.pl:has(.sb-ball):has(.sb-inj) b{max-width:calc(100% - 78px)}
 .sb-lineup th.pos,.sb-lineup td.pos{text-align:center;background:var(--sb-band);border-left:1px solid var(--line);border-right:1px solid var(--line);width:44px;color:var(--muted);font-weight:600;font-size:12px}
 .sb-lineup td{padding:0 4px;height:46px;border-bottom:1px solid var(--line);vertical-align:middle;white-space:nowrap;text-align:right}
 .sb-lineup td.pl{text-align:left;min-width:132px;padding-left:10px}
@@ -385,6 +402,14 @@ nav button:focus-visible{outline:1px solid var(--amber);outline-offset:-4px}
 .sb-lineup td.pl .g.fin{color:var(--ink)}
 .sb-lineup td.pl .g.none{color:var(--dim)}
 .sb-lineup td.dash{color:var(--line-2)}
+.sb-lineup th:not(.pl):not(.pos),.sb-lineup td:not(.pl):not(.pos){text-align:center}
+.sb-lineup td:not(.pl):not(.pos){font-size:13px}
+.sb-lineup th.pl+th,.sb-lineup td.pl+td{border-left:1px solid var(--line)}
+.sb-lineup th.c-3pm,.sb-lineup td.c-3pm{border-left:1px solid var(--line)}
+.sb-lineup td.z{color:var(--dim)}
+.sb-lineup tr.tot td:not(.pl):not(.pos){font-size:13.5px}
+.sb-mrow .n b{color:var(--ink);font-weight:600}
+.sb-mrow .n .sep{color:var(--line-2);margin:0 6px}
 .sb-lineup tr.bn td.pl b{color:var(--muted);font-weight:500}
 .sb-lineup tr.div td{height:26px;background:var(--surface-2);font-size:10.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);text-align:left;padding-left:12px}
 .sb-lineup tr.tot td{font-weight:700;background:var(--surface);border-top:2px solid var(--line-2);border-bottom:0;height:40px}
@@ -7783,7 +7808,8 @@ var Scoreboard=(function(){
     return '<div class="sb-meter"><div class="lb"><span>Games (cap '+cap+')</span><span><b>'+played+'</b> played'+(live?' · '+live+' live':'')+(sched?' · '+sched+' to come':'')+(over?' · <span class="sb-over">+'+over+' over</span>':'')+'</span></div><div class="bar"><i class="p" style="width:'+w(played)+'"></i><i class="l" style="width:'+w(live)+'"></i><i class="s" style="width:'+w(sched)+'"></i></div></div>'; }
   function railHtml(){ return (W.matchups||[]).map(function(m,i){ var A=teamWeek(m.a),B=teamWeek(m.b),sc=scoreOf(A,B),ta=teamOf(m.a),tb=teamOf(m.b), live=A.live+B.live;
       var tonightA=(A.roster||[]).filter(function(p){ var g=!BENCH[p.pos]&&gameFor(p.nba); return g&&g.state==="pre"; }).length, tonightB=(B.roster||[]).filter(function(p){ var g=!BENCH[p.pos]&&gameFor(p.nba); return g&&g.state==="pre"; }).length;
-      var note=live?'<i></i>'+live+' playing now':''; if(tonightA+tonightB) note+=(note?' · ':'')+(tonightA+tonightB)+' to tip'; if(!note) note=W.games&&W.games.length?'done for tonight':'no games today';
+      var side=function(t,tw,tip){ var bits=[]; if(tw.live) bits.push(tw.live+' playing'); if(tip) bits.push(tip+' to tip'); return bits.length?'<b>'+esc_(initials(t))+'</b> '+bits.join(' · '):''; };
+      var sa=side(ta,A,tonightA), sb=side(tb,B,tonightB), note=(live?'<i></i>':'')+[sa,sb].filter(Boolean).join('<span class="sep">|</span>'); if(!sa&&!sb) note=W.games&&W.games.length?'done for tonight':'no games today';
       return '<button type="button" class="sb-mrow'+(i===st.m&&!st.game?' on':'')+'" data-sbm="'+i+'"><span class="t'+(sc.a>sc.b?' lead':'')+'">'+esc_(ta.name)+'</span><span class="s'+(sc.a>sc.b?' lead':'')+'">'+sc.a+'</span><span class="t'+(sc.b>sc.a?' lead':'')+'">'+esc_(tb.name)+'</span><span class="s'+(sc.b>sc.a?' lead':'')+'">'+sc.b+'</span><span class="n">'+note+'</span></button>'; }).join("")||'<div class="empty" style="padding:14px">No matchups stored for this week yet.</div>'; }
   function gamesHtml(){ return (W.games||[]).map(function(g){ var aw=g.state!=="pre"&&g.awayScore>g.homeScore, hw=g.state!=="pre"&&g.homeScore>g.awayScore;
       return '<button type="button" class="sb-grow '+g.state+(st.game===g.id?' on':'')+'" data-sbg="'+g.id+'"><div class="tm"><span'+(aw?' class="w"':'')+'>'+g.away+'</span><span'+(hw?' class="w"':'')+'>@ '+g.home+'</span></div><div class="sc">'+(g.state==="pre"?'<span>&nbsp;</span><span>&nbsp;</span>':'<span>'+g.awayScore+'</span><span>'+g.homeScore+'</span>')+'</div><div class="st '+g.state+'">'+(g.state==="in"?'<i class="livedot"></i>':'')+esc_(gameLabel(g))+'</div></button>'; }).join("")||'<div class="empty" style="padding:14px">No NBA games today.</div>'; }
@@ -7809,12 +7835,13 @@ var Scoreboard=(function(){
     var opp=g?(g.away===abbrFix(p.nba)?'@ '+g.home:'vs '+g.away):'';
     var gl=!g?'<span class="g none">No game</span>':g.state==="pre"?'<span class="g">'+esc_(gameLabel(g))+' '+opp+'</span>':g.state==="in"?'<span class="g live"><i></i>'+esc_(gameLabel(g))+' · '+opp+(l&&!l.on&&l.pf>=4?' · '+l.pf+' fouls':'')+(l&&l.dnp?' · DNP':'')+'</span>':'<span class="g fin">Final · '+opp+(l&&l.dnp?' · DNP':'')+'</span>';
     return '<td class="pl"><b>'+esc_(p.name)+'</b><small>'+esc_(p.nba)+'</small>'+(on?BALL:'')+(st.view==="today"&&isDD(l)?'<span class="sb-ddm">DD</span>':'')+(p.status?'<span class="sb-inj">'+esc_(p.status)+'</span>':'')+gl+'</td>'; }
-  function numCells(p,tw){ if(st.view==="today"){ var l=lineFor(p,W.today); if(!l||!l.played) return CATS.map(function(){return '<td class="dash">–</td>';}).join(""); return [l.fgm+'-'+l.fga,l.ftm+'-'+l.fta,l.tpm,l.pts,l.reb,l.ast,l.stl,l.blk,isDD(l)?1:0].map(function(v){return '<td>'+v+'</td>';}).join(""); }
-    var q=tw.per[p.espn||p.key]; if(!q||!q.s.gp) return CATS.map(function(){return '<td class="dash">–</td>';}).join(""); var s=q.s, C=cats(s); return CATS.map(function(c){ return '<td>'+fmt(c[0],C[c[0]])+'</td>'; }).join(""); }
-  function totCells(tw){ var o=st.view==="today"?tw.tonight:tw.tot; if(st.view==="today") return [o.fgm+'-'+o.fga,o.ftm+'-'+o.fta,o["3pm"],o.pts,o.reb,o.ast,o.st,o.blk,o.dd].map(function(v){return '<td>'+v+'</td>';}).join(""); var C=cats(o); return CATS.map(function(c){ return '<td>'+fmt(c[0],C[c[0]])+'</td>'; }).join(""); }
+  function cell(v,i){ var z=v===0||v==="0"||v==="0-0"||v===".000"; return '<td class="c-'+CATS[i][0]+(z?' z':'')+'">'+v+'</td>'; }
+  function numCells(p,tw){ if(st.view==="today"){ var l=lineFor(p,W.today); if(!l||!l.played) return CATS.map(function(c){return '<td class="dash c-'+c[0]+'">–</td>';}).join(""); return [l.fgm+'-'+l.fga,l.ftm+'-'+l.fta,l.tpm,l.pts,l.reb,l.ast,l.stl,l.blk,isDD(l)?1:0].map(cell).join(""); }
+    var q=tw.per[p.espn||p.key]; if(!q||!q.s.gp) return CATS.map(function(c){return '<td class="dash c-'+c[0]+'">–</td>';}).join(""); var s=q.s, C=cats(s); return CATS.map(function(c,i){ return cell(fmt(c[0],C[c[0]]),i); }).join(""); }
+  function totCells(tw){ var o=st.view==="today"?tw.tonight:tw.tot; if(st.view==="today") return [o.fgm+'-'+o.fga,o.ftm+'-'+o.fta,o["3pm"],o.pts,o.reb,o.ast,o.st,o.blk,o.dd].map(function(v,i){return '<td class="c-'+CATS[i][0]+'">'+v+'</td>';}).join(""); var C=cats(o); return CATS.map(function(c){ return '<td class="c-'+c[0]+'">'+fmt(c[0],C[c[0]])+'</td>'; }).join(""); }
   function toggleHtml(){ return '<div class="sb-toggle"><span class="sync"><button type="button" class="sb-syncbtn" id="sb-sync"'+(st.syncing?' disabled':'')+'><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M13.5 8a5.5 5.5 0 0 1-9.4 3.9M2.5 8a5.5 5.5 0 0 1 9.4-3.9" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M12.6 1.6v3.2H9.4M3.4 14.4v-3.2h3.2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>'+(st.syncing?'Reading Yahoo…':'Refresh lineups from Yahoo')+'</button><small>'+(st.syncing?'':(W.lineupAt?'lineups read '+fmtTime(W.lineupAt):''))+'</small></span>'+
       '<button type="button"'+(st.view==="today"?' class="on"':'')+' data-sbview="today">Today’s stats</button><button type="button"'+(st.view==="week"?' class="on"':'')+' data-sbview="week">Matchup totals</button><label class="bench"><input type="checkbox" id="sb-bench"'+(st.bench?' checked':'')+'> Bench</label></div>'; }
-  function lineupHtml(m,A,B){ var ta=teamOf(m.a),tb=teamOf(m.b), heads=CATS.map(function(c){return '<th>'+c[1]+'</th>';}).join("");
+  function lineupHtml(m,A,B){ var ta=teamOf(m.a),tb=teamOf(m.b), heads=CATS.map(function(c){return '<th class="c-'+c[0]+'">'+(c[0]==="3pm"?"3PM":c[1])+'</th>';}).join("");
     var ra=slotSort(A.roster), rb=slotSort(B.roster), act=function(r){ return r.filter(function(p){return !BENCH[p.pos];}); }, bn=function(r){ return r.filter(function(p){return BENCH[p.pos];}); };
     if(phone()){ var tw=st.side==="a"?A:B, team=st.side==="a"?ta:tb, rows=st.side==="a"?ra:rb;
       var body=act(rows).map(function(p){ return '<tr>'+playerCell(p,tw).replace('<td class="pl">','<td class="pl"><span class="sb-slot">'+esc_(p.pos)+'</span>')+numCells(p,tw)+'</tr>'; }).join("");

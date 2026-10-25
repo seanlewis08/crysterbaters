@@ -210,6 +210,7 @@ async function week(opts) {
   // a lineup row stored before its player had an ESPN id (a rookie before his
   // first game, a name Yahoo spells differently) is linked now, for every day it
   // was stored, so his lines count; nothing to do when everyone is linked
+  let unmatched = [];
   const unlinked = lines.filter((l) => !l.espn_id && l.yahoo_key);
   if (unlinked.length) {
     try {
@@ -219,8 +220,7 @@ async function week(opts) {
         await supa.update("lineup_days", "yahoo_key=eq." + encodeURIComponent(k) + "&espn_id=is.null", { espn_id: links[k] }).catch(() => {});
         lines.forEach((l) => { if (l.yahoo_key === k && !l.espn_id) l.espn_id = links[k]; });
       }
-      const still = unlinked.filter((l) => !l.espn_id).map((l) => l.player);
-      if (still.length) notes.push("Not matched to ESPN yet: " + Array.from(new Set(still)).join(", "));
+      unmatched = Array.from(new Set(unlinked.filter((l) => !l.espn_id).map((l) => l.player)));
     } catch (e) { notes.push("Player linking: " + (e.message || e)); }
   }
   const lineupAt = lines.filter((l) => l.date === today).reduce((m, l) => (l.updated_at > m ? l.updated_at : m), "") || newest;
@@ -275,7 +275,7 @@ async function week(opts) {
   return {
     built: now(), season: meta.season, week: wk, currentWeek: cur, dates: dates, today: today, cap: cap,
     matchups: mu.rows.map((r) => ({ a: r.a, b: r.b, yahoo: r.yahoo, yahooAt: r.yahoo_at })),
-    lineups: lineups, lineupAt: lineupAt || null, box: box, games: games, live: live, liveAt: liveAt, schedule: schedule, proj: proj, notes: notes,
+    lineups: lineups, lineupAt: lineupAt || null, box: box, games: games, live: live, liveAt: liveAt, schedule: schedule, proj: proj, notes: notes, unmatched: unmatched,
     attribution: "Lineups from Yahoo Fantasy · box scores, play-by-play and projections from ESPN",
   };
 }
