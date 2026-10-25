@@ -173,10 +173,16 @@ async function fetchBox(date, deadline) {
       });
     });
   }
-  if (rows.length) { for (let i = 0; i < rows.length; i += 400) await supa.upsert("nba_box", rows.slice(i, i + 400), "espn_id,date"); }
+  // a player can be listed in two games on one date (waived and signed the same
+  // day: a DNP line on the old team, a real one on the new); one row per player
+  // per date, the line he played taking precedence, or Postgres refuses the batch
+  const byKey = {};
+  rows.forEach((r) => { const k = r.espn_id + "|" + r.date; const have = byKey[k]; if (!have || (r.played && !have.played) || (r.played === have.played && r.min > have.min)) byKey[k] = r; });
+  const uniq = Object.keys(byKey).map((k) => byKey[k]);
+  if (uniq.length) { for (let i = 0; i < uniq.length; i += 400) await supa.upsert("nba_box", uniq.slice(i, i + 400), "espn_id,date"); }
   const done = events.length > 0 && finals === events.length;
   await supa.upsert("nba_days", { date: date, games: events.length, finals: finals, done: done, fetched_at: now }, "date").catch(() => {});
-  return { games: events.length, finals: finals, rows: rows.length, done: done };
+  return { games: events.length, finals: finals, rows: uniq.length, done: done };
 }
 
 // ---- read back, in /api/yahoo/team's shape ----------------------------------
