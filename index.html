@@ -409,8 +409,12 @@ nav button:focus-visible{outline:1px solid var(--amber);outline-offset:-4px}
 .sb-lineup td.z{color:var(--dim)}
 .sb-lineup td.lv{background:var(--sb-live)}
 .sb-lineup tr.bn td.lv{background:var(--sb-live-bn)}
-.sb-lineup td.up,.sb-cats td.up,.sb-catsp td.up{background:var(--sb-up)!important;color:var(--sb-up-ink)!important;font-weight:700}
-.sb-lineup td.down,.sb-cats td.down,.sb-catsp td.down{background:var(--sb-down)!important;color:var(--sb-down-ink)!important;font-weight:700}
+/* a stat that moved since the previous read flashes green (up) or red (down) and fades back over a few seconds */
+@keyframes sb-up{0%,55%{background-color:var(--sb-up);color:var(--sb-up-ink)}100%{background-color:transparent;color:inherit}}
+@keyframes sb-down{0%,55%{background-color:var(--sb-down);color:var(--sb-down-ink)}100%{background-color:transparent;color:inherit}}
+.sb-lineup td.up,.sb-cats td.up,.sb-catsp td.up{animation:sb-up 7s ease-out forwards;font-weight:700}
+.sb-lineup td.down,.sb-cats td.down,.sb-catsp td.down{animation:sb-down 7s ease-out forwards;font-weight:700}
+@media (prefers-reduced-motion:reduce){.sb-lineup td.up,.sb-cats td.up,.sb-catsp td.up,.sb-lineup td.down,.sb-cats td.down,.sb-catsp td.down{animation:none}}
 .sb-lineup tr.tot td:not(.pl):not(.pos){font-size:13.5px}
 .sb-mrow .n b{color:var(--ink);font-weight:600}
 .sb-mrow .n .sep{color:var(--line-2);margin:0 6px}
@@ -7719,7 +7723,7 @@ var Scoreboard=(function(){
   var W=null, loading=false, err="", started=false, timer=null, fetchedAt=0;
   /* values as rendered after the previous data read, keyed by player/total/category, so a cell that moved since then can light up green or red until the next read (as Yahoo does) */
   var lastVals={}, curVals={}, valsStamp=0;
-  function moved(key,arr){ curVals[key]=arr; var prev=lastVals[key]; return arr.map(function(v,i){ if(!prev||prev[i]==null||v==null||v===prev[i]) return ""; return v>prev[i]?" up":" down"; }); }
+  function moved(key,arr){ curVals[key]=arr; var prev=lastVals[key], fresh=Date.now()-fetchedAt<9000; return arr.map(function(v,i){ if(!fresh||!prev||prev[i]==null||v==null||v===prev[i]) return ""; return v>prev[i]?" up":" down"; }); }
   var st={m:0,pick:null,view:"today",bench:true,side:"a",game:null,gdata:null,gloading:false,gerr:"",syncing:false};
   var inView=false;
   function $(id){ return document.getElementById(id); }
@@ -7841,7 +7845,7 @@ var Scoreboard=(function(){
   function slotSort(rows){ return rows.slice().sort(function(a,b){ return (SLOT_ORDER[a.pos]||8)-(SLOT_ORDER[b.pos]||8); }); }
   function playerCell(p,tw){ var g=gameFor(p.nba), l=st.view==="today"?lineFor(p,W.today):null, live=g&&g.state==="in"&&l, on=live&&l.on;
     var opp=g?(g.away===abbrFix(p.nba)?'@ '+g.home:'vs '+g.away):'';
-    var gl=!g?'<span class="g none">No game</span>':g.state==="pre"?'<span class="g">'+esc_(gameLabel(g))+' '+opp+'</span>':g.state==="in"?'<span class="g live"><i></i>'+esc_(gameLabel(g))+' · '+opp+(l&&!l.on&&l.pf>=4?' · '+l.pf+' fouls':'')+(l&&l.dnp?' · DNP':'')+'</span>':'<span class="g fin">Final · '+opp+(l&&l.dnp?' · DNP':'')+'</span>';
+    var gl=!g?'<span class="g none">No game</span>':g.state==="pre"?'<span class="g">'+esc_(gameLabel(g))+' '+opp+'</span>':g.state==="in"?'<span class="g live"><i></i>'+esc_(gameLabel(g))+' · '+opp+(l&&!l.on&&l.pf>=4?' · '+l.pf+' fouls':'')+'</span>':'<span class="g fin">Final · '+opp+(l&&l.dnp?' · DNP':'')+'</span>';
     return '<td class="pl'+(live?' lv':'')+'"><b>'+esc_(p.name)+'</b><small>'+esc_(p.nba)+'</small>'+(on?BALL:'')+(st.view==="today"&&isDD(l)?'<span class="sb-ddm">DD</span>':'')+(p.status?'<span class="sb-inj">'+esc_(p.status)+'</span>':'')+gl+'</td>'; }
   function cell(v,i,extra){ var z=v===0||v==="0"||v==="0-0"||v===".000"; return '<td class="c-'+CATS[i][0]+(z?' z':'')+(extra||'')+'">'+v+'</td>'; }
   function pct(m,a){ return a?m/a:null; }
@@ -7905,7 +7909,8 @@ var Scoreboard=(function(){
   function shortName(n){ var p=String(n||"").trim().split(/\s+/); return p.length>1?p[0].charAt(0)+". "+p.slice(1).join(" "):n; }
   function ownerChip(d,espn){ var o=d.owners&&d.owners[espn]; if(!o) return '<span class="sb-own fa">FA</span>'; var t=teamOf(o.team); return '<span class="sb-own'+(BENCH[o.pos]?' bn':'')+'" title="'+esc_(t.name)+(BENCH[o.pos]?' · on the bench today':'')+'">'+esc_(initials(t))+'</span>'; }
   function boxTable(d,side){ var cols=["MIN","PTS","REB","AST","ST","BLK","3PM","FG","FT","TO","PF"], starters=side.rows.filter(function(r){return r.starter;}), bench=side.rows.filter(function(r){return !r.starter;});
-    function row(r){ var dd=isDD(r); return '<tr'+(r.dnp?' class="dnp"':'')+'><td class="pl"><b>'+esc_(shortName(r.name))+'</b><small>'+esc_(r.pos)+'</small>'+(r.on?BALL:'')+(dd?'<span class="sb-ddm">DD</span>':'')+(r.dnp?'<span class="sb-inj">'+esc_(r.reason||"DNP")+'</span>':'')+'</td><td class="ow">'+ownerChip(d,r.espn)+'</td>'+(r.dnp&&!r.played?cols.map(function(){return '<td class="dash">–</td>';}).join(""):[r.min,r.pts,r.reb,r.ast,r.stl,r.blk,r.tpm,r.fgm+'-'+r.fga,r.ftm+'-'+r.fta,r.tov,r.pf].map(function(v){return '<td>'+v+'</td>';}).join(""))+'</tr>'; }
+    function row(r){ var dd=isDD(r), dnp=r.dnp&&d.game.state==="post"; /* "did not play" is only a verdict once the game is over; before that he just hasn't come in yet */
+      return '<tr'+(dnp?' class="dnp"':'')+'><td class="pl"><b>'+esc_(shortName(r.name))+'</b><small>'+esc_(r.pos)+'</small>'+(r.on?BALL:'')+(dd?'<span class="sb-ddm">DD</span>':'')+(dnp?'<span class="sb-inj">'+esc_(r.reason||"DNP")+'</span>':'')+'</td><td class="ow">'+ownerChip(d,r.espn)+'</td>'+(r.dnp&&!r.played?cols.map(function(){return '<td class="dash">–</td>';}).join(""):[r.min,r.pts,r.reb,r.ast,r.stl,r.blk,r.tpm,r.fgm+'-'+r.fga,r.ftm+'-'+r.fta,r.tov,r.pf].map(function(v){return '<td>'+v+'</td>';}).join(""))+'</tr>'; }
     var t=side.rows.reduce(function(o,r){ o.pts+=r.pts;o.reb+=r.reb;o.ast+=r.ast;o.st+=r.stl;o.blk+=r.blk;o["3pm"]+=r.tpm;o.fgm+=r.fgm;o.fga+=r.fga;o.ftm+=r.ftm;o.fta+=r.fta;o.to+=r.tov;o.pf+=r.pf; return o; },{pts:0,reb:0,ast:0,st:0,blk:0,"3pm":0,fgm:0,fga:0,ftm:0,fta:0,to:0,pf:0});
     return '<div class="sb-boxhd"><span class="bt"><i style="background:'+(NBACOL[side.tri]||'#555')+'"></i>'+esc_(side.tri)+'</span><span class="bs">'+side.score+'</span><span class="bl">Starters</span></div><div class="tablewrap"><table class="sb-lineup box"><thead><tr><th class="pl">Player</th><th class="ow" title="Who holds him in our league">Owner</th>'+cols.map(function(c){return '<th>'+c+'</th>';}).join("")+'</tr></thead><tbody>'+starters.map(row).join("")+(bench.length?'<tr class="div"><td colspan="13">Bench</td></tr>'+bench.map(row).join(""):'')+'<tr class="tot"><td class="pl">Team</td><td class="ow"></td>'+['',t.pts,t.reb,t.ast,t.st,t.blk,t["3pm"],t.fgm+'-'+t.fga,t.ftm+'-'+t.fta,t.to,t.pf].map(function(v){return '<td>'+v+'</td>';}).join("")+'</tr></tbody></table></div>'; }
   function gameHtml(){ var g=(W.games||[]).filter(function(x){return x.id===st.game;})[0]||(st.gdata&&st.gdata.game); if(!g) return '<div class="sb-box"><div class="sb-gh"><button type="button" class="back" data-sbback>‹ Back to matchups</button></div><div class="empty">Reading the game…</div></div>';
