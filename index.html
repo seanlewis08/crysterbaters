@@ -442,12 +442,12 @@ nav button:focus-visible{outline:1px solid var(--amber);outline-offset:-4px}
   .sb-mh .sb-side.r .sb-meter{margin-left:0}
   .sb-mh h3{font-size:20px;white-space:normal}
   .sb-mh .sb-score .big{font-size:44px}
-  .sb-catsp{width:100%;border-collapse:separate;border-spacing:0;font-size:13.5px;font-variant-numeric:tabular-nums}
-  .sb-catsp th{font-weight:600;font-size:11px;color:var(--muted);padding:8px 10px;background:var(--sb-band);border-bottom:1px solid var(--line);text-align:right}
-  .sb-catsp th:first-child{text-align:left}
-  .sb-catsp td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+  .sb-catsp{width:100%;min-width:0;table-layout:fixed;border-collapse:separate;border-spacing:0;font-size:14px;font-variant-numeric:tabular-nums}
+  .sb-catsp th{font-weight:600;font-size:11px;color:var(--muted);padding:8px 10px;background:var(--sb-band);border-bottom:1px solid var(--line);text-align:right;width:92px}
+  .sb-catsp th:first-child{text-align:left;width:auto}
+  .sb-catsp td{padding:7px 10px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap;vertical-align:top}
   .sb-catsp td.c{text-align:left;font-weight:600}
-  .sb-catsp td.c small{display:block;font-weight:400;font-size:11px}
+  .sb-catsp td.c small{display:block;font-weight:400;font-size:11px;margin-top:1px}
   .sb-catsp td.w{background:var(--sb-win);font-weight:700}
   .sb-catsp td .tn{display:block;font-size:10.5px;color:var(--dim);font-weight:400}
   .sb-catsp tr.sc td{font-weight:700;font-size:16px;background:var(--surface-2)}
@@ -459,10 +459,17 @@ nav button:focus-visible{outline:1px solid var(--amber);outline-offset:-4px}
   .sb-toggle .sync{position:static;width:100%;margin-bottom:8px}
   .sb-toggle .bench{position:static;margin-left:auto}
   .sb-lineup{min-width:0}
-  .sb-lineup.one{min-width:580px}
-  .sb-lineup.one td.pl,.sb-lineup.one th.pl{min-width:150px;max-width:150px;width:150px;padding-left:8px;white-space:normal}
-  .sb-lineup.one td.pl b{font-size:13px}
-  .sb-lineup.one td.pl .g{white-space:nowrap}
+  .sb-lineup.one{min-width:600px}
+  .sb-lineup.one td.pl,.sb-lineup.one th.pl{min-width:168px;max-width:168px;width:168px;padding-left:8px;padding-right:6px;white-space:nowrap;overflow:hidden}
+  .sb-lineup.one td.pl .sb-slot{width:24px;vertical-align:1px}
+  .sb-lineup.one td.pl b{display:inline-block;max-width:92px;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;vertical-align:bottom}
+  .sb-lineup.one td.pl small{margin-left:4px}
+  .sb-lineup.one td.pl .sb-ddm,.sb-lineup.one td.pl .sb-inj{margin-left:4px;padding:0 2px}
+  .sb-lineup.one td.pl .g{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-left:24px;font-size:11px}
+  .sb-lineup.one tr.tot td.pl,.sb-lineup.one tr.div td{padding-left:8px}
+  .sb-lineup.one th:not(.pl),.sb-lineup.one td:not(.pl){padding-left:5px;padding-right:5px;width:48px;min-width:48px}
+  .sb-lineup.one td.pl:has(.sb-ddm) b,.sb-lineup.one td.pl:has(.sb-inj) b{max-width:66px}
+  .sb-lineup.one td.pl:has(.sb-ddm):has(.sb-inj) b{max-width:46px}
   .sb-lineup td.pl,.sb-lineup th.pl{position:sticky;left:0;z-index:1;background:var(--surface);box-shadow:1px 0 0 var(--line)}
   .sb-lineup th.pl{background:var(--sb-band);z-index:2}
   .sb-lineup tr.tot td.pl{background:var(--surface)}
@@ -7681,7 +7688,7 @@ var Scoreboard=(function(){
   var NBACOL={ATL:"#C8102E",BOS:"#007A33",BKN:"#000000",CHA:"#1D1160",CHI:"#CE1141",CLE:"#860038",DAL:"#00538C",DEN:"#0E2240",DET:"#C8102E",GS:"#1D428A",GSW:"#1D428A",HOU:"#CE1141",IND:"#002D62",LAC:"#C8102E",LAL:"#552583",MEM:"#5D76A9",MIA:"#98002E",MIL:"#00471B",MIN:"#0C2340",NO:"#0C2340",NOP:"#0C2340",NY:"#006BB6",NYK:"#006BB6",OKC:"#007AC1",ORL:"#0077C0",PHI:"#006BB6",PHX:"#1D1160",PHO:"#1D1160",POR:"#E03A3E",SAC:"#5A2D81",SA:"#C4CED4",SAS:"#C4CED4",TOR:"#CE1141",UTAH:"#002B5C",UTA:"#002B5C",WSH:"#002B5C",WAS:"#002B5C"};
   var TYP={"3pm":2,pts:14,reb:6,ast:4,st:1.2,blk:0.9,dd:0.35,fgm:5.3,fga:11.5,ftm:2.6,fta:3.3};
   var W=null, loading=false, err="", started=false, timer=null, fetchedAt=0;
-  var st={m:0,view:"today",bench:true,side:"a",game:null,gdata:null,gloading:false,gerr:"",syncing:false};
+  var st={m:0,pick:null,view:"today",bench:true,side:"a",game:null,gdata:null,gloading:false,gerr:"",syncing:false};
   var inView=false;
   function $(id){ return document.getElementById(id); }
   function esc_(s){ return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];}); }
@@ -7699,7 +7706,16 @@ var Scoreboard=(function(){
     loading=true;
     var url="/api/ledger?cast=week&live="+(anyLive()?1:0)+(force?"&n="+Date.now():"");
     return fetch(url,{cache:force?"no-store":"default"}).then(function(r){ return r.json().then(function(j){ if(!r.ok) throw new Error(j.detail||j.error||("answered "+r.status)); return j; }); })
-      .then(function(j){ W=j; err=""; fetchedAt=Date.now(); }).catch(function(e){ err=e.message||"couldn't read"; }).then(function(){ loading=false; schedule(); paint(); });
+      .then(function(j){ W=j; err=""; fetchedAt=Date.now(); arrange(); }).catch(function(e){ err=e.message||"couldn't read"; }).then(function(){ loading=false; schedule(); paint(); });
+  }
+  /* the signed-in manager's own matchup goes first and opens by default; a matchup picked by hand stays picked
+     across refreshes even if the server lists them in another order */
+  function mineId(){ var p=window.Polls&&Polls.profile?Polls.profile():null; return p&&p.team_id?p.team_id:null; }
+  function arrange(){
+    var ms=(W&&W.matchups)||[], me=mineId(), i;
+    if(me){ for(i=1;i<ms.length;i++){ if(ms[i].a===me||ms[i].b===me){ ms.unshift(ms.splice(i,1)[0]); break; } } }
+    st.m=0;
+    if(st.pick){ for(i=0;i<ms.length;i++){ if(ms[i].a===st.pick||ms[i].b===st.pick){ st.m=i; break; } } }
   }
   function schedule(){ clearTimeout(timer); if(!inView) return; timer=setTimeout(function(){ if(inView&&document.visibilityState!=="hidden") load(true); else schedule(); }, anyLive()?60*1000:10*60*1000); }
   function loadGame(id){
@@ -7873,7 +7889,7 @@ var Scoreboard=(function(){
   function open(){ if(!started){ started=true; bind(); } inView=true; if(!W||Date.now()-fetchedAt>60*1000) load(false); else paint(); schedule(); }
   function bind(){
     document.addEventListener("click",function(e){
-      var m=e.target.closest("#v-scoreboard [data-sbm]"); if(m){ st.m=Number(m.dataset.sbm); st.game=null; st.gdata=null; paint(); return; }
+      var m=e.target.closest("#v-scoreboard [data-sbm]"); if(m){ st.m=Number(m.dataset.sbm); st.pick=W&&W.matchups[st.m]?W.matchups[st.m].a:null; st.game=null; st.gdata=null; paint(); return; }
       var g=e.target.closest("#v-scoreboard [data-sbg]"); if(g){ st.game=g.dataset.sbg; st.gdata=null; var gm=(W.games||[]).filter(function(x){return x.id===st.game;})[0]; if(gm&&gm.state!=="pre") loadGame(st.game); else paint(); window.scrollTo({top:$("sb-body").getBoundingClientRect().top+window.scrollY-90,behavior:"instant"}); return; }
       if(e.target.closest("#v-scoreboard [data-sbback]")){ st.game=null; st.gdata=null; paint(); return; }
       if(e.target.closest("#v-scoreboard [data-sbretry]")){ loadGame(st.game); return; }
@@ -7887,7 +7903,7 @@ var Scoreboard=(function(){
     document.addEventListener("visibilitychange",function(){ if(document.visibilityState==="visible"&&inView&&Date.now()-fetchedAt>60*1000) load(true); });
     if(window.Polls&&Polls.onAuth) Polls.onAuth(function(){ if(inView) paint(); });
   }
-  return {onView:function(v){ if(v==="scoreboard") open(); else { inView=false; clearTimeout(timer); } }, repaint:paint, data:function(){ return W; }, _calc:{teamWeek:teamWeek,scoreOf:scoreOf,expect:expect,remaining:remaining,projected:projected}};
+  return {onView:function(v){ if(v==="scoreboard") open(); else { inView=false; clearTimeout(timer); } }, repaint:paint, data:function(){ return W; }, _load:load, _st:st, _calc:{teamWeek:teamWeek,scoreOf:scoreOf,expect:expect,remaining:remaining,projected:projected}};
 })();
 window.Scoreboard=Scoreboard;
 var views={home:"v-home",teams:"v-teams",team:"v-team",players:"v-players",plot:"v-plot",rotations:"v-rotations",usage:"v-usage",scoreboard:"v-scoreboard",draft:"v-draft",cap:"v-cap",keepers:"v-keepers",polls:"v-polls",pollhist:"v-pollhist",agenda:"v-agenda",issues:"v-issues",sched:"v-sched",dues:"v-dues",badges:"v-badges",signup:"v-signup",manager:"v-manager",history:"v-history",rules:"v-rules"};
