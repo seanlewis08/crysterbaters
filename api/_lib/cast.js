@@ -187,10 +187,6 @@ async function week(opts) {
     try { await refreshToday(false); lines = await supa.select("lineup_days", "select=team_id,date,yahoo_key,player,nba,pos,status,espn_id,updated_at&date=gte." + range[0] + "&date=lte." + range[1] + "&order=date.asc&limit=5000"); }
     catch (e) { notes.push("Today's lineups are as last stored (Yahoo: " + (e.message || e) + ")"); }
   }
-  const lineupAt = lines.filter((l) => l.date === today).reduce((m, l) => (l.updated_at > m ? l.updated_at : m), "") || newest;
-  const lineups = {}; lines.forEach((l) => { const t = lineups[l.team_id] = lineups[l.team_id] || {}; (t[l.date] = t[l.date] || []).push({ key: l.yahoo_key, name: l.player, nba: l.nba, pos: l.pos, status: l.status, espn: l.espn_id || null }); });
-  const ids = Array.from(new Set(lines.map((l) => l.espn_id).filter(Boolean)));
-
   // a past day of this week whose box scores never landed (the nightly run was
   // refused or ran out of time) is fetched now, within a small budget, so the
   // score is never short a day for long. Once per instance per ten minutes.
@@ -210,6 +206,26 @@ async function week(opts) {
       }
     } catch (e) { notes.push("Box-score backfill: " + (e.message || e)); }
   }
+
+  // a lineup row stored before its player had an ESPN id (a rookie before his
+  // first game, a name Yahoo spells differently) is linked now, for every day it
+  // was stored, so his lines count; nothing to do when everyone is linked
+  const unlinked = lines.filter((l) => !l.espn_id && l.yahoo_key);
+  if (unlinked.length) {
+    try {
+      const links = await ledger.linkPlayers(unlinked);
+      const fixed = Object.keys(links).filter((k) => links[k]);
+      for (const k of fixed) {
+        await supa.update("lineup_days", "yahoo_key=eq." + encodeURIComponent(k) + "&espn_id=is.null", { espn_id: links[k] }).catch(() => {});
+        lines.forEach((l) => { if (l.yahoo_key === k && !l.espn_id) l.espn_id = links[k]; });
+      }
+      const still = unlinked.filter((l) => !l.espn_id).map((l) => l.player);
+      if (still.length) notes.push("Not matched to ESPN yet: " + Array.from(new Set(still)).join(", "));
+    } catch (e) { notes.push("Player linking: " + (e.message || e)); }
+  }
+  const lineupAt = lines.filter((l) => l.date === today).reduce((m, l) => (l.updated_at > m ? l.updated_at : m), "") || newest;
+  const lineups = {}; lines.forEach((l) => { const t = lineups[l.team_id] = lineups[l.team_id] || {}; (t[l.date] = t[l.date] || []).push({ key: l.yahoo_key, name: l.player, nba: l.nba, pos: l.pos, status: l.status, espn: l.espn_id || null }); });
+  const ids = Array.from(new Set(lines.map((l) => l.espn_id).filter(Boolean)));
 
   // stored lines (finals) for the week
   const box = {};
