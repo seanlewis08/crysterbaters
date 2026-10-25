@@ -69,7 +69,7 @@ function playersJson() {
   try {
     const d = require("../../players.json");
     const ci = d.cols.indexOf("id"), cn = d.cols.indexOf("name"), ct = d.cols.indexOf("team");
-    PJ = d.players.map((r) => ({ id: Number(r[ci]), name: r[cn], key: nrm(r[cn]), team: abbr(r[ct]) }));
+    PJ = d.players.map((r) => ({ id: Number(r[ci]), name: r[cn], key: nrm(r[cn]), team: abbr(r[ct]) })).filter((c) => c.id > 0); // a rookie carried without an ESPN id yet (id 0) must not shadow his box-score line
   } catch (e) { PJ = []; }
   return PJ;
 }
