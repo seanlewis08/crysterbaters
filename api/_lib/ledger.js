@@ -135,7 +135,7 @@ async function writeLineups(teamId, days) {
 
 // ---- ESPN box scores in ------------------------------------------------------
 async function espn(path) {
-  const r = await fetch(ESPN + path, { headers: { Accept: "application/json" } });
+  const r = await fetch((process.env.ESPN_URL || ESPN) + path, { headers: { Accept: "application/json" } });
   if (!r.ok) throw new Error("ESPN " + r.status + " on " + path);
   return r.json();
 }

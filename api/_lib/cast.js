@@ -191,6 +191,26 @@ async function week(opts) {
   const lineups = {}; lines.forEach((l) => { const t = lineups[l.team_id] = lineups[l.team_id] || {}; (t[l.date] = t[l.date] || []).push({ key: l.yahoo_key, name: l.player, nba: l.nba, pos: l.pos, status: l.status, espn: l.espn_id || null }); });
   const ids = Array.from(new Set(lines.map((l) => l.espn_id).filter(Boolean)));
 
+  // a past day of this week whose box scores never landed (the nightly run was
+  // refused or ran out of time) is fetched now, within a small budget, so the
+  // score is never short a day for long. Once per instance per ten minutes.
+  const past = dates.filter((d) => d < today);
+  if (past.length) {
+    try {
+      const doneRows = await supa.select("nba_days", "select=date,done&date=in.(" + past.join(",") + ")");
+      const done = {}; doneRows.forEach((r) => { if (r.done) done[r.date] = 1; });
+      const missing = past.filter((d) => !done[d]);
+      if (missing.length) {
+        const deadline = Date.now() + 25 * 1000;
+        for (const d of missing) {
+          if (Date.now() > deadline) { notes.push("Box scores for " + d + " still filling in"); break; }
+          const r = await memo("fill:" + d, 10 * 60 * 1000, () => ledger.fetchBox(d, deadline));
+          if (r && !r.done) notes.push("Box scores for " + d + ": " + r.finals + " of " + r.games + " games stored");
+        }
+      }
+    } catch (e) { notes.push("Box-score backfill: " + (e.message || e)); }
+  }
+
   // stored lines (finals) for the week
   const box = {};
   if (ids.length) {
