@@ -127,6 +127,40 @@ async function weekDates(week) {
   } catch (e) { return null; }
 }
 
+// The league's scoring categories: {stat_id: display_name} (cached per instance).
+let statNames = null;
+async function statCategories() {
+  if (statNames) return statNames;
+  const at = await accessToken();
+  const lg = L.fold((await L.yahoo({ at }, "/league/" + LEAGUE + "/settings")).fantasy_content.league);
+  const settings = list(lg.settings)[0] || lg.settings || {};
+  const cats = list(settings.stat_categories && (settings.stat_categories.stats || settings.stat_categories)).map((x) => x.stat || x);
+  const out = {};
+  cats.forEach((c) => { if (c && c.stat_id != null && String(c.is_only_display_stat || "0") !== "1") out[String(c.stat_id)] = c.display_name || c.name || String(c.stat_id); });
+  if (Object.keys(out).length) statNames = out;
+  return out;
+}
+
+// This week's matchups with Yahoo's running totals and category winners, for the
+// scoreboard's check: { matchups: [{ status, teams: [{key, stats:{FG%: ".480", …}}, …], winners: {PTS: team_key|"tie"} }] }
+async function scoreboard(week) {
+  const at = await accessToken();
+  const names = await statCategories().catch(() => ({}));
+  const lg = L.fold((await L.yahoo({ at }, "/league/" + LEAGUE + "/scoreboard;week=" + week)).fantasy_content.league);
+  const sb = lg.scoreboard || {};
+  const ms = list(sb.matchups || (sb["0"] && sb["0"].matchups)).map((x) => x.matchup || x).filter(Boolean);
+  return { matchups: ms.map((m) => {
+    const teams = list(m.teams || (m["0"] && m["0"].teams)).map((x) => x.team || x).filter(Boolean).map((t) => {
+      const ts = t.team_stats || {}; const stats = {};
+      list(ts.stats).map((x) => x.stat || x).forEach((st) => { if (st && st.stat_id != null) stats[names[String(st.stat_id)] || String(st.stat_id)] = st.value; });
+      return { key: t.team_key, name: t.name, stats: stats };
+    });
+    const winners = {};
+    list(m.stat_winners).map((x) => x.stat_winner || x).forEach((w) => { if (w && w.stat_id != null) winners[names[String(w.stat_id)] || String(w.stat_id)] = String(w.is_tied) === "1" ? "tie" : (w.winner_team_key || ""); });
+    return { status: m.status || "", week: Number(m.week) || week, teams: teams, winners: winners };
+  }) };
+}
+
 // Every team's lineup for one date: [{ key, name, players:[{key,name,nba,pos,status}] }]
 // (one call for the whole league; the per-team fallback is the caller's business).
 async function leagueRostersOn(date) {
@@ -207,4 +241,4 @@ async function teamName(teamId) {
   return s ? s.name : teamId;
 }
 
-module.exports = { leagueTeams, leagueRosters, mappedTeams, linkChoices, teamName, leagueMeta, weekDates, leagueRostersOn, draftResults, draftAnalysis, _reset: () => { cached = null; draftCache = null; adpCache = null; } };
+module.exports = { leagueTeams, leagueRosters, mappedTeams, linkChoices, teamName, leagueMeta, weekDates, leagueRostersOn, scoreboard, statCategories, draftResults, draftAnalysis, _reset: () => { cached = null; draftCache = null; adpCache = null; } };

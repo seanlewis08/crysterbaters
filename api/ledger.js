@@ -4,6 +4,11 @@
 //   GET  /api/ledger?rotations=sync          bring rotation_games/rotation_players up to date with
 //        popcornmachine's published games (a dozen per call; the Rotations page calls it on open,
 //        the nightly run does the rest). Reads only that site, so its failures stay its own.
+//   GET  /api/ledger?cast=week[&live=1]     the live scoreboard: every matchup's lineups for the
+//        week, stored box scores plus today's live ones from ESPN, today's games, projections.
+//        Cached a minute at the edge; today's lineups are re-read from Yahoo when stale.
+//   GET  /api/ledger?cast=lineups            the page's "Refresh lineups from Yahoo" button
+//   GET  /api/ledger?cast=game&id=<espn id>  one game: box scores, stints, score margin
 //   GET  /api/ledger?team=jalenba[&week=5]   one team's week, in /api/yahoo/team's
 //        shape, so the page draws stored and live data the same way. Lineups are
 //        what the last snapshot (or that manager's last visit) read from Yahoo;
@@ -25,6 +30,7 @@ const yahoo = require("./_lib/yahoo-server");
 const supa = require("./_lib/supa");
 const ledger = require("./_lib/ledger");
 const rotation = require("./_lib/rotation");
+const cast = require("./_lib/cast");
 
 const BUDGET_MS = 50 * 1000;
 
@@ -109,6 +115,13 @@ async function snapshot(req, res) {
       catch (e) { out.notes.push("ESPN " + date + ": " + e.message); }
     }
 
+    // 3b. projections from ESPN's fantasy feed, once a day (a failure is noted, not fatal)
+    try {
+      const pr = await supa.select("player_proj", "select=updated_at&order=updated_at.desc&limit=1").catch(() => []);
+      const age = pr[0] && pr[0].updated_at ? Date.now() - new Date(pr[0].updated_at).getTime() : Infinity;
+      if (age > 20 * 3600 * 1000 && Date.now() < deadline) { out.proj = await cast.projections(Number(meta.season) + 1); }
+    } catch (e) { out.notes.push("projections: " + e.message); }
+
     // 4. rotations from popcornmachine (separate source; a failure here is noted, not fatal)
     try { const r = await rotation.sync({ deadline: deadline, limit: 40 }); out.rotations = r.added.length; if (r.skipped.length) out.notes.push("rotations skipped: " + r.skipped.slice(0, 3).join("; ")); if (r.notes.length) out.notes.push("rotations: " + r.notes.join("; ")); }
     catch (e) { out.notes.push("popcornmachine: " + e.message); }
@@ -175,7 +188,37 @@ async function rotations(req, res) {
   }
 }
 
+async function scoreboard(req, res) {
+  const q = req.query || {}, mode = String(q.cast || "");
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  try {
+    if (mode === "week") {
+      const d = await cast.week({ week: Number(q.week) || 0, live: !!q.live });
+      res.setHeader("Cache-Control", "public, s-maxage=60, stale-while-revalidate=120");
+      return res.status(200).json(d);
+    }
+    if (mode === "lineups") {
+      res.setHeader("Cache-Control", "no-store");
+      const r = await cast.refreshToday(false);
+      return res.status(200).json(r);
+    }
+    if (mode === "game") {
+      if (!/^\d{6,12}$/.test(String(q.id || ""))) { res.setHeader("Cache-Control", "no-store"); return res.status(400).json({ error: "game id" }); }
+      const d = await cast.game(String(q.id));
+      res.setHeader("Cache-Control", "public, s-maxage=" + (d.game.state === "post" ? 600 : 45) + ", stale-while-revalidate=120");
+      return res.status(200).json(d);
+    }
+    res.setHeader("Cache-Control", "no-store");
+    return res.status(400).json({ error: "cast=week|lineups|game" });
+  } catch (e) {
+    res.setHeader("Cache-Control", "no-store");
+    const msg = e.message || String(e);
+    return res.status(msg === "no_snapshot" ? 404 : 503).json({ error: msg, detail: msg === "no_snapshot" ? "The ledger is empty: the nightly snapshot hasn't run yet." : undefined });
+  }
+}
+
 module.exports = async (req, res) => {
+  if (req.method === "GET" && req.query && req.query.cast) return scoreboard(req, res);
   if (req.method === "GET" && req.query && req.query.team) return read(req, res);
   if (req.method === "GET" && req.query && req.query.rotations) return rotations(req, res);
   if (req.method === "GET" && req.query && req.query.draft) return draft(req, res);

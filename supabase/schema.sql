@@ -1213,3 +1213,28 @@ drop policy if exists usage_players_read on public.usage_players;
 create policy usage_players_read on public.usage_players for select to anon, authenticated using (true);
 grant select on public.usage_games, public.usage_players to anon, authenticated;
 grant all on public.usage_games, public.usage_players to service_role;
+
+-- 16. Scoreboard (added 2026-10-25): the live scoreboard scores every matchup from
+-- lineup_days + nba_box itself (api/_lib/cast.js). These two tables only hold what
+-- the page can't recompute: who plays whom this week (with Yahoo's own totals, kept
+-- as a check) and ESPN's per-game projections. Both are written by the server only.
+create table if not exists public.matchups (
+  season    text not null,
+  week      integer not null,
+  a         text not null,                      -- site team id
+  b         text not null,
+  yahoo     jsonb not null default '{}'::jsonb, -- {a:{FG%:".480",…}, b:{…}, winners:{PTS:team_key|"tie"}, status}
+  yahoo_at  timestamptz,
+  primary key (season, week, a)
+);
+create table if not exists public.player_proj (
+  espn_id    bigint primary key,
+  name       text not null default '',
+  gp         integer,
+  min        numeric(5,2), pts numeric(5,2), reb numeric(5,2), ast numeric(5,2), stl numeric(5,2), blk numeric(5,2),
+  tpm        numeric(5,2), fgm numeric(5,2), fga numeric(5,2), ftm numeric(5,2), fta numeric(5,2),
+  updated_at timestamptz not null default now()
+);
+alter table public.matchups    enable row level security;
+alter table public.player_proj enable row level security;
+grant all on public.matchups, public.player_proj to service_role;
