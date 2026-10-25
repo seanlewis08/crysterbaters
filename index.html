@@ -7802,7 +7802,7 @@ var Scoreboard=(function(){
 
   /* ----- pieces ----- */
   var BALL='<svg class="sb-ball" viewBox="0 0 20 20" aria-label="in the game"><title>In the game right now</title><circle cx="10" cy="10" r="9.2" fill="#D9731F"/><g fill="none" stroke="#3A1E08" stroke-width=".9" stroke-linecap="round"><path d="M10 .8v18.4M.8 10h18.4"/><path d="M3.4 3.4c3.6 1.3 5.6 4.1 5.6 6.6s-2 5.3-5.6 6.6"/><path d="M16.6 3.4c-3.6 1.3-5.6 4.1-5.6 6.6s2 5.3 5.6 6.6"/></g></svg>';
-  function gameLabel(g){ if(!g) return ""; if(g.state==="pre") return fmtTime(g.start); if(g.state==="post") return "Final"; return g.detail||("Q"+g.period+" "+g.clock); }
+  function gameLabel(g){ if(!g) return ""; if(g.state==="pre") return fmtTime(g.start); if(g.state==="post") return "Final"; return String(g.detail||("Q"+g.period+" "+g.clock)).replace(/^(\d+)(?:\.\d+)?(?=\s*-\s)/,function(m,s){ return "0:"+(s.length<2?"0"+s:s); }); }
   function mark(t,cls){ return '<span class="sb-mark '+(cls||"")+'">'+esc_(initials(t))+'</span>'; }
   function meter(tw,cap){ var played=tw.played, live=tw.live, sched=tw.sched, over=Math.max(0,played+live+sched-cap); var w=function(n){ return (100*Math.min(n,cap)/cap).toFixed(1)+"%"; };
     return '<div class="sb-meter"><div class="lb"><span>Games (cap '+cap+')</span><span><b>'+played+'</b> played'+(live?' · '+live+' live':'')+(sched?' · '+sched+' to come':'')+(over?' · <span class="sb-over">+'+over+' over</span>':'')+'</span></div><div class="bar"><i class="p" style="width:'+w(played)+'"></i><i class="l" style="width:'+w(live)+'"></i><i class="s" style="width:'+w(sched)+'"></i></div></div>'; }
