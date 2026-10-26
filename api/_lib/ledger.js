@@ -185,6 +185,15 @@ async function fetchBox(date, deadline) {
   return { games: events.length, finals: finals, rows: uniq.length, done: done };
 }
 
+// A player's injury status (O, Q, GTD...) is a fact about him today, not about a
+// date: whichever stored row for him was written most recently carries the
+// status Yahoo showed last, so every day's lineup and the week view wear that one.
+function freshestStatus(rows) {
+  const at = {}, out = {};
+  (rows || []).forEach((l) => { const k = l.yahoo_key; if (!k) return; const u = l.updated_at || ""; if (at[k] == null || u > at[k]) { at[k] = u; out[k] = l.status || ""; } });
+  return out;
+}
+
 // ---- read back, in /api/yahoo/team's shape ----------------------------------
 async function readTeamWeek(teamId, wantWeek) {
   const meta = await supa.one("league_meta", "select=*&id=eq.current");
@@ -201,12 +210,13 @@ async function readTeamWeek(teamId, wantWeek) {
   const box = ids.length ? await supa.select("nba_box", "select=espn_id,date,played,opp,home,min,pts,reb,ast,stl,blk,tpm,fgm,fga,ftm,fta,tov&date=gte." + range[0] + "&date=lte." + range[1] + "&espn_id=in.(" + ids.join(",") + ")") : [];
   const bx = {}; box.forEach((b) => { bx[b.espn_id + "|" + b.date] = b; });
   const byDate = {}; lines.forEach((l) => { (byDate[l.date] = byDate[l.date] || []).push(l); });
+  const status = freshestStatus(lines);
   let latest = null, asOf = null;
   const days = daysBetween(range[0], range[1]).map((date) => {
     const ps = (byDate[date] || []).map((l) => {
       const b = bx[l.espn_id + "|" + date];
       if (l.updated_at && (!asOf || l.updated_at > asOf)) asOf = l.updated_at;
-      return { key: l.yahoo_key, name: l.player, team: l.nba, pos: l.pos, status: l.status, gp: b && b.played ? 1 : 0, espn: l.espn_id || null, box: b ? { min: b.min, pts: b.pts, reb: b.reb, ast: b.ast, stl: b.stl, blk: b.blk, tpm: b.tpm, fgm: b.fgm, fga: b.fga, ftm: b.ftm, fta: b.fta, tov: b.tov, opp: b.opp, home: b.home } : null };
+      return { key: l.yahoo_key, name: l.player, team: l.nba, pos: l.pos, status: status[l.yahoo_key] != null ? status[l.yahoo_key] : l.status, gp: b && b.played ? 1 : 0, espn: l.espn_id || null, box: b ? { min: b.min, pts: b.pts, reb: b.reb, ast: b.ast, stl: b.stl, blk: b.blk, tpm: b.tpm, fgm: b.fgm, fga: b.fga, ftm: b.ftm, fta: b.fta, tov: b.tov, opp: b.opp, home: b.home } : null };
     });
     if (ps.length) latest = ps;
     return { date: date, players: ps, active: ps.filter((p) => !BENCH[p.pos]).reduce((a, p) => a + p.gp, 0), bench: ps.filter((p) => BENCH[p.pos]).reduce((a, p) => a + p.gp, 0) };
@@ -233,4 +243,4 @@ async function readTeamWeek(teamId, wantWeek) {
   };
 }
 
-module.exports = { nrm, abbr, etDate, addDays, weekDates, weekOf, daysBetween, linkPlayers, writeLineups, fetchBox, readTeamWeek, BENCH, _playersJson: playersJson };
+module.exports = { nrm, abbr, etDate, addDays, weekDates, weekOf, daysBetween, linkPlayers, writeLineups, fetchBox, readTeamWeek, BENCH, _playersJson: playersJson , freshestStatus };

@@ -240,7 +240,8 @@ async function week(opts) {
     } catch (e) { notes.push("Player linking: " + (e.message || e)); }
   }
   const lineupAt = lines.filter((l) => l.date === today).reduce((m, l) => (l.updated_at > m ? l.updated_at : m), "") || newest;
-  const lineups = {}; lines.forEach((l) => { const t = lineups[l.team_id] = lineups[l.team_id] || {}; (t[l.date] = t[l.date] || []).push({ key: l.yahoo_key, name: l.player, nba: l.nba, pos: l.pos, status: l.status, espn: l.espn_id || null }); });
+  const status = ledger.freshestStatus(lines);
+  const lineups = {}; lines.forEach((l) => { const t = lineups[l.team_id] = lineups[l.team_id] || {}; (t[l.date] = t[l.date] || []).push({ key: l.yahoo_key, name: l.player, nba: l.nba, pos: l.pos, status: status[l.yahoo_key] != null ? status[l.yahoo_key] : l.status, espn: l.espn_id || null }); });
   const ids = Array.from(new Set(lines.map((l) => l.espn_id).filter(Boolean)));
 
   // stored lines (finals) for the week
