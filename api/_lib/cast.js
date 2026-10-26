@@ -149,20 +149,30 @@ async function matchupsFor(meta, week, force) {
 
 // ---- today's lineups from Yahoo (the refresh) --------------------------------
 let lastRefresh = 0;
-async function refreshToday(force) {
-  const today = ledger.etDate();
-  if (!force && Date.now() - lastRefresh < 60 * 1000) return { at: new Date(lastRefresh).toISOString(), skipped: true };
+// every team's lineup for each of `dates`, as Yahoo holds it now (one Yahoo
+// call per date for the whole league). Today is what people watch; the rest of
+// the week matters too, because managers set their later days whenever they like
+// and the nightly run only sees what was set by the morning.
+async function refreshDays(dates) {
   const map = await yahoo.mappedTeams();
   const idByKey = {}; map.forEach((m) => { if (m.team_id) idByKey[m.key] = m.team_id; });
-  const teams = await yahoo.leagueRostersOn(today);
   let n = 0;
-  for (const t of teams) {
-    const id = idByKey[t.key]; if (!id) continue;
-    await ledger.writeLineups(id, [{ date: today, players: t.players.map((p) => ({ key: p.key, name: p.name, team: p.nba, pos: p.pos, status: p.status })) }]);
-    n++;
+  for (const date of dates) {
+    const teams = await yahoo.leagueRostersOn(date);
+    for (const t of teams) {
+      const id = idByKey[t.key]; if (!id) continue;
+      await ledger.writeLineups(id, [{ date: date, players: t.players.map((p) => ({ key: p.key, name: p.name, team: p.nba, pos: p.pos, status: p.status })) }]);
+      n++;
+    }
   }
+  return n;
+}
+async function refreshToday(force, moreDates) {
+  const today = ledger.etDate();
+  if (!force && Date.now() - lastRefresh < 60 * 1000) return { at: new Date(lastRefresh).toISOString(), skipped: true };
+  const n = await refreshDays([today].concat(moreDates || []));
   lastRefresh = Date.now();
-  return { at: now(), teams: n };
+  return { at: now(), teams: n, days: 1 + (moreDates || []).length };
 }
 
 // ---- the week payload --------------------------------------------------------
@@ -180,12 +190,18 @@ async function week(opts) {
 
   // lineups for the week; today's re-read from Yahoo when stale (people are watching)
   let lines = await supa.select("lineup_days", "select=team_id,date,yahoo_key,player,nba,pos,status,espn_id,updated_at&date=gte." + range[0] + "&date=lte." + range[1] + "&order=date.asc&limit=5000");
-  const todayRows = lines.filter((l) => l.date === today);
-  const newest = todayRows.reduce((m, l) => (l.updated_at > m ? l.updated_at : m), "");
+  const newestOn = (d) => lines.filter((l) => l.date === d).reduce((m, l) => (l.updated_at > m ? l.updated_at : m), "");
+  const newest = newestOn(today);
   const staleMs = o.live ? 5 * 60 * 1000 : 30 * 60 * 1000;
-  if (today >= range[0] && today <= range[1] && (!newest || Date.now() - new Date(newest).getTime() > staleMs)) {
-    try { await refreshToday(false); lines = await supa.select("lineup_days", "select=team_id,date,yahoo_key,player,nba,pos,status,espn_id,updated_at&date=gte." + range[0] + "&date=lte." + range[1] + "&order=date.asc&limit=5000"); }
-    catch (e) { notes.push("Today's lineups are as last stored (Yahoo: " + (e.message || e) + ")"); }
+  // the rest of the week is re-read when it is more than two hours old (or never stored), with today
+  const later = dates.filter((d) => d > today && (!newestOn(d) || Date.now() - new Date(newestOn(d)).getTime() > 2 * 3600 * 1000));
+  const todayStale = !newest || Date.now() - new Date(newest).getTime() > staleMs;
+  if (today >= range[0] && today <= range[1] && (todayStale || later.length)) {
+    try {
+      if (todayStale) await refreshToday(false, later); else await refreshDays(later);
+      lines = await supa.select("lineup_days", "select=team_id,date,yahoo_key,player,nba,pos,status,espn_id,updated_at&date=gte." + range[0] + "&date=lte." + range[1] + "&order=date.asc&limit=5000");
+    }
+    catch (e) { notes.push("Lineups are as last stored (Yahoo: " + (e.message || e) + ")"); }
   }
   // a past day of this week whose box scores never landed (the nightly run was
   // refused or ran out of time) is fetched now, within a small budget, so the
@@ -319,4 +335,4 @@ async function projections(season) {
   return rows.length;
 }
 
-module.exports = { week, refreshToday, game, projections, _parseSummary: parseSummary, _elapsed: elapsed, _gameFromEvent: gameFromEvent, _memo: cache };
+module.exports = { week, refreshToday, refreshDays, game, projections, _parseSummary: parseSummary, _elapsed: elapsed, _gameFromEvent: gameFromEvent, _memo: cache };

@@ -199,7 +199,10 @@ async function scoreboard(req, res) {
     }
     if (mode === "lineups") {
       res.setHeader("Cache-Control", "no-store");
-      const r = await cast.refreshToday(false);
+      // the button re-reads today and the rest of this week, so a lineup set for Thursday shows up now
+      let later = [];
+      try { const meta = await supa.one("league_meta", "select=*&id=eq.current"); const wd = meta && ledger.weekDates(meta); const r0 = wd && wd[Number(meta.current_week) || 1]; const today = ledger.etDate(); if (r0) later = ledger.daysBetween(r0[0], r0[1]).filter((d) => d > today); } catch (e) { /* today alone */ }
+      const r = await cast.refreshToday(false, later);
       return res.status(200).json(r);
     }
     if (mode === "game") {
