@@ -6848,6 +6848,9 @@ var Yahoo=(function(){
   var $=function(id){return document.getElementById(id);};
   var started=false, busy=false, last=0, cur=null, waiting=[];
   var BENCH=/^(BN|IL|IL\+|IR|NA)$/;
+  /* rows in Yahoo's order: the starting five by slot (G G F F C Util), then the bench, then the injured list */
+  var SLOTS={PG:1,SG:2,G:3,SF:4,PF:5,F:6,C:7,Util:8,UTIL:8,BN:9,IL:10,"IL+":11,IR:11,NA:12};
+  function bySlot(list){ return (list||[]).map(function(p,i){ return [SLOTS[p.pos]||8,i,p]; }).sort(function(a,b){ return a[0]-b[0]||a[1]-b[1]; }).map(function(x){ return x[2]; }); }
   var view={week:null, day:null};
   function nrm(s){ return String(s||"").normalize("NFKD").replace(/[̀-ͯ]/g,"").toLowerCase().replace(/[^a-z0-9]/g,""); }
   function siteTeamFor(d){
@@ -6986,7 +6989,7 @@ var Yahoo=(function(){
   }
   function statHead(){ return STATC.map(function(c){ return '<th class="num yh-st" title="2025–26 per game">'+c[0]+'</th>'; }).join(""); }
   function weekTable(d, showKeepers){
-    var rows=d.players.map(function(p){
+    var rows=bySlot(d.players).map(function(p){
       var bench=BENCH.test(p.pos||""), left=sched?(sched.leftBy[p.name]||0):null;
       return '<tr'+(bench?' style="color:var(--dim)"':'')+'><td class="num sub">'+esc(p.pos||"")+'</td><td class="name" style="font-size:15px">'+esc(p.name||"")+status(p)+'</td><td class="mgr">'+esc(p.team||"")+'</td><td class="num">'+p.gp+'</td>'+
         '<td class="num'+(left?'':' sub')+'">'+(bench?'–':(left==null?'…':left))+'</td>'+statCells(p.name)+'</tr>';
@@ -6996,7 +6999,7 @@ var Yahoo=(function(){
   }
   function dayTable(d, day, showKeepers){
     var byDate={}; (d.days||[]).forEach(function(x){ byDate[x.date]=x; });
-    var dd=byDate[day], ps=dd&&dd.players&&dd.players.length?dd.players:null, today=etParts(new Date().toISOString()), past=day<today;
+    var dd=byDate[day], ps=dd&&dd.players&&dd.players.length?bySlot(dd.players):null, today=etParts(new Date().toISOString()), past=day<today;
     if(!ps) return '<div class="empty" style="padding:14px 16px">'+(d.source==="stored"?'No lineup stored for '+esc(day)+' yet — it fills in on the next snapshot or the next time this manager opens the page.':'Yahoo didn’t return a lineup for '+esc(day)+(dd&&dd.error?' ('+esc(dd.error)+')':'')+'.')+'</div>';
     var rows=ps.map(function(p){
       var bench=BENCH.test(p.pos||""), gs=gamesOn(day,p.team), g=gs[0], cell;
