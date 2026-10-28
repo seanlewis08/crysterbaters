@@ -2314,7 +2314,8 @@ footer p + p{margin-top:11px}
         <div class="field"><label for="pl-owner">In our league</label><select id="pl-owner"><option value="">Everyone</option><option value="fa">Not on a roster</option><option value="owned">On a roster</option><option value="keeper">Flagged keepers</option></select></div>
         <div class="field" style="flex:0 1 96px"><label for="pl-mingp">Min GP</label><input id="pl-mingp" type="number" min="0" step="1" inputmode="numeric" placeholder="0"></div>
         <div class="field" style="flex:0 1 96px"><label for="pl-minmin">Min MPG</label><input id="pl-minmin" type="number" min="0" step="1" inputmode="numeric" placeholder="0"></div>
-        <div class="field"><label for="pl-mode">Stats</label><select id="pl-mode"><option value="pg">Per game</option><option value="tot">Totals</option><option value="z">Z-scores</option></select></div>
+        <div class="field"><label for="pl-mode">Stats</label><select id="pl-mode"><option value="pg">Per game</option><option value="tot">Totals</option><option value="z">Z-scores</option><option value="adv">Advanced</option></select></div>
+        <div class="field" id="pl-spanf" hidden><label for="pl-span">Over</label><select id="pl-span"><option value="season">Season so far</option><option value="10">Last 10 games</option><option value="5">Last 5 games</option></select></div>
         <div class="field"><label for="pl-season">Season</label><select id="pl-season"></select></div>
         <div class="field" style="flex:0 0 auto;justify-content:flex-end;flex-direction:row;gap:8px"><button class="btn quiet sm" id="pl-clear">Clear</button><button class="btn sm" id="pl-csv" title="Every player in the list as shown, every column, as a .csv">Download CSV</button></div>
       </div>
@@ -2331,6 +2332,7 @@ footer p + p{margin-top:11px}
         <span class="sub" id="pl-src"></span>
         <span class="sub" id="pl-adp-note"></span>
       </div>
+      <p class="sub" style="margin-top:10px" id="pl-advnote" hidden><b>Advanced</b> comes from the play-by-play behind the Rotations and Usage pages (popcornmachine), this season only, over the games we hold. <b>USG%</b> is the share of his team’s possessions he ends with a shot, free throws or a turnover while he is on the floor; <b>Poss/g</b> is those possessions a game and <b>Share</b> his cut of the team’s; <b>Load</b> and <b>Box Cr</b> are Ben Taylor’s Offensive Load and Box Creation per 100 possessions on the floor; <b>TS%</b> is points per two true shooting attempts; <b>3PA rate</b> the share of his shots from three. Early in the season every one of these swings game to game. A player with no stored game shows a dash.</p>
       <p class="sub" style="margin-top:10px"><b>Value</b> is the sum of z-scores across our nine categories (FG%, FT%, 3PTM, PTS, REB, AST, ST, BLK, DD), per game, measured against the top 200 players by minutes — the Basketball Monster way. A player needs ten games (a fifth of the season early on) to be ranked. Switch Stats to <b>Z-scores</b> and every category column becomes that player's z-score against whoever is currently listed — filter to free agents, or one position, and the numbers re-centre on that group. <b>FPTS</b> is Yahoo's default points formula (PTS 1, REB 1.2, AST 1.5, STL 3, BLK 3, TO −1). <b>Owner</b> is whoever had him when rosters locked; K marks a flagged keeper. Salaries are this season's figure from Basketball-Reference (ESPN where they lack one); stats are ESPN's.</p>
     </section>
   </div>
@@ -4978,6 +4980,8 @@ var Players=(function(){
   var subs=[];
   function fire(){ subs.forEach(function(cb){ try{ cb(); }catch(e){} }); if(rows.length&&!ADP.espn&&!ADP.at) loadAdp(); else if(rows.length&&(ADP.espn||ADP.yahoo)&&rows[0].adpE===undefined) applyAdp(); }
   var f={q:"",team:"",pos:"",owner:"",mode:"pg",mingp:0,minmin:0}, qual=10;
+  /* the Advanced view: one league-wide table per span from /api/ledger?usage=, joined to the list by name */
+  var ADV={}, advSpan="season", advLoading=null, advErr="";
   var $=function(id){return document.getElementById(id);};
 
   /* ----- owners from the locked rosters ----- */
@@ -5013,6 +5017,31 @@ var Players=(function(){
     {k:"adpY",h:"Yahoo ADP",w:90,num:true,asc:true,get:function(r){return r.adpY==null?9999:r.adpY;},fmt:function(v){return v>=9999?"—":(+v).toFixed(1);}},
     {k:"owner",h:"Owner",w:150,get:function(r){return r.own?r.own.t:"";},asc:true}
   ];
+  function u(k){ return function(r){ return r.u&&r.u[k]!=null?r.u[k]:-1e9; }; }
+  var DASH='<span style="color:var(--line-2)">—</span>';
+  function uf(d){ return function(v){ return v<=-1e9?DASH:(d===3?(+v).toFixed(3).replace(/^0/,""):(+v).toFixed(d)); }; }
+  var ACOLS=[
+    COLS[0],
+    COLS[1],
+    {k:"ugp",h:"GP",num:true,get:u("gp"),fmt:uf(0),title:"Games we hold play-by-play for"},
+    {k:"umin",h:"MIN",num:true,get:u("min"),fmt:uf(1)},
+    {k:"usg",h:"USG%",num:true,cls:"val",get:u("usg"),fmt:function(v){ return v<=-1e9?DASH:"<b>"+(+v).toFixed(1)+"</b>"; }},
+    {k:"upos",h:"Poss/g",num:true,get:u("pos"),fmt:uf(1)},
+    {k:"ushare",h:"Share",num:true,get:u("share"),fmt:function(v){ return v<=-1e9?DASH:(+v).toFixed(1)+"%"; }},
+    {k:"uload",h:"Load",num:true,get:u("load"),fmt:uf(1)},
+    {k:"ubc",h:"Box Cr",num:true,get:u("creation"),fmt:uf(1)},
+    {k:"uts",h:"TS%",num:true,get:u("ts"),fmt:uf(3)},
+    {k:"utpar",h:"3PA rate",w:76,num:true,get:u("tpar"),fmt:uf(3)},
+    {k:"uat",h:"A/T",num:true,get:u("at"),fmt:function(v){ return v<=-1e9?DASH:v>=99?"∞":(+v).toFixed(1); }},
+    {k:"uastr",h:"Ast’d %",w:66,num:true,get:u("ast_rate"),fmt:function(v){ return v<=-1e9?DASH:Math.round(v)+"%"; }},
+    {k:"ufga",h:"FGA",num:true,get:u("fga"),fmt:uf(1)},
+    {k:"ufta",h:"FTA",num:true,get:u("fta"),fmt:uf(1)},
+    {k:"utov",h:"TOV",num:true,get:u("tov"),fmt:uf(1)},
+    {k:"uast",h:"AST",num:true,get:u("ast"),fmt:uf(1)},
+    {k:"upts",h:"PTS",num:true,get:u("pts"),fmt:uf(1)},
+    COLS[COLS.length-1]
+  ];
+  function cols(){ return f.mode==="adv"?ACOLS:COLS; }
   function stat(k){ return function(r){ return f.mode==="tot"?r[k]*r.gp:r[k]; }; }
   function d1(v){ return f.mode==="tot"?String(Math.round(v)):(+v).toFixed(1); }
   function fz(v){ return (v>0?"+":"")+(+v).toFixed(2); }
@@ -5213,27 +5242,32 @@ var Players=(function(){
       if(pool.length){ var model=zmodel(pool); view.forEach(function(r){ if(r.gp>0){ var zz=zscores(r,model); r.zc=zz.zc; r.zval=r.gp>=qual?zz.z:zz.z-1000; } else { r.zc=null; r.zval=-1099; } }); }
       else view.forEach(function(r){ r.zc=null; r.zval=-1099; });
     }
-    var col=COLS.filter(function(c){return c.k===sortKey;})[0]||COLS[17], get=colGet(col), dir=sortAsc?1:-1;
+    var C=cols(), col=C.filter(function(c){return c.k===sortKey;})[0]||(f.mode==="adv"?ACOLS[4]:COLS[17]), get=colGet(col), dir=sortAsc?1:-1;
     view.sort(function(a,b){
       var x=get(a), y=get(b);
       if(typeof x==="string"||typeof y==="string"){ x=String(x); y=String(y); return x<y?-dir:x>y?dir:0; }
-      if(x===y) return (f.mode==="z"?b.zval-a.zval:b.val-a.val);
+      if(x===y) return (f.mode==="z"?b.zval-a.zval:f.mode==="adv"?(u("usg")(b)-u("usg")(a)):b.val-a.val);
       return (x<y?-1:1)*dir;
     });
   }
   function render(){
     if(!rows.length) return;
+    $("pl-spanf").hidden=f.mode!=="adv"; $("pl-advnote").hidden=f.mode!=="adv";
+    if(f.mode==="adv"){ if(!ADV[advSpan]) loadAdv(advSpan); joinAdv(); }
     apply();
-    var head=COLS.map(function(c){
-      return '<th class="'+(c.num?"num ":"")+(c.k===sortKey?"on"+(sortAsc?" asc":""):"")+'" data-sort="'+c.k+'">'+c.h+'</th>';
+    var C=cols(), head=C.map(function(c){
+      return '<th class="'+(c.num?"num ":"")+(c.k===sortKey?"on"+(sortAsc?" asc":""):"")+'" data-sort="'+c.k+'"'+(c.title?' title="'+c.title+'"':'')+'>'+c.h+'</th>';
     }).join("");
     $("pl-head").innerHTML=head;
-    if(!$("pl-cols")){ var cg=document.createElement("colgroup"); cg.id="pl-cols"; var narrow=window.innerWidth<600; cg.innerHTML=COLS.map(function(c){return '<col style="width:'+(c.k==="name"&&narrow?168:(c.w||60))+'px">';}).join(""); $("pl-table").insertBefore(cg,$("pl-table").firstChild); }
+    var cg=$("pl-cols"), want=C.map(function(c){return c.k;}).join(",");
+    if(cg&&cg.dataset.cols!==want){ cg.parentNode.removeChild(cg); cg=null; }
+    if(!cg){ cg=document.createElement("colgroup"); cg.id="pl-cols"; cg.dataset.cols=want; var narrow=window.innerWidth<600; cg.innerHTML=C.map(function(c){return '<col style="width:'+(c.k==="name"&&narrow?168:(c.w||60))+'px">';}).join(""); $("pl-table").insertBefore(cg,$("pl-table").firstChild); }
     $("pl-wrap").scrollTop=0;
     renderBody(true);
     var lv=live[season], when=lv?new Date(lv.ts):null;
-    $("pl-eyebrow").textContent=(lv?lv.label:(season-1)+"-"+String(season).slice(2))+(f.mode==="z"?" z-scores vs "+zN+" listed players":" stats")+" · "+CAPS[capSeason].label+" salaries";
-    $("pl-src").textContent=(lv?"Stats from ESPN, refreshed "+when.toLocaleTimeString(undefined,{hour:"numeric",minute:"2-digit"}):"Stats from the last snapshot")+" · salaries as of "+new Date(snap.built).toLocaleDateString(undefined,{month:"short",day:"numeric"});
+    var A=ADV[advSpan];
+    $("pl-eyebrow").textContent=f.mode==="adv"?("Advanced · "+(advSpan==="season"?"this season so far":"last "+advSpan+" games")+(A?" · "+Math.round(A.games)+" games held":advLoading?" · loading…":"")):((lv?lv.label:(season-1)+"-"+String(season).slice(2))+(f.mode==="z"?" z-scores vs "+zN+" listed players":" stats")+" · "+CAPS[capSeason].label+" salaries");
+    $("pl-src").textContent=f.mode==="adv"?(A?"Play-by-play from popcornmachine · table built "+new Date(A.built).toLocaleTimeString(undefined,{hour:"numeric",minute:"2-digit"}):(advErr?"Couldn’t read the usage table ("+advErr+")":"Reading the usage table…")):((lv?"Stats from ESPN, refreshed "+when.toLocaleTimeString(undefined,{hour:"numeric",minute:"2-digit"}):"Stats from the last snapshot")+" · salaries as of "+new Date(snap.built).toLocaleDateString(undefined,{month:"short",day:"numeric"}));
     renderCap();
     fire();
   }
@@ -5244,12 +5278,12 @@ var Players=(function(){
     var start=Math.max(0,Math.floor(top/ROW_H)-6), end=Math.min(view.length,start+Math.ceil(h/ROW_H)+12);
     if(!force&&start===lastStart&&end===lastEnd) return;
     lastStart=start; lastEnd=end;
-    var out=[];
-    if(start>0) out.push('<tr class="sp" style="height:'+(start*ROW_H)+'px"><td colspan="'+COLS.length+'"></td></tr>');
+    var out=[], C=cols();
+    if(start>0) out.push('<tr class="sp" style="height:'+(start*ROW_H)+'px"><td colspan="'+C.length+'"></td></tr>');
     for(var i=start;i<end;i++){
       var r=view[i], cells=[];
-      for(var j=0;j<COLS.length;j++){
-        var c=COLS[j];
+      for(var j=0;j<C.length;j++){
+        var c=C[j];
         if(c.k==="name"){
           cells.push('<td class="pl-name">'+(r.id?'<img loading="lazy" alt="" src="https://a.espncdn.com/i/headshots/nba/players/full/'+r.id+'.png" onerror="this.style.visibility=\'hidden\'">':'<span style="width:30px;flex-shrink:0"></span>')+
             '<span class="nm"><b>'+esc(r.name)+'</b><small>'+(r.rank?"#"+r.rank+" · ":"")+esc(r.team)+(r.elig?" · "+esc(r.elig):"")+(r.gp?(r.q?"":" · "+r.gp+" GP, unranked"):" · no games")+'</small></span></td>');
@@ -5257,14 +5291,14 @@ var Players=(function(){
           cells.push('<td class="own">'+(r.own?esc(r.own.t)+(r.own.k?'<span class="k">K'+(r.own.cost?" RD "+r.own.cost:"")+'</span>':''):'<span style="color:var(--line-2)">—</span>')+'</td>');
         } else {
           var v=colGet(c)(r), txt=(c.k==="val"&&r.gp===0)?'<span style="color:var(--line-2)">—</span>':colFmt(c,v,r);
-          var neg=(c.k==="val"&&r.gp&&(f.mode==="z"?r.zval:r.z)<0)||(f.mode==="z"&&c.z&&r.gp&&v<0);
+          var neg=(c.k==="val"&&r.gp&&(f.mode==="z"?r.zval:r.z)<0)||(f.mode==="z"&&c.z&&r.gp&&v<0)||(c.k==="ubc"&&v>-1e9&&v<0);
           cells.push('<td class="num'+(c.cls?" "+c.cls:"")+(neg?" neg":"")+'">'+txt+'</td>');
         }
       }
       out.push('<tr>'+cells.join("")+'</tr>');
     }
-    if(end<view.length) out.push('<tr class="sp" style="height:'+((view.length-end)*ROW_H)+'px"><td colspan="'+COLS.length+'"></td></tr>');
-    $("pl-rows").innerHTML=out.join("")||'<tr><td colspan="'+COLS.length+'" class="pl-empty">Nobody matches that. Try fewer filters.</td></tr>';
+    if(end<view.length) out.push('<tr class="sp" style="height:'+((view.length-end)*ROW_H)+'px"><td colspan="'+C.length+'"></td></tr>');
+    $("pl-rows").innerHTML=out.join("")||'<tr><td colspan="'+C.length+'" class="pl-empty">Nobody matches that. Try fewer filters.</td></tr>';
     $("pl-count").textContent=view.length===rows.length?rows.length+" players":view.length+" of "+rows.length+" players";
   }
   function renderCap(){
@@ -5278,13 +5312,27 @@ var Players=(function(){
       '<div class="tile"><small>Second apron</small><b>'+m(c.apron2)+'</b><span>the hard one</span></div>'+
       '<div class="tile"><small>Salary floor</small><b>'+m(c.floor)+'</b><span>90% of the cap</span></div>';
   }
+  /* the usage table: fetched once per span, rows matched to the list by normalised name, then by surname + NBA team */
+  function loadAdv(span){
+    if(advLoading===span) return; advLoading=span; advErr="";
+    fetch("/api/ledger?usage="+encodeURIComponent(span)).then(function(r){ return r.json().then(function(j){ if(!r.ok) throw new Error(j.error==="no_usage"?"usage tables not set up yet":(j.error||("answered "+r.status))); return j; }); })
+      .then(function(j){ ADV[span]=j; }).catch(function(e){ advErr=e.message||"couldn’t read"; }).then(function(){ advLoading=null; if(document.getElementById("v-players").classList.contains("on")) render(); });
+  }
+  function joinAdv(){
+    var A=ADV[advSpan]; rows.forEach(function(r){ r.u=null; }); if(!A) return;
+    var byName={}, byLast={}, TRI={GSW:"GS",NOP:"NO",NYK:"NY",SAS:"SA",UTA:"UTAH",WAS:"WSH",PHO:"PHX",BRK:"BKN",CHO:"CHA"};
+    function tri(x){ x=String(x||"").toUpperCase(); return TRI[x]||x; }
+    A.rows.forEach(function(x){ var k=norm(x.name||""), lk=k.split(" ").pop()+"|"+tri(x.team); byName[k]=x; (byLast[lk]=byLast[lk]||[]).push(x); });
+    rows.forEach(function(r){ var x=byName[r.key]; if(!x){ var cand=byLast[r.key.split(" ").pop()+"|"+tri(r.team)]||[]; if(cand.length===1&&norm(cand[0].name).charAt(0)===r.key.charAt(0)) x=cand[0]; } r.u=x||null; });
+  }
   function setNotice(html,cls){ $("pl-notice").innerHTML=html?'<div class="notice '+(cls||"")+'">'+html+'</div>':""; }
 
   /* ----- events ----- */
   var timer=null;
   function bind(){
     $("pl-q").addEventListener("input",function(){ f.q=this.value; clearTimeout(timer); timer=setTimeout(function(){ render(); },40); });
-    ["team","pos","owner","mode"].forEach(function(k){ $("pl-"+k).addEventListener("change",function(){ f[k]=this.value; render(); }); });
+    ["team","pos","owner","mode"].forEach(function(k){ $("pl-"+k).addEventListener("change",function(){ var was=f[k]; f[k]=this.value; if(k==="mode"&&(this.value==="adv")!==(was==="adv")){ sortKey=this.value==="adv"?"usg":"val"; sortAsc=false; } render(); }); });
+    $("pl-span").addEventListener("change",function(){ advSpan=this.value; render(); });
     ["mingp","minmin"].forEach(function(k){ var el=$("pl-"+k); function upd(){ var v=Math.max(0,parseFloat(el.value)||0); if(v===f[k]) return; f[k]=v; render(); } el.addEventListener("input",function(){ clearTimeout(timer); timer=setTimeout(upd,120); }); el.addEventListener("change",upd); });
     $("pl-season").addEventListener("change",function(){ season=+this.value; userSeason=true; build(); render(); });
     /* CSV of the list as filtered and sorted, in the current stats mode, with the columns the
@@ -5295,11 +5343,11 @@ var Players=(function(){
       var extra=[["Team",function(r){return r.team;}],["Eligible",function(r){return r.elig||"";}],["Rank",function(r){return r.rank||"";}],["No.",function(r){return r.num||"";}],
                  ["Keeper",function(r){return r.own&&r.own.k?"K":"";}],["Keeper cost",function(r){return r.own&&r.own.cost?"RD "+r.own.cost:"";}],
                  ["OREB",function(r){return r.oreb==null?"":(+r.oreb).toFixed(1);}],["DREB",function(r){return r.dreb==null?"":(+r.dreb).toFixed(1);}],["GS",function(r){return r.gs==null?"":r.gs;}],["PF",function(r){return r.gp?(+r.pf).toFixed(1):"";}],["TECH",function(r){return r.tech||0;}],["TD",function(r){return r.td||0;}],["Guaranteed $",function(r){return r.gtd||"";}]];
-      var head=COLS.map(function(c){return c.h;}).concat(extra.map(function(e){return e[0];}));
+      var head=cols().map(function(c){return c.h;}).concat(extra.map(function(e){return e[0];}));
       head[head.indexOf("Salary")]="Salary $"; head[head.indexOf("% Cap")]="% of cap";
       var lines=[head.map(q).join(",")];
       view.forEach(function(r){
-        var cells=COLS.map(function(c){
+        var cells=cols().map(function(c){
           if(c.k==="name") return r.name;
           if(c.k==="owner") return r.own?r.own.t:"";
           var v=colGet(c)(r);
@@ -5315,7 +5363,7 @@ var Players=(function(){
     $("pl-csv").addEventListener("click",function(){
       if(!rows.length) return;
       var lv=live[season], label=(lv?lv.label:(season-1)+"-"+String(season).slice(2)).replace(/[^0-9a-z-]/gi,"");
-      var name="crysterbaters-players-"+label+"-"+({pg:"per-game",tot:"totals",z:"z-scores"}[f.mode]||f.mode)+(view.length===rows.length?"":"-filtered")+"-"+new Date().toISOString().slice(0,10)+".csv";
+      var name="crysterbaters-players-"+label+"-"+({pg:"per-game",tot:"totals",z:"z-scores",adv:"advanced-"+advSpan}[f.mode]||f.mode)+(view.length===rows.length?"":"-filtered")+"-"+new Date().toISOString().slice(0,10)+".csv";
       var blob=new Blob(["\ufeff"+csvText()],{type:"text/csv;charset=utf-8"});
       var a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click();
       setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); },1000);
@@ -5325,7 +5373,7 @@ var Players=(function(){
     window.addEventListener("resize",function(){ if(view.length) renderBody(true); });
     $("pl-head").addEventListener("click",function(e){
       var th=e.target.closest("[data-sort]"); if(!th) return;
-      var col=COLS.filter(function(c){return c.k===th.dataset.sort;})[0];
+      var col=cols().filter(function(c){return c.k===th.dataset.sort;})[0];
       if(sortKey===col.k) sortAsc=!sortAsc; else { sortKey=col.k; sortAsc=!!col.asc; }
       render();
     });

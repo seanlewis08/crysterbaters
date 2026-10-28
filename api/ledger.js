@@ -188,6 +188,24 @@ async function rotations(req, res) {
   }
 }
 
+// GET /api/ledger?usage=season|10|5 — the league-wide usage table for the
+// Players page's Advanced view (api/_lib/usage.js seasonTable). Half an hour at the edge.
+async function usageTable(req, res) {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  const span = String(req.query.usage || "season");
+  if (!/^(season|5|10|15|20)$/.test(span)) { res.setHeader("Cache-Control", "no-store"); return res.status(400).json({ error: "usage=season|5|10|15|20" }); }
+  try {
+    const usage = require("./_lib/usage");
+    const t = await usage.seasonTable(supa, { last: span === "season" ? 0 : Number(span) });
+    res.setHeader("Cache-Control", "public, s-maxage=1800, stale-while-revalidate=3600");
+    return res.status(200).json(t);
+  } catch (e) {
+    res.setHeader("Cache-Control", "no-store");
+    const missing = /usage_(games|players)/.test(e.message || "") && /does not exist|relation|42P01/.test(e.message || "");
+    return res.status(missing ? 404 : 503).json({ error: missing ? "no_usage" : (e.message || String(e)) });
+  }
+}
+
 async function scoreboard(req, res) {
   const q = req.query || {}, mode = String(q.cast || "");
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -224,6 +242,7 @@ module.exports = async (req, res) => {
   if (req.method === "GET" && req.query && req.query.cast) return scoreboard(req, res);
   if (req.method === "GET" && req.query && req.query.team) return read(req, res);
   if (req.method === "GET" && req.query && req.query.rotations) return rotations(req, res);
+  if (req.method === "GET" && req.query && req.query.usage) return usageTable(req, res);
   if (req.method === "GET" && req.query && req.query.draft) return draft(req, res);
   if (req.method === "GET" && req.query && req.query.adp) return adp(req, res);
   return snapshot(req, res);

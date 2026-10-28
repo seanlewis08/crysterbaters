@@ -128,4 +128,55 @@ function rows(g, entry) {
   return { games: games, players: players };
 }
 
-module.exports = { classify, zoneOf, zone14, teamUsage, rows, PT_KEYS, ZONE_KEYS };
+// ---- the league-wide table for the Players page -----------------------------
+// One line per player over the season so far (or his team's last N games), the
+// same arithmetic the Usage page does in the browser, done once here and cached:
+// USG%, possessions a game and share, Ben Taylor's Offensive Load and Box
+// Creation (inputs per 100 team possessions he was on the floor for), true
+// shooting, three-point attempt rate. Team totals are over the games he played in.
+async function pageAll(supa, table, cols, extra) {
+  const out = []; const page = 1000;
+  for (let off = 0; ; off += page) {
+    const rows = await supa.select(table, "select=" + cols + (extra ? "&" + extra : "") + "&order=date.asc,game_id.asc&limit=" + page + "&offset=" + off);
+    out.push.apply(out, rows); if (rows.length < page) break;
+  }
+  return out;
+}
+function boxCreation(ast, pts, tov, fg3a, fg3m) { const prof = (2 / (1 + Math.exp(-fg3a)) - 1) * (fg3a ? fg3m / fg3a : 0); return ast * 0.1843 + (pts + tov) * 0.0969 - 2.3021 * prof + 0.0582 * (ast * (pts + tov) * prof) - 1.1942; }
+const r3 = (x) => Math.round(x * 1000) / 1000;
+async function seasonTable(supa, opts) {
+  const last = Number((opts || {}).last) || 0;
+  const games = await pageAll(supa, "usage_games", "game_id,team,date,min,poss");
+  const players = await pageAll(supa, "usage_players", "game_id,date,team,player_id,name,starter,min,fga,fta,tov,pts,ast,fgm,fg3a,fg3m,ast_fg");
+  // the games in scope per team: all, or the last N by date
+  const byTeam = {}; games.forEach((g) => { (byTeam[g.team] = byTeam[g.team] || []).push(g); });
+  const inScope = {}; const G = {};
+  Object.keys(byTeam).forEach((tri) => {
+    const list = byTeam[tri].slice().sort((a, b) => (a.date + a.game_id < b.date + b.game_id ? 1 : -1));
+    (last ? list.slice(0, last) : list).forEach((g) => { inScope[g.game_id + "|" + tri] = 1; G[g.game_id + "|" + tri] = g; });
+  });
+  const by = {};
+  players.forEach((r) => {
+    const k = r.game_id + "|" + r.team; if (!inScope[k]) return;
+    const g = G[k]; const a = by[r.player_id] || (by[r.player_id] = { id: r.player_id, name: r.name, team: r.team, last: "", gp: 0, starter: 0, min: 0, fga: 0, fta: 0, tov: 0, pts: 0, ast: 0, fgm: 0, fg3a: 0, fg3m: 0, ast_fg: 0, tmin: 0, tposs: 0, onfloor: 0 });
+    if (r.date >= a.last) { a.last = r.date; a.name = r.name; a.team = r.team; }
+    a.gp++; if (r.starter) a.starter++;
+    ["min", "fga", "fta", "tov", "pts", "ast", "fgm", "fg3a", "fg3m", "ast_fg"].forEach((f) => { a[f] += Number(r[f]) || 0; });
+    const tmin = Number(g.min) || 0, tposs = Number(g.poss) || 0; a.tmin += tmin; a.tposs += tposs;
+    if (tmin) a.onfloor += tposs * (Number(r.min) || 0) / (tmin / 5);
+  });
+  const rows = Object.keys(by).map((id) => {
+    const a = by[id], gp = a.gp, poss = a.fga + 0.44 * a.fta + a.tov;
+    const usg = a.tposs && a.min ? 100 * poss * (a.tmin / 5) / (a.min * a.tposs) : 0;
+    const sc = a.onfloor ? 100 / a.onfloor : 0;
+    const bc = boxCreation(a.ast * sc, a.pts * sc, a.tov * sc, a.fg3a * sc, a.fg3m * sc);
+    const load = (a.ast * sc - 0.38 * bc) * 0.75 + a.fga * sc + a.fta * sc * 0.44 + bc + a.tov * sc;
+    const tsa = a.fga + 0.44 * a.fta;
+    return { id: a.id, name: a.name, team: a.team, gp: gp, starter: a.starter, min: r1(a.min / gp), usg: r1(usg), pos: r1(poss / gp), share: a.tposs ? r1(100 * poss / a.tposs) : 0,
+      load: r1(load), creation: r1(bc), ts: tsa ? r3(a.pts / (2 * tsa)) : null, tpar: a.fga ? r3(a.fg3a / a.fga) : null, at: a.tov ? r1(a.ast / a.tov) : (a.ast ? 99 : null),
+      fga: r1(a.fga / gp), fta: r1(a.fta / gp), tov: r1(a.tov / gp), ast: r1(a.ast / gp), pts: r1(a.pts / gp), tpa: r1(a.fg3a / gp), ast_rate: a.fgm ? Math.round(100 * a.ast_fg / a.fgm) : null };
+  }).sort((x, y) => y.usg - x.usg);
+  return { built: new Date().toISOString(), scope: last ? "last" + last : "season", games: Object.keys(inScope).length / 2, teams: Object.keys(byTeam).length, rows: rows, attribution: "Play-by-play from popcornmachine.com" };
+}
+
+module.exports = { classify, zoneOf, zone14, teamUsage, rows, seasonTable, PT_KEYS, ZONE_KEYS };
