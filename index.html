@@ -2332,7 +2332,7 @@ footer p + p{margin-top:11px}
         <span class="sub" id="pl-src"></span>
         <span class="sub" id="pl-adp-note"></span>
       </div>
-      <p class="sub" style="margin-top:10px" id="pl-advnote" hidden><b>Advanced</b> comes from the play-by-play behind the Rotations and Usage pages (popcornmachine), this season only, over the games we hold. <b>USG%</b> is the share of his team’s possessions he ends with a shot, free throws or a turnover while he is on the floor; <b>Poss/g</b> is those possessions a game and <b>Share</b> his cut of the team’s; <b>Load</b> and <b>Box Cr</b> are Ben Taylor’s Offensive Load and Box Creation per 100 possessions on the floor; <b>TS%</b> is points per two true shooting attempts; <b>3PA rate</b> the share of his shots from three. Early in the season every one of these swings game to game. A player with no stored game shows a dash.</p>
+      <p class="sub" style="margin-top:10px" id="pl-advnote" hidden><b>Advanced</b> comes from the play-by-play behind the Rotations and Usage pages (popcornmachine), this season only, over the games we hold. <b>USG%</b> is the share of his team’s possessions he ends with a shot, free throws or a turnover while he is on the floor; <b>Poss/g</b> is those possessions a game and <b>Share</b> his cut of the team’s; <b>Load</b> and <b>Box Cr</b> are Ben Taylor’s Offensive Load and Box Creation per 100 possessions on the floor; <b>TS%</b> is points per two true shooting attempts; <b>3PA rate</b> the share of his shots from three. Early in the season every one of these swings game to game. Lines under ten minutes a game sort to the bottom whichever column is up (garbage time makes anyone a 60% usage player); Min GP and Min MPG filter on these games. A player with no stored game shows a dash.</p>
       <p class="sub" style="margin-top:10px"><b>Value</b> is the sum of z-scores across our nine categories (FG%, FT%, 3PTM, PTS, REB, AST, ST, BLK, DD), per game, measured against the top 200 players by minutes — the Basketball Monster way. A player needs ten games (a fifth of the season early on) to be ranked. Switch Stats to <b>Z-scores</b> and every category column becomes that player's z-score against whoever is currently listed — filter to free agents, or one position, and the numbers re-centre on that group. <b>FPTS</b> is Yahoo's default points formula (PTS 1, REB 1.2, AST 1.5, STL 3, BLK 3, TO −1). <b>Owner</b> is whoever had him when rosters locked; K marks a flagged keeper. Salaries are this season's figure from Basketball-Reference (ESPN where they lack one); stats are ESPN's.</p>
     </section>
   </div>
@@ -5232,6 +5232,7 @@ var Players=(function(){
       if(f.owner==="owned"&&!r.own) return false;
       if(f.owner==="keeper"&&!(r.own&&r.own.k)) return false;
       if(f.owner&&["fa","owned","keeper"].indexOf(f.owner)<0&&!(r.own&&r.own.id===f.owner)) return false;
+      if(f.mode==="adv"){ if(f.mingp>0&&!(r.u&&r.u.gp>=f.mingp)) return false; if(f.minmin>0&&!(r.u&&r.u.min>=f.minmin)) return false; return true; }
       if(f.mingp>0&&r.gp<f.mingp) return false;
       if(f.minmin>0&&r.min<f.minmin) return false;
       return true;
@@ -5243,7 +5244,10 @@ var Players=(function(){
       else view.forEach(function(r){ r.zc=null; r.zval=-1099; });
     }
     var C=cols(), col=C.filter(function(c){return c.k===sortKey;})[0]||(f.mode==="adv"?ACOLS[4]:COLS[17]), get=colGet(col), dir=sortAsc?1:-1;
+    /* Advanced: a line under ten minutes a game is garbage time, so it sorts after everyone qualified whichever column is up */
+    var advQ=function(r){ return r.u&&r.u.min>=10?1:0; };
     view.sort(function(a,b){
+      if(f.mode==="adv"){ var qa=advQ(a), qb=advQ(b); if(qa!==qb) return qb-qa; }
       var x=get(a), y=get(b);
       if(typeof x==="string"||typeof y==="string"){ x=String(x); y=String(y); return x<y?-dir:x>y?dir:0; }
       if(x===y) return (f.mode==="z"?b.zval-a.zval:f.mode==="adv"?(u("usg")(b)-u("usg")(a)):b.val-a.val);
