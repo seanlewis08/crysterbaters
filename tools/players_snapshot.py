@@ -8,6 +8,7 @@ ESPN's contract feed as a fallback for anyone missing there.
     python3 tools/players_snapshot.py            # stats for the latest season with games, salaries for the cap season
     python3 tools/players_snapshot.py 2026 2027  # stats season (2026 = 2025-26), salary season (2027 = 2026-27)
     python3 tools/players_snapshot.py --numbers  # only refresh jersey numbers in the existing players.json (seconds)
+    python3 tools/players_snapshot.py --experience  # only refresh years of experience in the existing players.json (a minute)
 
 Writes players.json next to index.html. The page loads that file first (instant),
 then refreshes stats from ESPN in the browser. Run this again whenever salaries
@@ -25,6 +26,7 @@ BBR_PG = "https://www.basketball-reference.com/leagues/NBA_{season}_per_game.htm
 FBA = ("https://lm-api-reads.fantasy.espn.com/apis/v3/games/fba/seasons/{season}"
        "/players?scoringPeriodId=0&view=players_wl")
 ATHLETES = "https://sports.core.api.espn.com/v3/sports/basketball/nba/athletes?limit=2000&active=true"
+ATHLETE = "https://sports.core.api.espn.com/v2/sports/basketball/leagues/nba/athletes/{id}?lang=en&region=us"
 HDR = {"User-Agent": "Mozilla/5.0 (crysterbaters league site)"}
 
 def norm(name):
@@ -165,22 +167,91 @@ def add_numbers(rows):
         r.append(n)
     print(f"jersey numbers for {hits} of {len(rows)} players")
 
-def refresh_numbers_only():
+def experience(season_start):
+    """{espn id: completed NBA seasons} and {normalized name: same} for every active
+    player, entering the season that starts in `season_start` (0 = rookie).
+
+    ESPN's athlete list carries experience.years, which counts the current season
+    (Doncic 9 in 2026-27) but goes wrong at the fringe: rookies are 0, a few
+    two-way and undrafted men sit at 1 whatever they have played. So for anyone at
+    0 or 1 the athlete record is read too: its debutYear settles it, else the draft
+    year does, else he is a rookie."""
+    d = get(ATHLETES) or {}
+    items = d.get("items", d.get("athletes", []))
+    years = {}
+    for a in items:
+        years[int(a["id"])] = ((a.get("experience") or {}).get("years"))
+    low = [a for a in items if not years.get(int(a["id"])) or years[int(a["id"])] < 2]
+    def look(a):
+        j = get(ATHLETE.format(id=a["id"])) or {}
+        return int(a["id"]), j.get("debutYear"), (j.get("draft") or {}).get("year")
+    with ThreadPoolExecutor(max_workers=12) as ex:
+        detail = {pid: (debut, draft) for pid, debut, draft in ex.map(look, low)}
+    by_id, by_name = {}, {}
+    for a in items:
+        pid = int(a["id"]); debut, draft = detail.get(pid, (None, None))
+        e = seasons_from(season_start, years.get(pid), debut, draft)
+        by_id[pid] = e
+        by_name[norm(a.get("displayName") or a.get("fullName") or "")] = e
+    return by_id, by_name
+
+def seasons_from(season_start, y, debut, draft, active=True):
+    """experience.years counts the season in progress for an active player and
+    stops moving once he is off a roster, so a free agent is read off his draft year."""
+    if debut:
+        e = season_start - debut
+    elif not active and draft:
+        e = season_start - draft
+    elif y and y >= 2:
+        e = y - 1 if active else y
+    elif draft and season_start - draft >= 1:
+        e = season_start - draft
+    else:
+        e = y or 0   # ESPN's 1 is an undrafted second-year man; 0 a rookie
+    return max(0, int(e))
+
+def add_experience(rows, season_start):
+    by_id, by_name = experience(season_start)
+    # anyone with an ESPN id who has dropped off the active list (unsigned, overseas,
+    # out for the year) still has an athlete record
+    gone = [r for r in rows if r[0] and r[0] not in by_id]
+    def look(r):
+        j = get(ATHLETE.format(id=r[0])) or {}
+        return r[0], seasons_from(season_start, (j.get("experience") or {}).get("years"), j.get("debutYear"), (j.get("draft") or {}).get("year"), bool(j.get("active"))) if j else None
+    with ThreadPoolExecutor(max_workers=12) as ex:
+        for pid, e in ex.map(look, gone):
+            if e is not None: by_id[pid] = e
+    hits = 0
+    for r in rows:
+        e = by_id.get(r[0])
+        if e is None: e = by_name.get(norm(r[1]))
+        if e is not None: hits += 1
+        r.append(e)
+    print(f"years of experience for {hits} of {len(rows)} players")
+
+def refresh_column(name, fill):
+    """Rebuild one trailing column of the existing players.json in place."""
     path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "players.json")
     with open(path) as f:
         out = json.load(f)
     cols = out["cols"]
-    if "num" in cols:
-        i = cols.index("num")
+    if name in cols:
+        i = cols.index(name)
         for r in out["players"]:
             del r[i]
         cols.pop(i)
-    add_numbers(out["players"])
-    cols.append("num")
+    fill(out)
+    cols.append(name)
     out["built"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())   # the site only swaps its cached snapshot when this moves
     with open(path, "w") as f:
         json.dump(out, f, separators=(",", ":"))
     print("wrote", os.path.normpath(path), os.path.getsize(path), "bytes")
+
+def refresh_numbers_only():
+    refresh_column("num", lambda out: add_numbers(out["players"]))
+
+def refresh_experience_only():
+    refresh_column("exp", lambda out: add_experience(out["players"], out["salarySeason"] - 1))
 
 def pick(cat, names, key):
     i = names.index(key)
@@ -284,10 +355,11 @@ def main():
         r.append(eligible(fine or [], r[3] or ""))
     print(f"matched {el_hits} of {len(rows)} for multi-position eligibility")
     add_numbers(rows)
+    add_experience(rows, cap_season - 1)
     out = {
         "built": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "statsSeason": stats_season, "salarySeason": cap_season,
-        "cols": ["id","name","team","pos","age","gp","min","pts","reb","ast","stl","blk","tpm","tpa","fgm","fga","ftm","fta","to","dd","td","salary","yrs","gtd","src","pf","tech","ff","ejct","oreb","dreb","gs","elig","num"],
+        "cols": ["id","name","team","pos","age","gp","min","pts","reb","ast","stl","blk","tpm","tpa","fgm","fga","ftm","fta","to","dd","td","salary","yrs","gtd","src","pf","tech","ff","ejct","oreb","dreb","gs","elig","num","exp"],
         "players": rows,
     }
     path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "players.json")
@@ -298,5 +370,7 @@ def main():
 if __name__ == "__main__":
     if "--numbers" in sys.argv:
         refresh_numbers_only()
+    elif "--experience" in sys.argv:
+        refresh_experience_only()
     else:
         main()
