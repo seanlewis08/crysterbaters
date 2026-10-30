@@ -7797,7 +7797,7 @@ var Scoreboard=(function(){
     loading=true;
     var url="/api/ledger?cast=week&live="+(anyLive()?1:0)+(force?"&n="+Date.now():"");
     return fetch(url,{cache:force?"no-store":"default"}).then(function(r){ return r.json().then(function(j){ if(!r.ok) throw new Error(j.detail||j.error||("answered "+r.status)); return j; }); })
-      .then(function(j){ W=j; err=""; fetchedAt=Date.now(); arrange(); }).catch(function(e){ err=e.message||"couldn't read"; }).then(function(){ loading=false; schedule(); paint(); });
+      .then(function(j){ W=j; err=""; fetchedAt=Date.now(); arrange(); }).catch(function(e){ err=e.message||"couldn't read"; }).then(function(){ loading=false; schedule(); paint(); refreshOpenGame(); });
   }
   /* the signed-in manager's own matchup goes first and opens by default; a matchup picked by hand stays picked
      across refreshes even if the server lists them in another order */
@@ -7808,12 +7808,23 @@ var Scoreboard=(function(){
     st.m=0;
     if(st.pick){ for(i=0;i<ms.length;i++){ if(ms[i].a===st.pick||ms[i].b===st.pick){ st.m=i; break; } } }
   }
-  function schedule(){ clearTimeout(timer); if(!inView) return; timer=setTimeout(function(){ if(inView&&document.visibilityState!=="hidden") load(true); else schedule(); }, anyLive()?60*1000:10*60*1000); }
-  function loadGame(id){
-    st.gloading=true; st.gerr=""; st.gdata=null; paint();
-    fetch("/api/ledger?cast=game&id="+encodeURIComponent(id)+"&n="+Math.floor(Date.now()/45000)).then(function(r){ return r.json().then(function(j){ if(!r.ok) throw new Error(j.error||("answered "+r.status)); return j; }); })
-      .then(function(j){ if(st.game===id){ st.gdata=j; } }).catch(function(e){ st.gerr=e.message||"couldn't read"; }).then(function(){ st.gloading=false; paint(); });
+  /* how long until the next read: every 30 s while a game is on; otherwise wake up 20 s after the next tip-off
+     (so the page is already polling when the first game starts), and no less often than every 10 minutes */
+  function nextDelay(){
+    if(anyLive()) return 30*1000;
+    var now=Date.now(), soon=null;
+    ((W&&W.games)||[]).forEach(function(g){ if(g.state==="pre"&&g.start){ var t0=new Date(g.start).getTime(); if(!isNaN(t0)&&(soon==null||t0<soon)) soon=t0; } });
+    if(soon!=null){ var d=soon+20*1000-now; return d<=0?30*1000:Math.min(d,10*60*1000); }
+    return 10*60*1000;
   }
+  function schedule(){ clearTimeout(timer); if(!inView) return; timer=setTimeout(function(){ if(inView&&document.visibilityState!=="hidden") load(true); else schedule(); }, nextDelay()); }
+  function loadGame(id,quiet){
+    if(!quiet){ st.gloading=true; st.gerr=""; st.gdata=null; paint(); }
+    fetch("/api/ledger?cast=game&id="+encodeURIComponent(id)+"&n="+Math.floor(Date.now()/20000)).then(function(r){ return r.json().then(function(j){ if(!r.ok) throw new Error(j.error||("answered "+r.status)); return j; }); })
+      .then(function(j){ if(st.game===id){ st.gdata=j; st.gerr=""; } }).catch(function(e){ if(!quiet) st.gerr=e.message||"couldn't read"; }).then(function(){ st.gloading=false; paint(); });
+  }
+  /* an open game view follows the same clock as the page while that game is on */
+  function refreshOpenGame(){ if(!st.game||!W) return; var g=(W.games||[]).filter(function(x){return x.id===st.game;})[0]; if(g&&g.state!=="pre"&&st.gdata&&st.gdata.game&&st.gdata.game.state!=="post") loadGame(st.game,true); }
   function refreshLineups(){
     st.syncing=true; paint();
     fetch("/api/ledger?cast=lineups&n="+Date.now(),{cache:"no-store"}).then(function(r){ return r.json(); }).catch(function(){ return {}; })
@@ -7928,7 +7939,7 @@ var Scoreboard=(function(){
     if(st.bench){ rows.push('<tr class="div"><td colspan="10">Bench</td><td class="pos"></td><td colspan="10">Bench</td></tr>'); var nb=Math.max(bn(ra).length,bn(rb).length); for(var j=0;j<nb;j++){ var qa=bn(ra)[j], qb=bn(rb)[j]; rows.push('<tr class="bn">'+(qa?playerCell(qa,A)+numCells(qa,A):'<td class="pl"></td>'+CATS.map(function(){return '<td></td>';}).join(""))+'<td class="pos">'+esc_((qa||qb||{}).pos||"")+'</td>'+(qb?playerCell(qb,B)+numCells(qb,B):'<td class="pl"></td>'+CATS.map(function(){return '<td></td>';}).join(""))+'</tr>'); } }
     rows.push('<tr class="tot"><td class="pl">'+(st.view==="today"?'Tonight':'Week')+'</td>'+totCells(A)+'<td class="pos"></td><td class="pl">'+(st.view==="today"?'Tonight':'Week')+'</td>'+totCells(B)+'</tr>');
     return toggleHtml()+'<div class="tablewrap"><table class="sb-lineup"><thead><tr><th class="pl">'+esc_(ta.name)+'</th>'+heads+'<th class="pos">Pos</th><th class="pl">'+esc_(tb.name)+'</th>'+heads+'</tr></thead><tbody>'+rows.join("")+'</tbody></table></div>'+
-      '<div class="sb-foot">Active slots count toward the week and the cap; bench players who play tonight add nothing. '+(st.view==="today"?'FG% and FT% show makes-attempts for the game.':'Matchup totals are each player’s week so far in this lineup.')+' The basketball marks who is on the floor. Lines refresh every minute while a game is live.</div>'; }
+      '<div class="sb-foot">Active slots count toward the week and the cap; bench players who play tonight add nothing. '+(st.view==="today"?'FG% and FT% show makes-attempts for the game.':'Matchup totals are each player’s week so far in this lineup.')+' The basketball marks who is on the floor. Lines refresh every 30 seconds while a game is on.</div>'; }
   function matchHtml(){ var m=W.matchups[st.m]; if(!m) return '<div class="empty">No matchups stored for week '+W.week+' yet. They arrive with the nightly run.</div>';
     var A=teamWeek(m.a), B=teamWeek(m.b), sc=scoreOf(A,B);
     return '<div class="sb-box">'+headHtml(m,A,B,sc)+catsHtml(m,A,B,sc)+'</div><div class="sb-box" style="margin-top:'+(phone()?10:14)+'px">'+lineupHtml(m,A,B)+'</div>'; }
@@ -7989,7 +8000,7 @@ var Scoreboard=(function(){
     var ph=phone();
     body.innerHTML='<div class="sb-layout"><aside><div class="sb-box"><div class="sb-boxhd2">Matchups <small>Week '+W.week+'</small></div><div class="'+(ph?'sb-strip':'')+'">'+railHtml()+'</div></div><div class="sb-box"><div class="sb-boxhd2">Today’s games <small>'+esc_(fmtDate(W.today))+'</small></div><div class="'+(ph?'sb-strip':'')+'">'+gamesHtml()+'</div></div></aside><main id="sb-main">'+(st.game?gameHtml():matchHtml())+'</main></div>';
   }
-  function open(){ if(!started){ started=true; bind(); } inView=true; if(!W||Date.now()-fetchedAt>60*1000) load(false); else paint(); schedule(); }
+  function open(){ if(!started){ started=true; bind(); document.addEventListener("visibilitychange",function(){ if(document.visibilityState==="visible"&&inView&&Date.now()-fetchedAt>25*1000) load(true); }); } inView=true; if(!W||Date.now()-fetchedAt>30*1000) load(false); else paint(); schedule(); }
   function bind(){
     document.addEventListener("click",function(e){
       var m=e.target.closest("#v-scoreboard [data-sbm]"); if(m){ st.m=Number(m.dataset.sbm); st.pick=W&&W.matchups[st.m]?W.matchups[st.m].a:null; st.game=null; st.gdata=null; paint(); return; }
@@ -8006,7 +8017,7 @@ var Scoreboard=(function(){
     document.addEventListener("visibilitychange",function(){ if(document.visibilityState==="visible"&&inView&&Date.now()-fetchedAt>60*1000) load(true); });
     if(window.Polls&&Polls.onAuth) Polls.onAuth(function(){ if(inView) paint(); });
   }
-  return {onView:function(v){ if(v==="scoreboard") open(); else { inView=false; clearTimeout(timer); } }, repaint:paint, data:function(){ return W; }, _load:load, _st:st, _calc:{teamWeek:teamWeek,scoreOf:scoreOf,expect:expect,remaining:remaining,projected:projected}};
+  return {onView:function(v){ if(v==="scoreboard") open(); else { inView=false; clearTimeout(timer); } }, repaint:paint, data:function(){ return W; }, _load:load, _st:st, _next:nextDelay, _calc:{teamWeek:teamWeek,scoreOf:scoreOf,expect:expect,remaining:remaining,projected:projected}};
 })();
 window.Scoreboard=Scoreboard;
 var views={home:"v-home",teams:"v-teams",team:"v-team",players:"v-players",plot:"v-plot",rotations:"v-rotations",usage:"v-usage",scoreboard:"v-scoreboard",draft:"v-draft",cap:"v-cap",keepers:"v-keepers",polls:"v-polls",pollhist:"v-pollhist",agenda:"v-agenda",issues:"v-issues",sched:"v-sched",dues:"v-dues",badges:"v-badges",signup:"v-signup",manager:"v-manager",history:"v-history",rules:"v-rules"};

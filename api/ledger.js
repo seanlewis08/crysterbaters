@@ -212,7 +212,9 @@ async function scoreboard(req, res) {
   try {
     if (mode === "week") {
       const d = await cast.week({ week: Number(q.week) || 0, live: !!q.live });
-      res.setHeader("Cache-Control", "public, s-maxage=60, stale-while-revalidate=120");
+      // twenty seconds at the edge while a game is on (every viewer shares that one read), a minute otherwise
+      const on = (d.games || []).some((g) => g.state === "in");
+      res.setHeader("Cache-Control", "public, s-maxage=" + (on ? 20 : 60) + ", stale-while-revalidate=" + (on ? 20 : 120));
       return res.status(200).json(d);
     }
     if (mode === "lineups") {
@@ -226,7 +228,7 @@ async function scoreboard(req, res) {
     if (mode === "game") {
       if (!/^\d{6,12}$/.test(String(q.id || ""))) { res.setHeader("Cache-Control", "no-store"); return res.status(400).json({ error: "game id" }); }
       const d = await cast.game(String(q.id));
-      res.setHeader("Cache-Control", "public, s-maxage=" + (d.game.state === "post" ? 600 : 45) + ", stale-while-revalidate=120");
+      res.setHeader("Cache-Control", "public, s-maxage=" + (d.game.state === "post" ? 600 : 20) + ", stale-while-revalidate=" + (d.game.state === "post" ? 120 : 20));
       return res.status(200).json(d);
     }
     res.setHeader("Cache-Control", "no-store");
