@@ -30,9 +30,15 @@ const ABBR = { GSW: "GS", NOP: "NO", NYK: "NY", SAS: "SA", UTA: "UTAH", WAS: "WS
 const abbr = (a) => { a = String(a || "").toUpperCase(); return ABBR[a] || a; };
 
 // ---- dates (ET, the NBA's day) ---------------------------------------------
+// A basketball day runs 6 AM ET to 6 AM ET: the West Coast game that tips at 10 PM ET
+// still belongs to that night, and a manager in Pacific time watching it at midnight
+// ET should not see the Scoreboard flip to tomorrow's slate under him. No NBA game
+// tips between midnight and 6 AM ET, so game dates come out the same either way.
 const ET = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", year: "numeric", month: "2-digit", day: "2-digit" });
+const DAY_TURNS_AT_H = 6;
 function etDate(d) {
-  const o = {}; ET.formatToParts(d || new Date()).forEach((p) => { o[p.type] = p.value; });
+  const t = new Date((d || new Date()).getTime() - DAY_TURNS_AT_H * 3600 * 1000);
+  const o = {}; ET.formatToParts(t).forEach((p) => { o[p.type] = p.value; });
   return o.year + "-" + o.month + "-" + o.day;
 }
 function addDays(ymd, n) { const d = new Date(ymd + "T12:00:00Z"); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); }

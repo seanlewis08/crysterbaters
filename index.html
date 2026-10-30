@@ -7031,7 +7031,7 @@ var Yahoo=(function(){
       '</div>';
   }
   function daysHtml(d){
-    var days=weekDays(d), today=etParts(new Date().toISOString()), byDate={}; (d.days||[]).forEach(function(x){ byDate[x.date]=x; });
+    var days=weekDays(d), today=etToday(), byDate={}; (d.days||[]).forEach(function(x){ byDate[x.date]=x; });
     var tabs='<button class="yh-dtab'+(view.day?'':' on')+'" data-yhday="">Week</button>';
     days.forEach(function(x){
       var past=x<today, isToday=x===today, dd=byDate[x], done=dd?dd.active:null, toCome=sched?sched.perDay[x]:null;
@@ -7066,7 +7066,7 @@ var Yahoo=(function(){
   }
   function dayTable(d, day, showKeepers){
     var byDate={}; (d.days||[]).forEach(function(x){ byDate[x.date]=x; });
-    var dd=byDate[day], ps=dd&&dd.players&&dd.players.length?bySlot(dd.players):null, today=etParts(new Date().toISOString()), past=day<today;
+    var dd=byDate[day], ps=dd&&dd.players&&dd.players.length?bySlot(dd.players):null, today=etToday(), past=day<today;
     if(!ps) return '<div class="empty" style="padding:14px 16px">'+(d.source==="stored"?'No lineup stored for '+esc(day)+' yet — it fills in on the next snapshot or the next time this manager opens the page.':'Yahoo didn’t return a lineup for '+esc(day)+(dd&&dd.error?' ('+esc(dd.error)+')':'')+'.')+'</div>';
     var rows=ps.map(function(p){
       var bench=BENCH.test(p.pos||""), gs=gamesOn(day,p.team), g=gs[0], cell;
@@ -7182,6 +7182,8 @@ var Yahoo=(function(){
   var ALIAS={GSW:"GS",NOP:"NO",NYK:"NY",SAS:"SA",UTA:"UTAH",WAS:"WSH",PHO:"PHX",NY:"NY",GS:"GS",NO:"NO",SA:"SA"};
   function espnAbbr(a){ a=String(a||"").toUpperCase(); return ALIAS[a]||a; }
   function etParts(iso){ var o={}; ET.formatToParts(new Date(iso)).forEach(function(p){o[p.type]=p.value;}); return o.year+"-"+o.month+"-"+o.day; }
+  /* the basketball day turns at 6 AM ET, same as the server: a late West Coast game is still "today" at 1 AM ET */
+  function etToday(){ return etParts(new Date(Date.now()-6*3600*1000).toISOString()); }
   function weekRange(d){
     var mu=d.matchup||{};
     if(mu.start&&mu.end) return [mu.start,mu.end];
