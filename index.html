@@ -412,9 +412,16 @@ nav button:focus-visible{outline:1px solid var(--amber);outline-offset:-4px}
 /* a stat that moved since the previous read flashes green (up) or red (down) and fades back over a few seconds */
 @keyframes sb-up{0%,55%{background-color:var(--sb-up);color:var(--sb-up-ink)}100%{background-color:transparent;color:inherit}}
 @keyframes sb-down{0%,55%{background-color:var(--sb-down);color:var(--sb-down-ink)}100%{background-color:transparent;color:inherit}}
-.sb-lineup td.up,.sb-cats td.up,.sb-catsp td.up{animation:sb-up 7s ease-out forwards;font-weight:700}
-.sb-lineup td.down,.sb-cats td.down,.sb-catsp td.down{animation:sb-down 7s ease-out forwards;font-weight:700}
-@media (prefers-reduced-motion:reduce){.sb-lineup td.up,.sb-cats td.up,.sb-catsp td.up,.sb-lineup td.down,.sb-cats td.down,.sb-catsp td.down{animation:none}}
+/* totals flash green/red and fade; a player's cell keeps its live tint and the number itself ticks instead */
+.sb-lineup tr.tot td.up,.sb-cats td.up,.sb-catsp td.up{animation:sb-up 7s ease-out forwards;font-weight:700}
+.sb-lineup tr.tot td.down,.sb-cats td.down,.sb-catsp td.down{animation:sb-down 7s ease-out forwards;font-weight:700}
+.sb-lineup td .v{display:inline-block}
+@keyframes sb-tick-up{0%{transform:scale(1);color:var(--sb-up-ink)}30%{transform:scale(1.4)}60%{transform:scale(1);color:var(--sb-up-ink)}100%{color:inherit}}
+@keyframes sb-tick-down{0%{transform:scale(1);color:var(--sb-down-ink)}30%{transform:scale(1.4)}60%{transform:scale(1);color:var(--sb-down-ink)}100%{color:inherit}}
+.sb-lineup tr:not(.tot) td.up{font-weight:700}.sb-lineup tr:not(.tot) td.down{font-weight:700}
+.sb-lineup tr:not(.tot) td.up .v{animation:sb-tick-up 2.4s ease-out forwards}
+.sb-lineup tr:not(.tot) td.down .v{animation:sb-tick-down 2.4s ease-out forwards}
+@media (prefers-reduced-motion:reduce){.sb-lineup td.up,.sb-cats td.up,.sb-catsp td.up,.sb-lineup td.down,.sb-cats td.down,.sb-catsp td.down,.sb-lineup td .v{animation:none}}
 .sb-lineup tr.tot td:not(.pl):not(.pos){font-size:13.5px}
 .sb-mrow .n b{color:var(--ink);font-weight:600}
 .sb-mrow .n .sep{color:var(--line-2);margin:0 6px}
@@ -7931,7 +7938,7 @@ var Scoreboard=(function(){
     var opp=g?(g.away===abbrFix(p.nba)?'@ '+g.home:'vs '+g.away):'';
     var gl=!g?'<span class="g none">No game</span>':g.state==="pre"?'<span class="g">'+esc_(gameLabel(g))+' '+opp+'</span>':g.state==="in"?'<span class="g live"><i></i>'+esc_(gameLabel(g))+' · '+opp+(l&&!l.on&&l.pf>=4?' · '+l.pf+' fouls':'')+'</span>':'<span class="g fin">Final · '+opp+(l&&l.dnp?' · DNP':'')+'</span>';
     return '<td class="pl'+(live?' lv':'')+'"><b>'+esc_(p.name)+'</b><small>'+esc_(p.nba)+'</small>'+(on?BALL:'')+(st.view==="today"&&isDD(l)?'<span class="sb-ddm">DD</span>':'')+(p.status?'<span class="sb-inj">'+esc_(p.status)+'</span>':'')+gl+'</td>'; }
-  function cell(v,i,extra){ var z=v===0||v==="0"||v==="0-0"||v===".000"; return '<td class="c-'+CATS[i][0]+(z?' z':'')+(extra||'')+'">'+v+'</td>'; }
+  function cell(v,i,extra){ var z=v===0||v==="0"||v==="0-0"||v===".000"; return '<td class="c-'+CATS[i][0]+(z?' z':'')+(extra||'')+'"><span class="v">'+v+'</span></td>'; }
   function pct(m,a){ return a?m/a:null; }
   function isLiveRow(p){ var g=gameFor(p.nba); return !!(st.view==="today"&&g&&g.state==="in"&&lineFor(p,W.today)); }
   function numCells(p,tw){ var lv=isLiveRow(p)?' lv':'', key=(p.espn||p.key)+'|'+st.view;
