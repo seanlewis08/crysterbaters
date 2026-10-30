@@ -67,7 +67,7 @@ function gameFromEvent(ev) {
   };
 }
 async function scoreboard(date) {
-  return memo("sb:" + date, 20 * 1000, async () => {
+  return memo("sb:" + date, 8 * 1000, async () => {
     const sb = await espn("/scoreboard?dates=" + date.replace(/-/g, "") + "&limit=1000");
     return (sb.events || []).filter((ev) => !(ev.season && ev.season.type === 1)).map(gameFromEvent).filter((g) => g.date === date);
   });
@@ -116,7 +116,7 @@ function parseSummary(sum, g) {
   return { lines: lines, byTeam: byTeam, stints: stints, track: track.map((p) => [round1(p[0]), p[1]]) };
 }
 async function summary(g) {
-  const ttl = g.state === "post" ? 10 * 60 * 1000 : 20 * 1000;
+  const ttl = g.state === "post" ? 10 * 60 * 1000 : 8 * 1000;
   return memo("sum:" + g.id, ttl, async () => parseSummary(await espn("/summary?event=" + g.id), g));
 }
 
