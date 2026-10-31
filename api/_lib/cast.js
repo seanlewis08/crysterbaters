@@ -193,8 +193,10 @@ async function week(opts) {
   const newestOn = (d) => lines.filter((l) => l.date === d).reduce((m, l) => (l.updated_at > m ? l.updated_at : m), "");
   const newest = newestOn(today);
   const staleMs = o.live ? 5 * 60 * 1000 : 30 * 60 * 1000;
-  // the rest of the week is re-read when it is more than two hours old (or never stored), with today
-  const later = dates.filter((d) => d > today && (!newestOn(d) || Date.now() - new Date(newestOn(d)).getTime() > 2 * 3600 * 1000));
+  // the rest of the week is re-read when it is more than thirty minutes old (or never stored), with
+  // today — managers set tomorrow's lineup during tonight's games, and the Teams page's games-left
+  // count reads these rows (one Yahoo call per day, league-wide, so this is cheap)
+  const later = dates.filter((d) => d > today && (!newestOn(d) || Date.now() - new Date(newestOn(d)).getTime() > 30 * 60 * 1000));
   const todayStale = !newest || Date.now() - new Date(newest).getTime() > staleMs;
   if (today >= range[0] && today <= range[1] && (todayStale || later.length)) {
     try {

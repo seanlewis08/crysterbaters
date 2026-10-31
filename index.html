@@ -727,8 +727,7 @@ tr.keeprow td{background:var(--amber-glow)!important;border-bottom-color:var(--a
   .teamgrid .keeper-mini{margin-top:auto;padding-top:7px;gap:3px;height:54px;flex:0 0 54px;overflow:hidden}
   .teamgrid .keeper-mini .k b{font-size:13px}
   .teamgrid .keeper-mini .k span{font-size:10px}
-  .teamgrid .capflag{font-size:11px;min-height:31px;align-items:flex-start}
-  .teamgrid .capflag .dot{margin-top:3px}
+  .teamgrid .capflag{font-size:11px;min-height:31px;justify-content:center}
   #v-teams .lede{margin-bottom:0}
   #teamgrid{margin-top:12px!important}
 }
@@ -739,12 +738,12 @@ tr.keeprow td{background:var(--amber-glow)!important;border-bottom-color:var(--a
 }
 .team:hover{border-color:var(--amber-dim);background:var(--surface-2)}
 /* games-cap flag on the team cards: red once a team has used more games than the week's cap, amber when on pace to */
-.team .capflag{display:none;font-size:12px;line-height:1.3}
-.team .capflag:not(:empty){display:flex;align-items:center;gap:7px}
-.team .capflag .dot{width:8px;height:8px;border-radius:50%;background:var(--line-2);flex:none}
+.team .capflag{display:none;font-size:12px;line-height:1.3;white-space:nowrap}
+.team .capflag:not(:empty){display:flex;flex-direction:column;align-items:flex-start;gap:1px}
+.team .capflag b{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;font-weight:700}
 .team .capflag.ok{color:var(--muted)}
-.team .capflag.pace{color:#8a5a00;font-weight:600}.team .capflag.pace .dot{background:var(--amber)}
-.team .capflag.over{color:var(--red);font-weight:700}.team .capflag.over .dot{background:var(--red);box-shadow:0 0 0 3px rgba(176,48,40,.18)}
+.team .capflag.pace{color:#8a5a00;font-weight:600}
+.team .capflag.over{color:var(--red);font-weight:700}
 .team.cap-over{border-color:var(--red);box-shadow:0 0 0 1px var(--red),var(--shadow)}
 .team.cap-over .team-top{background:#fbeeec}
 .team.cap-pace{border-color:var(--amber)}
@@ -7923,9 +7922,9 @@ var Scoreboard=(function(){
     capStatus().then(function(cs){ if(!cs) return;
       Object.keys(cs).forEach(function(id){ var el=document.querySelector('[data-capflag="'+id+'"]'); if(!el) return; var c=cs[id], used=c.played+c.live, pace=used+c.sched, card=el.closest(".team");
         card.classList.remove("cap-over","cap-pace"); el.className="capflag";
-        if(used>c.cap){ card.classList.add("cap-over"); el.classList.add("over"); el.innerHTML='<span class="dot"></span>Over the games cap · '+used+' of '+c.cap+' used'+(c.sched?' · '+c.sched+' to come':''); el.title='Week '+c.week+': games played or in progress by players in starting slots, against the '+c.cap+'-game cap'; }
-        else if(pace>c.cap){ card.classList.add("cap-pace"); el.classList.add("pace"); el.innerHTML='<span class="dot"></span>On pace to pass the cap · '+used+' of '+c.cap+' used, '+c.sched+' to come'; el.title='Week '+c.week+': if every current starter plays his remaining games this week'; }
-        else { el.classList.add("ok"); el.innerHTML='<span class="dot"></span>'+used+' of '+c.cap+' games used'+(c.sched?' · '+c.sched+' to come':''); el.title='Week '+c.week+' games against the cap'; } });
+        if(used>c.cap){ card.classList.add("cap-over"); el.classList.add("over"); el.innerHTML='<b>Over the cap</b><span>Games Played: '+used+' | Games Left: '+c.sched+'</span>'; el.title='Week '+c.week+': '+used+' games played or in progress by players in starting slots, against the '+c.cap+'-game cap'; }
+        else if(pace>c.cap){ card.classList.add("cap-pace"); el.classList.add("pace"); el.innerHTML='<b>On pace to pass '+c.cap+'</b><span>Games Played: '+used+' | Games Left: '+c.sched+'</span>'; el.title='Week '+c.week+': on pace to pass the '+c.cap+'-game cap if every current starter plays his remaining games ('+pace+')'; }
+        else { el.classList.add("ok"); el.innerHTML='<span>Games Played: '+used+' | Games Left: '+c.sched+'</span>'; el.title='Week '+c.week+' games by players in starting slots, against the '+c.cap+'-game cap'; } });
     }).catch(function(){});
   }
   function scoreOf(A,B){ var a=0,b=0,t=0; CATS.forEach(function(c){ var k=c[0]; if(A.C[k]>B.C[k]) a++; else if(B.C[k]>A.C[k]) b++; else t++; }); return {a:a,b:b,t:t}; }
