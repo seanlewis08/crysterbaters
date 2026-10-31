@@ -712,13 +712,41 @@ tr.keeprow td{background:var(--amber-glow)!important;border-bottom-color:var(--a
 .alert p{font-size:14.5px;color:var(--muted)}
 
 /* ---------- team cards ---------- */
-.teamgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+.teamgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;align-items:stretch}
+/* on a laptop screen the ten sit in two rows of five, every card the same height, the keepers pinned to the foot */
+@media (min-width:1180px){
+  .teamgrid{grid-template-columns:repeat(5,minmax(0,1fr));grid-auto-rows:1fr;gap:10px}
+  .teamgrid .team-top{padding:10px 12px;gap:10px}
+  .teamgrid .team-top .avatar{width:36px;height:36px;font-size:13px}
+  .teamgrid .team-id b{font-size:15px;line-height:1.15}
+  .teamgrid .team-id span{margin-top:2px;font-size:9px}
+  .teamgrid .team-body{padding:9px 12px 10px;gap:6px}
+  .teamgrid .kv dd{font-size:14px}
+  .teamgrid .bstrip{gap:4px}
+  .teamgrid .bstrip .seal{width:26px;height:31px}
+  .teamgrid .keeper-mini{margin-top:auto;padding-top:7px;gap:3px}
+  .teamgrid .keeper-mini .k b{font-size:13px}
+  .teamgrid .keeper-mini .k span{font-size:10px}
+  .teamgrid .capflag{font-size:11px}
+  #v-teams .lede{margin-bottom:0}
+  #teamgrid{margin-top:12px!important}
+}
 .team{
   background:var(--surface);border:1px solid var(--line);border-radius:4px;box-shadow:var(--shadow);
   overflow:hidden;text-align:left;cursor:pointer;width:100%;display:flex;flex-direction:column;
   transition:border-color .12s,background .12s;
 }
 .team:hover{border-color:var(--amber-dim);background:var(--surface-2)}
+/* games-cap flag on the team cards: red once a team has used more games than the week's cap, amber when on pace to */
+.team .capflag{display:none;font-size:12px;line-height:1.3}
+.team .capflag:not(:empty){display:flex;align-items:center;gap:7px}
+.team .capflag .dot{width:8px;height:8px;border-radius:50%;background:var(--line-2);flex:none}
+.team .capflag.ok{color:var(--muted)}
+.team .capflag.pace{color:#8a5a00;font-weight:600}.team .capflag.pace .dot{background:var(--amber)}
+.team .capflag.over{color:var(--red);font-weight:700}.team .capflag.over .dot{background:var(--red);box-shadow:0 0 0 3px rgba(176,48,40,.18)}
+.team.cap-over{border-color:var(--red);box-shadow:0 0 0 1px var(--red),var(--shadow)}
+.team.cap-over .team-top{background:#fbeeec}
+.team.cap-pace{border-color:var(--amber)}
 .team:focus-visible{outline:1px solid var(--amber);outline-offset:2px}
 .team-top{padding:15px 17px;border-bottom:1px solid var(--line);display:flex;gap:13px;align-items:center}
 .avatar{
@@ -2972,6 +3000,7 @@ function teamCard(t){
     '<div class="team-top"><div class="avatar">'+t.ini+'</div>'+
       '<div class="team-id"><b>'+esc(t.name)+'</b><span>'+esc(t.mgr)+'</span></div></div>'+
     '<div class="team-body">'+
+      '<div class="capflag" data-capflag="'+t.id+'"></div>'+
       '<div class="kv"><dt>2025–26</dt><dd>'+s.rec+' · '+ordinal(s.fin)+'</dd></div>'+
       '<div class="kv"><dt>Titles</dt><dd>'+(t.titles.length?t.titles.join(" · "):"—")+'</dd></div>'+
       '<div class="bstrip" data-bstrip="'+t.id+'"></div>'+
@@ -2981,6 +3010,7 @@ function teamCard(t){
 document.getElementById("teamgrid").innerHTML=T.slice().sort(function(a,b){return ST[a.id].fin-ST[b.id].fin;}).map(teamCard).join("");
 if(typeof renderKeeperLadders==="function") renderKeeperLadders();
 if(window.Badges&&Badges.onView) Badges.onView("teams");
+if(window.Scoreboard&&Scoreboard.flagCaps) Scoreboard.flagCaps();
 if(window.Players&&Players.rebuildOwners) Players.rebuildOwners();
 if(typeof renderBoard==="function"&&typeof trades!=="undefined"&&trades) renderBoard();
 if(curTeam&&document.getElementById("v-team").classList.contains("on")) renderTeam(curTeam);
@@ -7881,6 +7911,22 @@ var Scoreboard=(function(){
     });
     return {id:id,tot:tot,tonight:tonight,per:per,played:played,live:live,sched:sched,C:cats(tot),roster:roster||L[W.today]||[]};
   }
+  /* games used against this week's cap, per team, for the Teams page cards: a team is "over" once the games its
+     starters have played or are playing exceed the cap; "on pace" when the rest of the week's schedule would take it over */
+  function capStatus(){
+    var p=(W&&Date.now()-fetchedAt<5*60*1000)?Promise.resolve():(loading?new Promise(function(res){ var t=setInterval(function(){ if(!loading){ clearInterval(t); res(); } },200); }):load(false));
+    return p.then(function(){ if(!W||!W.cap||!W.matchups) return null; var out={}; W.matchups.forEach(function(m){ [m.a,m.b].forEach(function(id){ var tw=teamWeek(id); out[id]={played:tw.played,live:tw.live,sched:tw.sched,cap:W.cap,week:W.week}; }); }); return out; });
+  }
+  function flagCaps(){
+    if(!document.querySelector("[data-capflag]")) return;
+    capStatus().then(function(cs){ if(!cs) return;
+      Object.keys(cs).forEach(function(id){ var el=document.querySelector('[data-capflag="'+id+'"]'); if(!el) return; var c=cs[id], used=c.played+c.live, pace=used+c.sched, card=el.closest(".team");
+        card.classList.remove("cap-over","cap-pace"); el.className="capflag";
+        if(used>c.cap){ card.classList.add("cap-over"); el.classList.add("over"); el.innerHTML='<span class="dot"></span>Over the games cap · '+used+' of '+c.cap+' used'+(c.sched?' · '+c.sched+' to come':''); el.title='Week '+c.week+': games played or in progress by players in starting slots, against the '+c.cap+'-game cap'; }
+        else if(pace>c.cap){ card.classList.add("cap-pace"); el.classList.add("pace"); el.innerHTML='<span class="dot"></span>On pace to pass the cap · '+used+' of '+c.cap+' used, '+c.sched+' to come'; el.title='Week '+c.week+': if every current starter plays his remaining games this week'; }
+        else { el.classList.add("ok"); el.innerHTML='<span class="dot"></span>'+used+' of '+c.cap+' games used'+(c.sched?' · '+c.sched+' to come':''); el.title='Week '+c.week+' games against the cap'; } });
+    }).catch(function(){});
+  }
   function scoreOf(A,B){ var a=0,b=0,t=0; CATS.forEach(function(c){ var k=c[0]; if(A.C[k]>B.C[k]) a++; else if(B.C[k]>A.C[k]) b++; else t++; }); return {a:a,b:b,t:t}; }
   function yahooScore(m){ var y=m.yahoo||{}, w=y.winners||{}, a=0,b=0; Object.keys(w).forEach(function(k){ if(w[k]===y.akey) a++; else if(w[k]===y.bkey) b++; }); return Object.keys(w).length?{a:a,b:b,at:m.yahooAt}:null; }
   /* expected per-game line for a player: his season so far blended with ESPN's projection */
@@ -8044,7 +8090,7 @@ var Scoreboard=(function(){
     document.addEventListener("visibilitychange",function(){ if(document.visibilityState==="visible"&&inView&&Date.now()-fetchedAt>60*1000) load(true); });
     if(window.Polls&&Polls.onAuth) Polls.onAuth(function(){ if(inView) paint(); });
   }
-  return {onView:function(v){ if(v==="scoreboard") open(); else { inView=false; clearTimeout(timer); } }, repaint:paint, data:function(){ return W; }, _load:load, _st:st, _next:nextDelay, _calc:{teamWeek:teamWeek,scoreOf:scoreOf,expect:expect,remaining:remaining,projected:projected}};
+  return {onView:function(v){ if(v==="scoreboard") open(); else { inView=false; clearTimeout(timer); if(v==="teams") flagCaps(); } }, flagCaps:flagCaps, capStatus:capStatus, repaint:paint, data:function(){ return W; }, _load:load, _st:st, _next:nextDelay, _calc:{teamWeek:teamWeek,scoreOf:scoreOf,expect:expect,remaining:remaining,projected:projected}};
 })();
 window.Scoreboard=Scoreboard;
 var views={home:"v-home",teams:"v-teams",team:"v-team",players:"v-players",plot:"v-plot",rotations:"v-rotations",usage:"v-usage",scoreboard:"v-scoreboard",draft:"v-draft",cap:"v-cap",keepers:"v-keepers",polls:"v-polls",pollhist:"v-pollhist",agenda:"v-agenda",issues:"v-issues",sched:"v-sched",dues:"v-dues",badges:"v-badges",signup:"v-signup",manager:"v-manager",history:"v-history",rules:"v-rules"};
