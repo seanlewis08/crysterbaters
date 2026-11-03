@@ -6986,7 +6986,7 @@ var Yahoo=(function(){
     busy=url; last=Date.now();
     var preview=src.kind==="live"?"The Yahoo connection only works on crysterbaters.com, not in this preview.":"The games ledger only answers on crysterbaters.com, not in this preview.";
     fetch(url,{credentials:"same-origin",cache:"no-store"}).then(function(r){ return r.json().then(function(j){ return {ok:r.ok,status:r.status,j:j}; }); })
-      .then(function(x){ busy=false; cur=x; if(x.ok) cache[url]={t:Date.now(),x:x}; flush(url,x); })
+      .then(function(x){ busy=false; cur=x; if(x.ok) cache[url]={t:Date.now(),x:x}; /* a live read just rewrote this team's lineup rows in the ledger: the Scoreboard and the Teams cards should re-read rather than trust a copy from before */ if(x.ok&&url.indexOf("/api/yahoo/team")===0&&window.Scoreboard&&Scoreboard.invalidate) Scoreboard.invalidate(); flush(url,x); })
       .catch(function(){ busy=false; cur={ok:false,status:0,j:{error:preview}}; flush(url,cur); });
   }
   function flush(url,x){ var w=take(waiting,url).concat(take(again,url)); w.forEach(function(f){ try{ f.cb(x); }catch(e){} }); pump(); }
@@ -7914,7 +7914,8 @@ var Scoreboard=(function(){
   /* games used against this week's cap, per team, for the Teams page cards: a team is "over" once the games its
      starters have played or are playing exceed the cap; "on pace" when the rest of the week's schedule would take it over */
   function capStatus(){
-    var p=(W&&Date.now()-fetchedAt<5*60*1000)?Promise.resolve():(loading?new Promise(function(res){ var t=setInterval(function(){ if(!loading){ clearInterval(t); res(); } },200); }):load(false));
+    var fresh=W&&Date.now()-fetchedAt<5*60*1000;
+    var p=fresh?Promise.resolve():(loading?new Promise(function(res){ var t=setInterval(function(){ if(!loading){ clearInterval(t); res(); } },200); }):load(true));
     return p.then(function(){ if(!W||!W.cap||!W.matchups) return null; var out={}; W.matchups.forEach(function(m){ [m.a,m.b].forEach(function(id){ var tw=teamWeek(id); out[id]={played:tw.played,live:tw.live,sched:tw.sched,cap:W.cap,week:W.week}; }); }); return out; });
   }
   function flagCaps(){
@@ -8073,7 +8074,7 @@ var Scoreboard=(function(){
     var ph=phone();
     body.innerHTML='<div class="sb-layout"><aside><div class="sb-box"><div class="sb-boxhd2">Matchups <small>Week '+W.week+'</small></div><div class="'+(ph?'sb-strip':'')+'">'+railHtml()+'</div></div><div class="sb-box"><div class="sb-boxhd2">Today’s games <small>'+esc_(fmtDate(W.today))+'</small></div><div class="'+(ph?'sb-strip':'')+'">'+gamesHtml()+'</div></div></aside><main id="sb-main">'+(st.game?gameHtml():matchHtml())+'</main></div>';
   }
-  function open(){ if(!started){ started=true; bind(); document.addEventListener("visibilitychange",function(){ if(document.visibilityState==="visible"&&inView&&Date.now()-fetchedAt>12*1000) load(true); }); } inView=true; if(!W||Date.now()-fetchedAt>15*1000) load(false); else paint(); schedule(); }
+  function open(){ if(!started){ started=true; bind(); document.addEventListener("visibilitychange",function(){ if(document.visibilityState==="visible"&&inView&&Date.now()-fetchedAt>12*1000) load(true); }); } inView=true; if(!W) load(false); else if(Date.now()-fetchedAt>15*1000) load(fetchedAt===0); else paint(); schedule(); }
   function bind(){
     document.addEventListener("click",function(e){
       var m=e.target.closest("#v-scoreboard [data-sbm]"); if(m){ st.m=Number(m.dataset.sbm); st.pick=W&&W.matchups[st.m]?W.matchups[st.m].a:null; st.game=null; st.gdata=null; paint(); return; }
@@ -8090,7 +8091,10 @@ var Scoreboard=(function(){
     document.addEventListener("visibilitychange",function(){ if(document.visibilityState==="visible"&&inView&&Date.now()-fetchedAt>60*1000) load(true); });
     if(window.Polls&&Polls.onAuth) Polls.onAuth(function(){ if(inView) paint(); });
   }
-  return {onView:function(v){ if(v==="scoreboard") open(); else { inView=false; clearTimeout(timer); if(v==="teams") flagCaps(); } }, flagCaps:flagCaps, capStatus:capStatus, repaint:paint, data:function(){ return W; }, _load:load, _st:st, _next:nextDelay, _calc:{teamWeek:teamWeek,scoreOf:scoreOf,expect:expect,remaining:remaining,projected:projected}};
+  /* something just changed the ledger (a manager's own team page read his lineups live from Yahoo and stored
+     them): forget the copy we hold so the next look — the Teams cards or the Scoreboard — reads past every cache */
+  function invalidate(){ fetchedAt=0; if(inView&&!loading) load(true); }
+  return {onView:function(v){ if(v==="scoreboard") open(); else { inView=false; clearTimeout(timer); if(v==="teams") flagCaps(); } }, flagCaps:flagCaps, capStatus:capStatus, invalidate:invalidate, repaint:paint, data:function(){ return W; }, _load:load, _st:st, _next:nextDelay, _calc:{teamWeek:teamWeek,scoreOf:scoreOf,expect:expect,remaining:remaining,projected:projected}};
 })();
 window.Scoreboard=Scoreboard;
 var views={home:"v-home",teams:"v-teams",team:"v-team",players:"v-players",plot:"v-plot",rotations:"v-rotations",usage:"v-usage",scoreboard:"v-scoreboard",draft:"v-draft",cap:"v-cap",keepers:"v-keepers",polls:"v-polls",pollhist:"v-pollhist",agenda:"v-agenda",issues:"v-issues",sched:"v-sched",dues:"v-dues",badges:"v-badges",signup:"v-signup",manager:"v-manager",history:"v-history",rules:"v-rules"};
