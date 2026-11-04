@@ -1278,6 +1278,7 @@ select.flash{box-shadow:0 0 0 3px var(--amber-glow),0 0 0 1px var(--amber);trans
 .pp-top .eyebrow{display:block;margin-bottom:8px}
 .pp-top input{width:100%;padding:7px 9px;font-size:13.5px}
 .pp-act{display:flex;gap:8px;align-items:center;margin-top:8px}
+.pp-act[hidden]{display:none}
 .pp-act select{flex:1;padding:5px 7px;font-size:12px}
 .pp-act .pp-lbl{font-family:var(--mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);flex:0 0 auto}
 .pp-act .grp{flex:1 1 0;padding:5px 4px;font-size:11.5px;letter-spacing:.05em;min-width:0}
@@ -2394,12 +2395,12 @@ footer p + p{margin-top:11px}
         <div class="field" style="flex:0 1 96px" data-for="swarm scatter"><label for="po-lbl" id="po-lbl-l">Names per group</label><input id="po-lbl" type="number" min="0" max="100" step="1" inputmode="numeric" placeholder="3"></div>
         <div class="field" style="flex:0 1 96px" data-for="cards"><label for="po-n">How many</label><input id="po-n" type="number" min="1" max="50" step="1" inputmode="numeric" placeholder="10"></div>
         <div class="field" data-for="cards"><label for="po-order">Which end</label><select id="po-order"><option value="top">Top</option><option value="bottom">Bottom</option></select></div>
-        <div class="field" data-for="cards tiers"><label for="po-subject">Rank</label><select id="po-subject"><option value="players">Players</option><option value="teams">Fantasy teams</option></select></div>
-        <div class="field" data-for="teams cards tiers"><label for="po-agg">Roll up a roster by</label><select id="po-agg"><option value="auto">Auto (total, average for rates)</option><option value="sum">Total</option><option value="mean">Average</option></select></div>
-        <div class="field"><label for="po-pos">Position</label><select id="po-pos"><option value="">Any</option><option value="G">Guards</option><option value="F">Forwards</option><option value="C">Centers</option></select></div>
-        <div class="field"><label for="po-owner">In our league</label><select id="po-owner"><option value="">Everyone</option><option value="fa">Not on a roster</option><option value="owned">On a roster</option><option value="keeper">Flagged keepers</option></select></div>
-        <div class="field" style="flex:0 1 96px"><label for="po-mingp">Min GP</label><input id="po-mingp" type="number" min="0" step="1" inputmode="numeric" placeholder="0"></div>
-        <div class="field" style="flex:0 1 96px"><label for="po-minmin">Min MPG</label><input id="po-minmin" type="number" min="0" step="1" inputmode="numeric" placeholder="0"></div>
+        <div class="field" data-for="scatter swarm cards tiers"><label for="po-subject">Subject</label><select id="po-subject"><option value="players">Players</option><option value="nba">NBA teams</option><option value="teams">Fantasy teams</option></select></div>
+        <div class="field" data-for="teams cards tiers" data-pl><label for="po-agg">Roll up a roster by</label><select id="po-agg"><option value="auto">Auto (total, average for rates)</option><option value="sum">Total</option><option value="mean">Average</option></select></div>
+        <div class="field" data-pl><label for="po-pos">Position</label><select id="po-pos"><option value="">Any</option><option value="G">Guards</option><option value="F">Forwards</option><option value="C">Centers</option></select></div>
+        <div class="field" data-pl><label for="po-owner">In our league</label><select id="po-owner"><option value="">Everyone</option><option value="fa">Not on a roster</option><option value="owned">On a roster</option><option value="keeper">Flagged keepers</option></select></div>
+        <div class="field" style="flex:0 1 96px" data-pl><label for="po-mingp">Min GP</label><input id="po-mingp" type="number" min="0" step="1" inputmode="numeric" placeholder="0"></div>
+        <div class="field" style="flex:0 1 96px" data-pl><label for="po-minmin">Min MPG</label><input id="po-minmin" type="number" min="0" step="1" inputmode="numeric" placeholder="0"></div>
         <div class="field"><label for="po-mode">Stats</label><select id="po-mode"><option value="pg">Per game</option><option value="tot">Totals</option></select></div>
         <div class="field"><label for="po-season">Season</label><select id="po-season"></select></div>
         <div class="field"><label for="po-style">Look</label><select id="po-style"><option value="site">Hardwood</option><option value="poster">Poster (dark)</option></select></div>
@@ -5519,7 +5520,57 @@ var Plot=(function(){
     {k:"cappct",s:"%CAP", h:"% of the cap",        g:"Contract", get:function(r,cap){return r.salary?r.salary/cap:null;}, fmt:function(v){return (v*100).toFixed(1)+"%";}, ax:pcax, flat:true},
     {k:"yrs",   s:"YRS",  h:"Years left",          g:"Contract", get:function(r){return r.yrs||null;}, fmt:whole, ax:ax, flat:true, agg:"mean"}
   ];
-  function met(k){ for(var i=0;i<M.length;i++){ if(M[i].k===k) return M[i]; } return M[0]; }
+  /* ----- the same for an NBA team: its own numbers, what it allows, the margins, the record ----- */
+  function ocnt(k){ return function(r){ return r.o&&r.o[k]!=null?(f.mode==="tot"?r.o[k]*r.gp:r.o[k]):null; }; }
+  function flat(k){ return function(r){ return r[k]==null?null:r[k]; }; }
+  var MT=[
+    {k:"gp",   s:"GP",   h:"Games played",            g:"Team per game", get:flat("gp"), fmt:whole, ax:ax, flat:true},
+    {k:"pts",  s:"PTS",  h:"Points",                  g:"Team per game", get:cnt("pts"), fmt:n1, ax:ax},
+    {k:"reb",  s:"REB",  h:"Rebounds",                g:"Team per game", get:cnt("reb"), fmt:n1, ax:ax},
+    {k:"oreb", s:"OREB", h:"Offensive rebounds",      g:"Team per game", get:cnt("oreb"), fmt:n1, ax:ax},
+    {k:"dreb", s:"DREB", h:"Defensive rebounds",      g:"Team per game", get:cnt("dreb"), fmt:n1, ax:ax},
+    {k:"ast",  s:"AST",  h:"Assists",                 g:"Team per game", get:cnt("ast"), fmt:n1, ax:ax},
+    {k:"stl",  s:"STL",  h:"Steals",                  g:"Team per game", get:cnt("stl"), fmt:n1, ax:ax},
+    {k:"blk",  s:"BLK",  h:"Blocks",                  g:"Team per game", get:cnt("blk"), fmt:n1, ax:ax},
+    {k:"tpm",  s:"3PM",  h:"Threes made",             g:"Team per game", get:cnt("tpm"), fmt:n1, ax:ax},
+    {k:"tpa",  s:"3PA",  h:"Threes attempted",        g:"Team per game", get:cnt("tpa"), fmt:n1, ax:ax},
+    {k:"tpp",  s:"3P%",  h:"Three point %",           g:"Team per game", get:flat("tpp"), fmt:pc3, ax:pcax, flat:true},
+    {k:"fgm",  s:"FGM",  h:"Field goals made",        g:"Team per game", get:cnt("fgm"), fmt:n1, ax:ax},
+    {k:"fga",  s:"FGA",  h:"Field goals attempted",   g:"Team per game", get:cnt("fga"), fmt:n1, ax:ax},
+    {k:"fgp",  s:"FG%",  h:"Field goal %",            g:"Team per game", get:flat("fgp"), fmt:pc3, ax:pcax, flat:true},
+    {k:"ftm",  s:"FTM",  h:"Free throws made",        g:"Team per game", get:cnt("ftm"), fmt:n1, ax:ax},
+    {k:"fta",  s:"FTA",  h:"Free throws attempted",   g:"Team per game", get:cnt("fta"), fmt:n1, ax:ax},
+    {k:"ftp",  s:"FT%",  h:"Free throw %",            g:"Team per game", get:flat("ftp"), fmt:pc3, ax:pcax, flat:true},
+    {k:"to",   s:"TO",   h:"Turnovers",               g:"Team per game", get:cnt("to"), fmt:n1, ax:ax, neg:true},
+    {k:"at",   s:"A/T",  h:"Assist to turnover",      g:"Team per game", get:flat("at"), fmt:function(v){return v?v.toFixed(2):"—";}, ax:function(v){return v.toFixed(1);}, flat:true},
+    {k:"pf",   s:"PF",   h:"Personal fouls",          g:"Team per game", get:cnt("pf"), fmt:n1, ax:ax, neg:true},
+    {k:"pace", s:"PACE", h:"Pace (possessions, est.)",g:"Team per game", get:flat("pace"), fmt:n1, ax:ax, flat:true},
+    {k:"opts", s:"oPTS", h:"Points allowed",          g:"Opponents per game (what they give up)", get:ocnt("pts"), fmt:n1, ax:ax},
+    {k:"oreb_",s:"oREB", h:"Rebounds allowed",        g:"Opponents per game (what they give up)", get:ocnt("reb"), fmt:n1, ax:ax},
+    {k:"oast", s:"oAST", h:"Assists allowed",         g:"Opponents per game (what they give up)", get:ocnt("ast"), fmt:n1, ax:ax},
+    {k:"ostl", s:"oSTL", h:"Steals allowed",          g:"Opponents per game (what they give up)", get:ocnt("stl"), fmt:n1, ax:ax},
+    {k:"oblk", s:"oBLK", h:"Blocks allowed",          g:"Opponents per game (what they give up)", get:ocnt("blk"), fmt:n1, ax:ax},
+    {k:"otpm", s:"o3PM", h:"Threes allowed",          g:"Opponents per game (what they give up)", get:ocnt("tpm"), fmt:n1, ax:ax},
+    {k:"otpa", s:"o3PA", h:"Threes attempted against",g:"Opponents per game (what they give up)", get:ocnt("tpa"), fmt:n1, ax:ax},
+    {k:"ofga", s:"oFGA", h:"Shots attempted against", g:"Opponents per game (what they give up)", get:ocnt("fga"), fmt:n1, ax:ax},
+    {k:"ofgp", s:"oFG%", h:"Field goal % allowed",    g:"Opponents per game (what they give up)", get:function(r){return r.o?r.o.fgp:null;}, fmt:pc3, ax:pcax, flat:true},
+    {k:"otpp", s:"o3P%", h:"Three point % allowed",   g:"Opponents per game (what they give up)", get:function(r){return r.o?r.o.tpp:null;}, fmt:pc3, ax:pcax, flat:true},
+    {k:"ofta", s:"oFTA", h:"Free throws given up",    g:"Opponents per game (what they give up)", get:ocnt("fta"), fmt:n1, ax:ax},
+    {k:"oto",  s:"oTO",  h:"Turnovers forced",        g:"Opponents per game (what they give up)", get:ocnt("to"), fmt:n1, ax:ax},
+    {k:"diff", s:"+/-",  h:"Point margin",            g:"Margins per game", get:flat("diff"), fmt:sg, ax:sg, flat:true},
+    {k:"rebd", s:"REB±", h:"Rebound margin",          g:"Margins per game", get:flat("rebd"), fmt:sg, ax:sg, flat:true},
+    {k:"astd", s:"AST±", h:"Assist margin",           g:"Margins per game", get:flat("astd"), fmt:sg, ax:sg, flat:true},
+    {k:"tpmd", s:"3PM±", h:"Threes margin",           g:"Margins per game", get:flat("tpmd"), fmt:sg, ax:sg, flat:true},
+    {k:"stld", s:"STL±", h:"Steals margin",           g:"Margins per game", get:flat("stld"), fmt:sg, ax:sg, flat:true},
+    {k:"blkd", s:"BLK±", h:"Blocks margin",           g:"Margins per game", get:flat("blkd"), fmt:sg, ax:sg, flat:true},
+    {k:"w",    s:"W",    h:"Wins",                    g:"Record", get:flat("w"), fmt:whole, ax:ax, flat:true},
+    {k:"l",    s:"L",    h:"Losses",                  g:"Record", get:flat("l"), fmt:whole, ax:ax, flat:true, neg:true},
+    {k:"pct",  s:"WIN%", h:"Win %",                   g:"Record", get:flat("pct"), fmt:pc3, ax:pcax, flat:true}
+  ];
+  function isNba(){ return f.subject==="nba"&&f.chart!=="teams"; }
+  function mlist(){ return isNba()?MT:M; }
+  function met(k){ var L=mlist(); for(var i=0;i<L.length;i++){ if(L[i].k===k) return L[i]; } return L[0]; }
+  function hasMet(L,k){ for(var i=0;i<L.length;i++){ if(L[i].k===k) return true; } return false; }
   function axname(m){ return m.h+(m.flat?"":(f.mode==="tot"?" — season total":" per game")); }
 
   /* ----- the ways players can be grouped (the swarm's x axis) ----- */
@@ -5535,7 +5586,14 @@ var Plot=(function(){
     {k:"sal",   h:"Salary band",      of:function(r){ return salBand(r.salary); }, order:["$0–10M","$10–20M","$20–30M","$30–40M","$40–50M","$50M+"]},
     {k:"team",  h:"NBA team",         of:function(r){ return r.team&&r.team!=="FA"?r.team:null; }, order:null}
   ];
-  function grp(k){ for(var i=0;i<G.length;i++){ if(G[i].k===k) return G[i]; } return G[0]; }
+  /* NBA teams swarm by conference or division */
+  var GT=[
+    {k:"conf", h:"Conference", of:function(r){ return r.conf||null; }, order:["Eastern","Western"]},
+    {k:"div",  h:"Division",   of:function(r){ return r.div||null; }, order:["Atlantic","Central","Southeast","Northwest","Pacific","Southwest"]},
+    {k:"rec",  h:"Record",     of:function(r){ return r.w+r.l?(r.pct>=0.6?"Over .600":r.pct>=0.5?".500 to .599":r.pct>=0.4?".400 to .499":"Under .400"):null; }, order:["Over .600",".500 to .599",".400 to .499","Under .400"]}
+  ];
+  function glist(){ return isNba()?GT:G; }
+  function grp(k){ var L=glist(); for(var i=0;i<L.length;i++){ if(L[i].k===k) return L[i]; } return L[0]; }
   function gname(g,v){ return (g.names&&g.names[v])||v; }
 
   /* ----- colour: fixed order per group, never cycled; a diverging ramp for a gradient ----- */
@@ -5577,6 +5635,7 @@ var Plot=(function(){
   }
   function collect(){
     if(f.chart==="teams"||(f.subject==="teams"&&(f.chart==="cards"||f.chart==="tiers"))){ collectTeams(); return; }
+    if(isNba()){ collectNba(); return; }
     var rows=(window.Players&&Players.rows())||[], mx=met(f.x), my=met(f.y), ms=met(f.size), cap=((window.Players&&Players.cap())||{cap:1}).cap;
     var g=grp(f.g), swarm=f.chart==="swarm";
     pts=[]; dropX=0; dropY=0; groups=[];
@@ -5629,6 +5688,60 @@ var Plot=(function(){
     });
   }
   function aggWord(m){ var how=f.agg==="auto"?(m.agg||"sum"):f.agg; return how==="mean"?"roster average":"roster total"; }
+  /* ----- NBA teams: ESPN's team statistics feed (own and opponent splits for all thirty in one read)
+     plus the standings for the record, conference and division; cached six hours per season ----- */
+  var NBA_KEY="cb-nbateams-v1", NBA_TTL=6*3600*1000, nbaRows={}, nbaBusy={}, nbaErr={};
+  var TAB={GSW:"GS",NOP:"NO",NYK:"NY",SAS:"SA",UTA:"UTAH",WAS:"WSH",PHO:"PHX"};
+  function abbrFix(a){ a=String(a||"").toUpperCase(); return TAB[a]||a; }
+  function nbaSeason(){ return (window.Players&&Players.season())||2027; }
+  function nbaUrl(y){ return "https://site.web.api.espn.com/apis/common/v3/sports/basketball/nba/statistics/byteam?region=us&lang=en&contentorigin=espn&seasontype=2&season="+y; }
+  function nbaStUrl(y){ return "https://site.api.espn.com/apis/v2/sports/basketball/nba/standings?level=3&season="+y; }
+  function nbaLoad(y){
+    if(nbaRows[y]||nbaBusy[y]) return;
+    try{ var c=JSON.parse(localStorage.getItem(NBA_KEY+":"+y)||"null"); if(c&&c.rows&&c.rows.length&&Date.now()-c.t<NBA_TTL){ nbaRows[y]=c.rows; return; } }catch(e){}
+    nbaBusy[y]=true; nbaErr[y]="";
+    Promise.all([fetch(nbaUrl(y)).then(function(r){ return r.json(); }), fetch(nbaStUrl(y)).then(function(r){ return r.json(); }).catch(function(){ return null; })])
+      .then(function(res){ nbaRows[y]=nbaParse(res[0],res[1]); try{ localStorage.setItem(NBA_KEY+":"+y,JSON.stringify({t:Date.now(),rows:nbaRows[y]})); }catch(e){} })
+      .catch(function(e){ nbaRows[y]=[]; nbaErr[y]=e.message||"couldn't read"; })
+      .then(function(){ nbaBusy[y]=false; if($("v-plot").classList.contains("on")) refresh(); else dirty=true; });
+  }
+  function nbaParse(d,st){
+    var cats={}; (d.categories||[]).forEach(function(c){ if(c.names) cats[c.name]=c.names; });
+    var rec={};
+    function walk(n,conf,div){
+      (((n||{}).standings||{}).entries||[]).forEach(function(e){ var s={}; (e.stats||[]).forEach(function(x){ s[x.name]=x.name==="streak"?(x.displayValue||""):(x.value!=null?x.value:x.displayValue); }); var ab=abbrFix(e.team.abbreviation); rec[ab]={w:+s.wins||0,l:+s.losses||0,pct:+s.winPercent||0,conf:conf,div:div,streak:s.streak||"",seed:+s.playoffSeed||0}; });
+      ((n||{}).children||[]).forEach(function(c){ var isConf=/Conference/.test(c.name||""); walk(c,isConf?String(c.name).replace(" Conference",""):conf,isConf?div:(c.name||div)); });
+    }
+    if(st) walk(st,"","");
+    var pct=function(v){ return v==null?null:v/100; };
+    return (d.teams||[]).map(function(t){
+      var own={}, opp={};
+      (t.categories||[]).forEach(function(c){ var names=cats[c.name]; if(!names) return; var tgt=String(c.splitId)==="900"?opp:own; names.forEach(function(n,i){ if(tgt[n]==null) tgt[n]=c.values[i]; }); });
+      var ab=abbrFix(t.team.abbreviation), r=rec[ab]||{}, gp=own.gamesPlayed||0;
+      var side=function(o){ return {pts:o.avgPoints,reb:o.avgRebounds,oreb:o.avgOffensiveRebounds,dreb:o.avgDefensiveRebounds,ast:o.avgAssists,stl:o.avgSteals,blk:o.avgBlocks,tpm:o.avgThreePointFieldGoalsMade,tpa:o.avgThreePointFieldGoalsAttempted,fgm:o.avgFieldGoalsMade,fga:o.avgFieldGoalsAttempted,ftm:o.avgFreeThrowsMade,fta:o.avgFreeThrowsAttempted,to:o.avgTurnovers,pf:o.avgFouls,fgp:pct(o.fieldGoalPct),ftp:pct(o.freeThrowPct),tpp:pct(o.threePointFieldGoalPct),at:o.assistTurnoverRatio}; };
+      var me=side(own), them=side(opp);
+      me.pace=(me.fga||0)+0.44*(me.fta||0)+(me.to||0)-(me.oreb||0);
+      return Object.assign({id:"t:"+ab, key:"nba:"+ab, name:t.team.displayName||ab, short:t.team.shortDisplayName||ab, team:ab, abbr:ab, gp:gp, tech:own.technicalFouls||0,
+        conf:r.conf||"", div:r.div||"", w:r.w||0, l:r.l||0, pct:r.pct||0, streak:r.streak||"", seed:r.seed||0,
+        diff:own.avgPointsDifferential, rebd:own.avgReboundsDifferential, astd:own.avgAssistsDifferential, tpmd:own.avgThreePointFieldGoalsMadeDifferential, stld:own.avgStealsDifferential, blkd:own.avgBlocksDifferential,
+        o:them, own:null, elig:""}, me);
+    }).sort(function(a,b){ return a.abbr<b.abbr?-1:1; });
+  }
+  function collectNba(){
+    var y=nbaSeason(), rows=nbaRows[y], mx=met(f.x), my=met(f.y), ms=met(f.size), g=grp(f.g), swarm=f.chart==="swarm";
+    pts=[]; dropX=0; dropY=0; groups=[];
+    if(!rows){ nbaLoad(y); return; }
+    var seen={};
+    rows.forEach(function(r){
+      var yv=my.get(r); if(yv==null||!isFinite(yv)){ dropY++; return; }
+      var p={r:r,y:yv}; p.s=f.size==="none"?1:(ms.get(r)||0);
+      if(swarm){ var gv=g.of(r); if(gv==null){ dropX++; return; } p.gv=gv; if(!seen[gv]){ seen[gv]=1; groups.push(gv); } }
+      else { var xv=mx.get(r); if(xv==null||!isFinite(xv)){ dropX++; return; } p.x=xv; }
+      pts.push(p);
+    });
+    if(swarm){ if(g.order) groups.sort(function(a,b){ return g.order.indexOf(a)-g.order.indexOf(b); }); else groups.sort(); }
+    loadHeads(rows.map(function(r){ return r.id; }),function(changed){ if(changed&&$("v-plot").classList.contains("on")) draw(); });
+  }
   /* a stat that only exists in the snapshot is missing for any other season: say so
      rather than leaving the reader with "nobody matches those filters" */
   function whyEmpty(){
@@ -5637,6 +5750,7 @@ var Plot=(function(){
     if(gone&&!pts.length) return gone.h+" comes from the salary snapshot, which only covers "+
       ((window.Players&&Players.snapLabel())||"one season")+" — pick that season, or another stat.";
     if(f.chart==="swarm"&&dropX&&!pts.length) return "Nobody here has a "+grp(f.g).h.toLowerCase()+" on file.";
+    if(isNba()){ var y=nbaSeason(); return nbaBusy[y]?"Reading the thirty teams from ESPN…":(nbaErr[y]?"Couldn’t read ESPN’s team feed ("+nbaErr[y]+").":"ESPN has no team numbers for "+((window.Players&&Players.seasonLabel())||"that season")+" yet."); }
     return "Nobody matches those filters. Loosen Min GP or Min MPG.";
   }
   function median(a){ if(!a.length) return 0; var b=a.slice().sort(function(p,q){return p-q;}), h=b.length>>1; return b.length%2?b[h]:(b[h-1]+b[h])/2; }
@@ -5671,9 +5785,10 @@ var Plot=(function(){
   /* ----- headshots: ESPN's small variant, pulled through CORS into data URIs so
      they survive the trip into a copied PNG (an <img>-rendered SVG can't fetch) ----- */
   var HS={}, hsPending=0;
-  function headUrl(id){ return "https://a.espncdn.com/combiner/i?img=/i/headshots/nba/players/full/"+id+".png&w=120&h=88"; }
+  function isLogo(id){ return typeof id==="string"&&id.indexOf("t:")===0; }
+  function headUrl(id){ return isLogo(id)?"https://a.espncdn.com/combiner/i?img=/i/teamlogos/nba/500/"+id.slice(2).toLowerCase()+".png&w=96&h=96":"https://a.espncdn.com/combiner/i?img=/i/headshots/nba/players/full/"+id+".png&w=120&h=88"; }
   function loadHeads(ids,then){
-    var need=ids.filter(function(id){ return id>0&&!(id in HS); });
+    var need=ids.filter(function(id){ return (isLogo(id)||id>0)&&!(id in HS); });
     if(!need.length){ then&&then(false); return; }
     need.forEach(function(id){ HS[id]="…"; });
     hsPending+=need.length;
@@ -5690,11 +5805,14 @@ var Plot=(function(){
     x=+x; y=+y;
     var d=id&&HS[id]&&HS[id]!=="…"?HS[id]:null, cid="c"+Math.round(x*10)+"_"+Math.round(y*10);
     o.push('<circle class="av" cx="'+x+'" cy="'+y+'" r="'+r+'"/>');
-    if(d){
+    if(d&&isLogo(id)){
+      o.push('<image href="'+d+'" x="'+(x-r*0.82)+'" y="'+(y-r*0.82)+'" width="'+(r*1.64)+'" height="'+(r*1.64)+'" preserveAspectRatio="xMidYMid meet"/>');
+    }else if(d){
       o.push('<clipPath id="'+cid+'"><circle cx="'+x+'" cy="'+y+'" r="'+(r-1)+'"/></clipPath>');
       o.push('<image href="'+d+'" x="'+(x-r*1.18)+'" y="'+(y-r*0.95)+'" width="'+(r*2.36)+'" height="'+(r*1.73)+'" preserveAspectRatio="xMidYMid slice" clip-path="url(#'+cid+')"/>');
     }else{
-      o.push('<text class="avi" x="'+x+'" y="'+(y+r*0.36)+'" text-anchor="middle" font-size="'+(r*0.95)+'">'+esc(initials(r0.name))+'</text>');
+      var ini=r0.abbr||initials(r0.name);
+      o.push('<text class="avi" x="'+x+'" y="'+(y+r*0.36)+'" text-anchor="middle" font-size="'+(r*(ini.length>2?0.62:0.95))+'">'+esc(ini)+'</text>');
     }
   }
   function badge(o,x,y,r,t){
@@ -5724,9 +5842,9 @@ var Plot=(function(){
   }
 
   /* ----- the chart: one function draws every kind, on screen and for export ----- */
-  function labelText(r){ return f.chart==="teams"?r.name:shortName(r.name); }
+  function labelText(r){ return f.chart==="teams"?r.name:(r.abbr||shortName(r.name)); }
   function chartSvg(w,h,exp){
-    var o=[], mx=met(f.x), my=met(f.y), swarm=f.chart==="swarm", teams=f.chart==="teams";
+    var o=[], mx=met(f.x), my=met(f.y), swarm=f.chart==="swarm", teams=f.chart==="teams", nba=isNba();
     pts.forEach(function(p){ p.named=false; });
     if(f.chart==="cards") return cardsSvg(w,exp);
     if(f.chart==="tiers") return tiersSvg(w,exp);
@@ -5734,7 +5852,7 @@ var Plot=(function(){
     var PL=teams?70:62, PR=teams?30:18, PT=showLgd?36:(teams?26:16), PB=teams?52:46, iw=w-PL-PR, ih=h-PT-PB;
     var ylo=Infinity,yhi=-Infinity,xlo=Infinity,xhi=-Infinity;
     pts.forEach(function(p){ if(p.y<ylo)ylo=p.y; if(p.y>yhi)yhi=p.y; if(!swarm){ if(p.x<xlo)xlo=p.x; if(p.x>xhi)xhi=p.x; } });
-    if(teams){ var padx=(xhi-xlo||1)*0.12, pady=(yhi-ylo||1)*0.14; xlo-=padx; xhi+=padx; ylo-=pady; yhi+=pady; }
+    if(teams||(nba&&!swarm)){ var padx=(xhi-xlo||1)*0.12, pady=(yhi-ylo||1)*0.14; xlo-=padx; xhi+=padx; ylo-=pady; yhi+=pady; }
     var TY=f.zero&&!teams?symm(ylo,yhi,5):nice(ylo,yhi,5), TX=swarm?null:(f.zero&&!teams?symm(xlo,xhi,6):nice(xlo,xhi,6));
     function sy(v){ return PT+ih-(v-TY.lo)/(TY.hi-TY.lo)*ih; }
     function sx(v){ return PL+(v-TX.lo)/(TX.hi-TX.lo)*iw; }
@@ -5747,7 +5865,8 @@ var Plot=(function(){
       if(swarm&&f.color==="group"&&groups.length<=6) return catColor(gi[p.gv]);
       return REC[f.style];
     }
-    var aria=teams?axname(my)+" against "+axname(mx)+" for our "+pts.length+" fantasy teams.":(swarm?axname(my)+" by "+grp(f.g).h.toLowerCase()+" for "+pts.length+" players.":axname(my)+" against "+axname(mx)+" for "+pts.length+" players.")+" The list beside the chart has every value.";
+    var unit=nba?" NBA teams.":" players.";
+    var aria=teams?axname(my)+" against "+axname(mx)+" for our "+pts.length+" fantasy teams.":(swarm?axname(my)+" by "+grp(f.g).h.toLowerCase()+" for "+pts.length+unit:axname(my)+" against "+axname(mx)+" for "+pts.length+unit)+" The list beside the chart has every value.";
     o.push('<svg width="'+w+'" height="'+h+'" viewBox="0 0 '+w+' '+h+'" role="img" aria-label="'+esc(aria)+'">');
     TY.ticks.forEach(function(v){ var y=sy(v).toFixed(1); o.push('<line class="grid" x1="'+PL+'" y1="'+y+'" x2="'+(PL+iw)+'" y2="'+y+'"/>'); });
     if(!swarm) TX.ticks.forEach(function(v){ var x=sx(v).toFixed(1); o.push('<line class="grid" x1="'+x+'" y1="'+PT+'" x2="'+x+'" y2="'+(PT+ih)+'"/>'); });
@@ -5785,8 +5904,9 @@ var Plot=(function(){
         if(!exp) geo.push({i:i,x:x,y:y,r:p.rad});
         var fl=fillFor(p);
         if(sel[p.r.key]) onOut.push({p:p,x:x,y:y,r:Math.max(p.rad,5)});
+        else if(nba&&p.rad>=7){ var lo=[]; avatar(lo,x.toFixed(1),y.toFixed(1),p.rad,p.r,p.r.id); dotsOut.push(lo.join("")); }
         else dotsOut.push('<circle class="dot" cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="'+p.rad.toFixed(1)+'" fill="'+fl+'"/>');
-        if(p.named&&!sel[p.r.key]) label(x,y,labelText(p.r));
+        if(p.named&&!sel[p.r.key]&&!(nba&&p.rad>=7&&HS[p.r.id]&&HS[p.r.id]!=="…")) label(x,y,labelText(p.r));
       });
     }else if(teams){
       var R=Math.max(13,Math.min(19,iw/34));
@@ -5827,7 +5947,9 @@ var Plot=(function(){
         var x=sx(p.x), y=sy(p.y), r=rr||(2.5+(rmaxS-2.5)*Math.sqrt(smax?p.s/smax:0));
         p.rad=r;
         if(!exp) geo.push({i:i,x:x,y:y,r:r});
+        if(nba){ r=Math.max(r,11); p.rad=r; if(!exp) geo[geo.length-1].r=r; }
         if(sel[p.r.key]) onOut.push({p:p,x:x,y:y,r:Math.max(r,6)});
+        else if(nba){ var lo2=[]; avatar(lo2,x.toFixed(1),y.toFixed(1),r,p.r,p.r.id); dotsOut.push(lo2.join("")); }
         else dotsOut.push('<circle class="dot" cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="'+r.toFixed(1)+'" fill="'+fillFor(p)+'"/>');
         if(p.named&&!sel[p.r.key]) label(x,y,labelText(p.r));
       });
@@ -5899,7 +6021,7 @@ var Plot=(function(){
       o.push('<text class="crank" x="'+(PAD+30)+'" y="'+(cy+7)+'" text-anchor="end">'+(i+1)+'</text>');
       if(p.t) badge(o,PAD+64,cy,19,p.t); else avatar(o,PAD+64,cy,19,p.r,p.r.id);
       o.push('<text class="cname" x="'+(PAD+96)+'" y="'+(cy-2)+'">'+esc(p.r.name)+'</text>');
-      var sub=p.t?(p.n+" players counted"):(esc(p.r.team||"FA")+(p.r.elig?" · "+esc(p.r.elig):"")+" · "+p.r.gp+" GP"+(p.r.own?" · "+esc(p.r.own.t):""));
+      var sub=p.t?(p.n+" players counted"):(p.r.abbr?esc(p.r.w+"-"+p.r.l+(p.r.div?" · "+p.r.div:"")+" · "+p.r.gp+" GP"):(esc(p.r.team||"FA")+(p.r.elig?" · "+esc(p.r.elig):"")+" · "+p.r.gp+" GP"+(p.r.own?" · "+esc(p.r.own.t):"")));
       o.push('<text class="csub" x="'+(PAD+96)+'" y="'+(cy+14)+'">'+sub+'</text>');
       o.push('<text class="cval" x="'+(w-PAD-14)+'" y="'+(cy+7)+'" text-anchor="end">'+esc(my.fmt(p.y))+'</text>');
       if(!exp) geo.push({i:pts.indexOf(p),x:w/2,y:cy,r:RH/2,row:true});
@@ -5934,7 +6056,7 @@ var Plot=(function(){
       L.t.list.forEach(function(p,j){
         var x0=PAD+LW+(j%per)*(CW+GAP), cy=L.y+4+CH/2+Math.floor(j/per)*(CH+GAP), cx=x0+AV+2;
         if(p.t) badge(o,cx,cy,AV,p.t); else avatar(o,cx,cy,AV,p.r,p.r.id);
-        var nm=p.t?p.t.short:shortName(p.r.name); if(!p.t&&dup[nm]>1&&!NICK[p.r.name]) nm=p.r.name.charAt(0)+". "+nm; if(nm.length>13) nm=nm.slice(0,12)+"…";
+        var nm=p.t?p.t.short:(p.r.abbr?p.r.short:shortName(p.r.name)); if(!p.t&&!p.r.abbr&&dup[nm]>1&&!NICK[p.r.name]) nm=p.r.name.charAt(0)+". "+nm; if(nm.length>13) nm=nm.slice(0,12)+"…";
         o.push('<text class="tname" x="'+(cx+AV+5)+'" y="'+(cy-1)+'">'+esc(nm)+'</text>');
         o.push('<text class="tval" x="'+(cx+AV+5)+'" y="'+(cy+10)+'">'+esc(my.fmt(p.y))+'</text>');
         if(!exp) geo.push({i:pts.indexOf(p),x:cx,y:cy,r:AV});
@@ -5951,14 +6073,15 @@ var Plot=(function(){
     var old=box.querySelector("svg"); if(old) old.remove();
     geo=[]; hov=-1; tip(false);
     box.classList.toggle("poster",isPoster());
-    if(!pts.length){ $("po-empty").hidden=false; $("po-empty").textContent=(window.Players&&Players.rows().length)?whyEmpty():"Loading players…"; return; }
+    if(!pts.length){ $("po-empty").hidden=false; $("po-empty").textContent=(isNba()||(window.Players&&Players.rows().length))?whyEmpty():"Loading players…"; return; }
     $("po-empty").hidden=true;
     W=Math.max(280,Math.round(box.clientWidth-28));
     H=f.chart==="swarm"?Math.max(320,Math.min(600,Math.round(W*(W<560?1.1:0.7)))):Math.max(280,Math.min(540,Math.round(W*(W<560?0.94:0.62))));
     box.insertAdjacentHTML("afterbegin",chartSvg(W,H,false));
     var c=pearson();
     $("po-corr").textContent=c==null?"":"correlation r = "+(c>0?"+":"")+c.toFixed(2);
-    $("po-count").textContent=f.chart==="teams"?pts.length+" fantasy teams":(f.chart==="cards"?"top "+ranked().length+" of "+pts.length:pts.length+" player"+(pts.length===1?"":"s")+(f.chart==="swarm"?" in "+groups.length+" groups":" plotted"));
+    var unit=isNba()?" NBA team":" player";
+    $("po-count").textContent=f.chart==="teams"?pts.length+" fantasy teams":(f.chart==="cards"?"top "+ranked().length+" of "+pts.length:pts.length+unit+(pts.length===1?"":"s")+(f.chart==="swarm"?" in "+groups.length+" groups":" plotted"));
     if(f.chart==="cards"||f.chart==="tiers"){
       var ids=(f.chart==="cards"?ranked():pts).map(function(p){ return p.r.id; });
       loadHeads(ids,function(changed){ if(changed&&$("v-plot").classList.contains("on")) draw(); });
@@ -5969,7 +6092,7 @@ var Plot=(function(){
   function panel(){
     var mx=met(f.x), my=met(f.y), swarm=f.chart==="swarm", teams=f.chart==="teams"||!!(pts[0]&&pts[0].t);
     $("po-col-x").textContent=swarm?grp(f.g).h.split(" ")[0]:mx.s; $("po-col-y").textContent=my.s;
-    $("po-col-n").textContent=teams?"Team":"Player";
+    $("po-col-n").textContent=teams||isNba()?"Team":"Player"; var qf=$("po-q"); if(qf) qf.placeholder=teams||isNba()?"Find a team":"Find a player";
     var q=(f.q||"").trim().toLowerCase();
     var list=pts.filter(function(p){ return !q||p.r.name.toLowerCase().indexOf(q)>=0||(p.r.team||"").toLowerCase().indexOf(q)>=0; });
     var dir=f.sort==="name"?1:-1;
@@ -5984,18 +6107,18 @@ var Plot=(function(){
     var g=grp(f.g);
     var out=list.map(function(p){
       var r=p.r, xcell=swarm?esc(g.short?g.short(p.gv):gname(g,p.gv)):esc(mx.fmt(p.x));
-      var small=teams?esc(r.team)+" · "+r.gp+" players":esc(r.team||"FA")+(r.elig?" · "+esc(r.elig):"")+" · "+r.gp+" GP";
+      var small=teams?esc(r.team)+" · "+r.gp+" players":(r.abbr?esc(r.w+"-"+r.l+(r.conf?" · "+r.conf:"")+" · "+r.gp+" GP"):esc(r.team||"FA")+(r.elig?" · "+esc(r.elig):"")+" · "+r.gp+" GP");
       return '<button class="pp-row'+(sel[r.key]?" on":"")+'" data-k="'+esc(r.key)+'" aria-pressed="'+(sel[r.key]?"true":"false")+'">'+
         '<span class="tick"></span>'+
         '<span class="g"><b>'+esc(r.name)+'</b><small>'+small+'</small></span>'+
         '<span class="n'+(swarm?" t":"")+'">'+xcell+'</span><span class="n">'+esc(my.fmt(p.y))+'</span></button>';
     }).join("");
-    $("po-list").innerHTML=out||'<div class="pp-none">'+(pts.length?"Nobody by that name on the chart.":"No players on the chart yet.")+"</div>";
+    $("po-list").innerHTML=out||'<div class="pp-none">'+(pts.length?"Nobody by that name on the chart.":(isNba()?"No teams on the chart yet.":"No players on the chart yet."))+"</div>";
     var n=0, shown=0;
     Object.keys(sel).forEach(function(k){ if(sel[k]) n++; });
     pts.forEach(function(p){ if(sel[p.r.key]) shown++; });
     var head=document.querySelector(".pp-top .eyebrow");
-    if(head) head.textContent=n?("Highlighting "+n+(n>shown?" · "+(n-shown)+" off the chart":"")+(shown>LBL_MAX?" · too many to label":"")):"Highlight "+(teams?"teams":"players");
+    if(head) head.textContent=n?("Highlighting "+n+(n>shown?" · "+(n-shown)+" off the chart":"")+(shown>LBL_MAX?" · too many to label":"")):"Highlight "+(teams||isNba()?"teams":"players");
     groupState();
   }
 
@@ -6004,7 +6127,7 @@ var Plot=(function(){
     var el=$("po-tip"); if(!el) return;
     if(!show){ el.style.opacity=0; return; }
     var mx=met(f.x), my=met(f.y), r=p.r, swarm=f.chart==="swarm", g=grp(f.g);
-    var who=p.t?esc(r.team)+" · "+p.n+" players":esc(r.team||"FA")+(r.elig?" · "+esc(r.elig):"")+" · "+r.gp+' GP'+(r.own?" · "+esc(r.own.t):"");
+    var who=p.t?esc(r.team)+" · "+p.n+" players":(r.abbr?esc(r.w+"-"+r.l+(r.div?" · "+r.div:"")+(r.streak?" · "+r.streak:"")+" · "+r.gp+" GP"):esc(r.team||"FA")+(r.elig?" · "+esc(r.elig):"")+" · "+r.gp+' GP'+(r.own?" · "+esc(r.own.t):""));
     var rows=[];
     if(swarm){ rows.push([g.h,gname(g,p.gv)]); if(f.size!=="none") rows.push([met(f.size).s,met(f.size).fmt(p.s)]); }
     else if(p.t){ rows.push([mx.s+" (#"+p.rx+")",mx.fmt(p.x)]); }
@@ -6063,7 +6186,7 @@ var Plot=(function(){
     return out||"Highlighted";
   }
   function groupState(){
-    var teams=!!(pts[0]&&pts[0].t);
+    var teams=!!(pts[0]&&pts[0].t)||isNba();
     $("po-groups").hidden=teams;
     ["G","F","C"].forEach(function(k){
       var btn=document.querySelector('[data-hlpos="'+k+'"]'); if(!btn) return;
@@ -6098,23 +6221,26 @@ var Plot=(function(){
   }
   function autoTitle(){
     var mx=met(f.x), my=met(f.y);
-    if(f.chart==="swarm") return my.h+" by "+grp(f.g).h;
+    var by=isNba()?", by NBA team":"";
+    if(f.chart==="swarm") return my.h+" by "+grp(f.g).h+by;
     if(f.chart==="teams") return my.h+" vs "+mx.h+", by fantasy team";
+    if(isNba()&&f.chart==="scatter") return my.h+" vs "+mx.h+by;
     if(f.chart==="cards") return (f.order==="bottom"?"Bottom ":"Top ")+Math.max(1,f.n|0)+" — "+my.h;
     if(f.chart==="tiers") return my.h+" tiers";
     return my.h+" vs "+mx.h;
   }
   function subline(){
     var bits=[(window.Players?Players.seasonLabel():"")||"", f.mode==="tot"?"season totals":"per game"];
-    if(f.pos) bits.push({G:"guards",F:"forwards",C:"centers"}[f.pos]);
-    if(f.mingp>0) bits.push("min "+f.mingp+" GP");
-    if(f.minmin>0) bits.push("min "+f.minmin+" MPG");
-    var os=$("po-owner"); if(f.owner&&os&&os.selectedIndex>0) bits.push(os.options[os.selectedIndex].text.replace(/ —.*$/,""));
+    if(isNba()) bits.push("all 30 NBA teams");
+    if(f.pos&&!isNba()) bits.push({G:"guards",F:"forwards",C:"centers"}[f.pos]);
+    if(f.mingp>0&&!isNba()) bits.push("min "+f.mingp+" GP");
+    if(f.minmin>0&&!isNba()) bits.push("min "+f.minmin+" MPG");
+    var os=$("po-owner"); if(f.owner&&os&&os.selectedIndex>0&&!isNba()) bits.push(os.options[os.selectedIndex].text.replace(/ —.*$/,""));
     if(f.zero&&f.chart==="scatter") bits.push("centred on zero");
     return bits.filter(Boolean).join("  ·  ").toUpperCase();
   }
   function legendNote(){
-    if(f.chart==="swarm"||f.chart==="scatter") return "Each bubble = 1 player"+(f.size!=="none"?" · size = "+met(f.size).h.toLowerCase():"")+(f.color==="grad"?" · colour = "+met(f.y).s:"");
+    if(f.chart==="swarm"||f.chart==="scatter") return "Each "+(isNba()?"logo = 1 NBA team":"bubble = 1 player")+(f.size!=="none"?" · size = "+met(f.size).h.toLowerCase():"")+(f.color==="grad"&&!isNba()?" · colour = "+met(f.y).s:"");
     if(f.chart==="teams") return "Each badge = 1 fantasy team · "+aggWord(met(f.x))+"s";
     return "";
   }
@@ -6193,7 +6319,9 @@ var Plot=(function(){
     {id:"landscape",h:"The Roster Landscape",    p:"Value vs payroll, one badge per fantasy team",    s:{chart:"teams",x:"salary",y:"val",agg:"auto",style:"site",title:"The Roster Landscape",sub:"Fantasy value against payroll"}},
     {id:"whistle",h:"Whistle Magnets",           p:"Personal fouls by position, sized by minutes",    s:{chart:"swarm",g:"pos",y:"pf",size:"tmin",color:"group",lbl:3,minmin:20,style:"poster",title:"Whistle Magnets",sub:"Personal fouls per game by position"}},
     {id:"threes", h:"3P Shooters",               p:"Attempts against accuracy, the top names labelled",s:{chart:"scatter",x:"tpa",y:"tpp",size:"none",color:"grad",lbl:25,minmin:20,mingp:20,style:"poster",title:"3P Shooters",sub:"Volume and accuracy from deep"}},
-    {id:"grades", h:"Roster Grades",             p:"The ten teams tiered by fantasy value",           s:{chart:"tiers",y:"val",subject:"teams",style:"site",title:"Roster Grades",sub:"Fantasy value, rolled up per roster"}}
+    {id:"grades", h:"Roster Grades",             p:"The ten teams tiered by fantasy value",           s:{chart:"tiers",y:"val",subject:"teams",style:"site",title:"Roster Grades",sub:"Fantasy value, rolled up per roster"}},
+    {id:"stream", h:"Who To Stream Against",      p:"NBA teams: pace against points allowed",          s:{chart:"scatter",subject:"nba",x:"pace",y:"opts",size:"none",color:"single",lbl:30,style:"poster",title:"Who To Stream Against",sub:"Possessions per game against points allowed"}},
+    {id:"glass",  h:"Glass Kings",                p:"NBA teams tiered by rebounds per game",           s:{chart:"tiers",subject:"nba",y:"reb",style:"site",title:"Glass Kings",sub:"Rebounds per game, by NBA team"}}
   ];
   function applyState(s,keepFilters){
     var next=JSON.parse(JSON.stringify(DEF));
@@ -6269,7 +6397,7 @@ var Plot=(function(){
   }
 
   /* ----- wiring ----- */
-  function refresh(){ collect(); draw(); panel(); meta(); showFields(); if($("v-plot").classList.contains("on")) pushHash(); }
+  function refresh(){ fillMetrics(); sync(); collect(); draw(); panel(); meta(); showFields(); if($("v-plot").classList.contains("on")) pushHash(); }
   function meta(){
     if(!window.Players) return;
     var lab=Players.seasonLabel();
@@ -6280,10 +6408,26 @@ var Plot=(function(){
     if(opts&&ss.innerHTML!==opts){ ss.innerHTML=opts; }
     if(cur) ss.value=cur;
     var hc=document.querySelector("#hc-plot .hc-n"); if(hc) hc.textContent=pts.length?String(f.chart==="teams"?T.length:pts.length):"—";
+    var ey=$("po-eyebrow"); if(ey&&isNba()&&lab) ey.textContent=lab+" · NBA teams · "+(f.mode==="tot"?"season totals":"per game");
   }
   /* each chart shows only the controls that mean something to it */
+  function fillMetrics(){
+    var L=mlist(), opts="", lastG="";
+    L.forEach(function(m){ if(m.g!==lastG){ if(lastG) opts+="</optgroup>"; opts+='<optgroup label="'+esc(m.g)+'">'; lastG=m.g; } opts+='<option value="'+m.k+'">'+esc(m.h)+'</option>'; });
+    opts+="</optgroup>";
+    if($("po-x").dataset.list!==(isNba()?"nba":"pl")){ $("po-x").innerHTML=opts; $("po-y").innerHTML=opts; $("po-size").innerHTML='<option value="none">Same size</option>'+opts; $("po-x").dataset.list=isNba()?"nba":"pl";
+      $("po-g").innerHTML=glist().map(function(g){ return '<option value="'+g.k+'">'+esc(g.h)+'</option>'; }).join(""); }
+    /* a stat the other subject doesn't have falls back to something sensible */
+    if(!hasMet(L,f.x)) f.x=isNba()?"pace":DEF.x;
+    if(!hasMet(L,f.y)) f.y=isNba()?"opts":DEF.y;
+    if(f.size!=="none"&&!hasMet(L,f.size)) f.size="none";
+    var GL=glist(); if(!GL.some(function(g){ return g.k===f.g; })) f.g=GL[0].k;
+  }
   function showFields(){
     document.querySelectorAll("#po-tools [data-for]").forEach(function(el){ el.hidden=el.dataset.for.split(" ").indexOf(f.chart)<0; });
+    /* NBA teams have no position, owner or minutes filter; the fantasy-teams subject only makes sense on the ranked charts */
+    document.querySelectorAll("#po-tools [data-pl]").forEach(function(el){ if(isNba()) el.hidden=true; else if(!el.dataset.for) el.hidden=false; });
+    var so=$("po-subject"); if(so){ so.querySelector('[value="teams"]').hidden=(f.chart==="scatter"||f.chart==="swarm"); if(f.subject==="teams"&&(f.chart==="scatter"||f.chart==="swarm")){ f.subject="players"; so.value="players"; } }
     var pl=$("po-lbl-l"); if(pl) pl.textContent=f.chart==="swarm"?"Names per group":"Names on chart";
     var co=$("po-color"); if(co){ co.querySelector('[value="group"]').hidden=f.chart!=="swarm"; if(f.chart!=="swarm"&&f.color==="group"){ f.color="single"; co.value="single"; } }
   }
@@ -6309,7 +6453,10 @@ var Plot=(function(){
     $("po-presets").innerHTML=PRESETS.map(function(p){ return '<button class="preset" data-preset="'+p.id+'"><b>'+esc(p.h)+'</b><small>'+esc(p.p)+'</small></button>'; }).join("")+'<button class="preset diy" id="po-diy"><b>Build your own</b><small>Any chart, any two stats, any slice of the league — the controls below are yours</small></button>';
     sync(); showFields();
 
-    ["chart","x","y","g","size","color","pos","owner","mode","style","order","subject","agg"].forEach(function(k){ $("po-"+k).addEventListener("change",function(){ f[k]=this.value; f.preset=""; if(k==="chart"){ sel={}; } refresh(); }); });
+    ["chart","x","y","g","size","color","pos","owner","mode","style","order","subject","agg"].forEach(function(k){ $("po-"+k).addEventListener("change",function(){ var was=isNba(); f[k]=this.value; f.preset=""; if(k==="chart"){ sel={}; }
+      /* thirty logos want all their names; back among players, the usual few */
+      if(k==="subject"||k==="chart"){ var now=isNba(); if(now!==was){ sel={}; if(now&&f.lbl===DEF.lbl) f.lbl=30; else if(!now&&f.lbl===30) f.lbl=DEF.lbl; } }
+      refresh(); }); });
     $("po-zero").addEventListener("change",function(){ f.zero=this.checked; draw(); pushHash(); });
     ["lbl","n"].forEach(function(k){ $("po-"+k).addEventListener("input",function(){ var v=Math.max(k==="n"?1:0,parseInt(this.value,10)||0); if(v===f[k]) return; f[k]=v; clearTimeout(t3); t3=setTimeout(function(){ draw(); pushHash(); },120); }); });
     ["title","sub"].forEach(function(k){ $("po-"+k).addEventListener("input",function(){ f[k]=this.value; clearTimeout(t3); t3=setTimeout(pushHash,300); }); });
