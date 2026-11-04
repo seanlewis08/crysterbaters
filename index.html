@@ -5882,8 +5882,8 @@ var Plot=(function(){
       var n=groups.length, cw=iw/n, hw=cw/2-4, g=grp(f.g);
       var counts={}; pts.forEach(function(p){ counts[p.gv]=(counts[p.gv]||0)+1; });
       var nmax=1; groups.forEach(function(k){ if(counts[k]>nmax) nmax=counts[k]; });
-      var rmax=Math.min(11,Math.max(3,Math.sqrt(0.48*cw*ih/(nmax*Math.PI)))), rmin=Math.max(2,rmax*0.3);
-      pts.forEach(function(p){ p.r0=f.size==="none"?rmax*0.72:(rmin+(rmax-rmin)*Math.sqrt(smax?p.s/smax:0)); p.cy=sy(p.y); p.cx0=PL+cw*(gi[p.gv]+0.5); });
+      var rmax=Math.min(nba?15:11,Math.max(3,Math.sqrt(0.48*cw*ih/(nmax*Math.PI)))), rmin=Math.max(2,rmax*0.3);
+      pts.forEach(function(p){ p.r0=f.size==="none"?rmax*(nba?0.95:0.72):(rmin+(rmax-rmin)*Math.sqrt(smax?p.s/smax:0)); p.cy=sy(p.y); p.cx0=PL+cw*(gi[p.gv]+0.5); });
       groups.forEach(function(k){
         var col=pts.filter(function(p){ return p.gv===k; }), scale=1;
         for(var t=0;t<3;t++){
