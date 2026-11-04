@@ -5695,12 +5695,14 @@ var Plot=(function(){
   function abbrFix(a){ a=String(a||"").toUpperCase(); return TAB[a]||a; }
   function nbaSeason(){ return (window.Players&&Players.season())||2027; }
   function nbaUrl(y){ return "https://site.web.api.espn.com/apis/common/v3/sports/basketball/nba/statistics/byteam?region=us&lang=en&contentorigin=espn&seasontype=2&season="+y; }
-  function nbaStUrl(y){ return "https://site.api.espn.com/apis/v2/sports/basketball/nba/standings?level=3&season="+y; }
+  /* two spellings of the standings host: ESPN's edge sometimes serves one without the CORS header */
+  function nbaStUrl(y,alt){ return "https://"+(alt?"site.api.espn.com":"site.web.api.espn.com")+"/apis/v2/sports/basketball/nba/standings?region=us&lang=en&contentorigin=espn&level=3&season="+y; }
   function nbaLoad(y){
     if(nbaRows[y]||nbaBusy[y]) return;
     try{ var c=JSON.parse(localStorage.getItem(NBA_KEY+":"+y)||"null"); if(c&&c.rows&&c.rows.length&&Date.now()-c.t<NBA_TTL){ nbaRows[y]=c.rows; return; } }catch(e){}
     nbaBusy[y]=true; nbaErr[y]="";
-    Promise.all([fetch(nbaUrl(y)).then(function(r){ return r.json(); }), fetch(nbaStUrl(y)).then(function(r){ return r.json(); }).catch(function(){ return null; })])
+    var st=fetch(nbaStUrl(y)).then(function(r){ return r.json(); }).catch(function(){ return fetch(nbaStUrl(y,true)).then(function(r){ return r.json(); }); }).catch(function(){ return null; });
+    Promise.all([fetch(nbaUrl(y)).then(function(r){ return r.json(); }), st])
       .then(function(res){ nbaRows[y]=nbaParse(res[0],res[1]); try{ localStorage.setItem(NBA_KEY+":"+y,JSON.stringify({t:Date.now(),rows:nbaRows[y]})); }catch(e){} })
       .catch(function(e){ nbaRows[y]=[]; nbaErr[y]=e.message||"couldn't read"; })
       .then(function(){ nbaBusy[y]=false; if($("v-plot").classList.contains("on")) refresh(); else dirty=true; });
@@ -6342,7 +6344,8 @@ var Plot=(function(){
     var s={}; h.slice(i+1).split("&").forEach(function(kv){ var p=kv.split("="), k=p[0], v=decodeURIComponent(p[1]||""); if(!(k in DEF)) return; s[k]=(typeof DEF[k]==="number")?+v:(typeof DEF[k]==="boolean")?v==="true"||v==="1":v; });
     return s;
   }
-  function pushHash(){ var r=stateToHash(); if(location.hash!==r){ try{ history.replaceState(null,"",r); }catch(e){} } }
+  var hashRead=false;   /* Players can repaint the page before onView has read the URL; until then the URL is not ours to rewrite */
+  function pushHash(){ if(!hashRead) return; var r=stateToHash(); if(location.hash!==r){ try{ history.replaceState(null,"",r); }catch(e){} } }
   function shareLink(){
     pushHash();
     var url=location.href.split("#")[0]+stateToHash();
@@ -6501,7 +6504,7 @@ var Plot=(function(){
     if(v!=="plot") return;
     if(!started){ started=true; bind(); galleryLoad(); }
     if(window.Players) Players.ensure();
-    var s=stateFromHash(); if(s){ applyState(s); f.preset=""; sync(); } else refresh();
+    var s=stateFromHash(); hashRead=true; if(s){ applyState(s); f.preset=""; sync(); } else refresh();
     dirty=false;
   }
   /* the home page's pinned chart works before the Analysis page has ever been opened */
