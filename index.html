@@ -6357,8 +6357,9 @@ var Plot=(function(){
   /* ----- the gallery: charts the league has saved ----- */
   var gallery=[], gLoaded=false;
   function galleryLoad(){
-    if(!window.Polls||!Polls.store) return;
-    Polls.store().chartsList().then(function(list){ gallery=list||[]; gLoaded=true; galleryRender(); }).catch(function(){ gallery=[]; gLoaded=true; galleryRender(); });
+    /* the store is null until the sign-in state is known; Polls.onAuth calls back in when it is */
+    var st=window.Polls&&Polls.store&&Polls.store(); if(!st||!st.chartsList) return;
+    st.chartsList().then(function(list){ gallery=list||[]; gLoaded=true; galleryRender(); }).catch(function(){ gallery=[]; gLoaded=true; galleryRender(); });
   }
   function galleryRender(){
     var el=$("po-gallery"), me=window.Polls?Polls.me():null, com=window.Polls?Polls.commish():false; if(!el) return;
@@ -6502,7 +6503,7 @@ var Plot=(function(){
   }
   function onView(v){
     if(v!=="plot") return;
-    if(!started){ started=true; bind(); galleryLoad(); }
+    if(!started){ started=true; bind(); try{ galleryLoad(); }catch(e){} }
     if(window.Players) Players.ensure();
     var s=stateFromHash(); hashRead=true; if(s){ applyState(s); f.preset=""; sync(); } else refresh();
     dirty=false;
