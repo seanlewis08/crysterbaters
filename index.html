@@ -5545,6 +5545,26 @@ var Plot=(function(){
     {k:"at",   s:"A/T",  h:"Assist to turnover",      g:"Team per game", get:flat("at"), fmt:function(v){return v?v.toFixed(2):"—";}, ax:function(v){return v.toFixed(1);}, flat:true},
     {k:"pf",   s:"PF",   h:"Personal fouls",          g:"Team per game", get:cnt("pf"), fmt:n1, ax:ax, neg:true},
     {k:"pace", s:"PACE", h:"Pace (possessions, est.)",g:"Team per game", get:flat("pace"), fmt:n1, ax:ax, flat:true},
+    {k:"ortg", s:"ORtg", h:"Offensive rating (pts per 100 poss)", g:"Advanced", get:flat("ortg"), fmt:n1, ax:ax, flat:true},
+    {k:"drtg", s:"DRtg", h:"Defensive rating (allowed per 100)", g:"Advanced", get:flat("drtg"), fmt:n1, ax:ax, flat:true, neg:true},
+    {k:"net",  s:"NetRtg", h:"Net rating",                g:"Advanced", get:flat("net"), fmt:sg, ax:sg, flat:true},
+    {k:"efg",  s:"eFG%", h:"Effective FG%",               g:"Advanced", get:flat("efg"), fmt:pc3, ax:pcax, flat:true},
+    {k:"ts",   s:"TS%",  h:"True shooting %",             g:"Advanced", get:flat("ts"), fmt:pc3, ax:pcax, flat:true},
+    {k:"tpar", s:"3PAr", h:"3PA rate (share of shots from three)", g:"Advanced", get:flat("tpar"), fmt:pc3, ax:pcax, flat:true},
+    {k:"ftr",  s:"FTr",  h:"Free throw rate (FTA per FGA)", g:"Advanced", get:flat("ftr"), fmt:pc3, ax:pcax, flat:true},
+    {k:"orebp",s:"OREB%",h:"Offensive rebound %",         g:"Advanced", get:flat("orebp"), fmt:pc3, ax:pcax, flat:true},
+    {k:"drebp",s:"DREB%",h:"Defensive rebound %",         g:"Advanced", get:flat("drebp"), fmt:pc3, ax:pcax, flat:true},
+    {k:"tovp", s:"TOV%", h:"Turnover % (per possession)", g:"Advanced", get:flat("tovp"), fmt:pc3, ax:pcax, flat:true, neg:true},
+    {k:"astr", s:"AST/FGM", h:"Assist ratio (assisted share of makes)", g:"Advanced", get:flat("astr"), fmt:pc3, ax:pcax, flat:true},
+    {k:"stlp", s:"STL%", h:"Steal % (per opponent possession)", g:"Advanced", get:flat("stlp"), fmt:pc3, ax:pcax, flat:true},
+    {k:"blkp", s:"BLK%", h:"Block % (per opponent 2PA)",  g:"Advanced", get:flat("blkp"), fmt:pc3, ax:pcax, flat:true},
+    {k:"opace",s:"oPACE",h:"Opponent possessions per game", g:"Advanced, against", get:flat("opace"), fmt:n1, ax:ax, flat:true},
+    {k:"oefg", s:"oeFG%",h:"Effective FG% allowed",       g:"Advanced, against", get:flat("oefg"), fmt:pc3, ax:pcax, flat:true},
+    {k:"ots",  s:"oTS%", h:"True shooting % allowed",     g:"Advanced, against", get:flat("ots"), fmt:pc3, ax:pcax, flat:true},
+    {k:"otpar",s:"o3PAr",h:"3PA rate allowed",            g:"Advanced, against", get:flat("otpar"), fmt:pc3, ax:pcax, flat:true},
+    {k:"oftr", s:"oFTr", h:"Free throw rate allowed",     g:"Advanced, against", get:flat("oftr"), fmt:pc3, ax:pcax, flat:true},
+    {k:"otovp",s:"oTOV%",h:"Turnover % forced",           g:"Advanced, against", get:flat("otovp"), fmt:pc3, ax:pcax, flat:true},
+    {k:"oastr",s:"oAST/FGM",h:"Assist ratio allowed",     g:"Advanced, against", get:flat("oastr"), fmt:pc3, ax:pcax, flat:true},
     {k:"opts", s:"oPTS", h:"Points allowed",          g:"Opponents per game (what they give up)", get:ocnt("pts"), fmt:n1, ax:ax},
     {k:"oreb_",s:"oREB", h:"Rebounds allowed",        g:"Opponents per game (what they give up)", get:ocnt("reb"), fmt:n1, ax:ax},
     {k:"oast", s:"oAST", h:"Assists allowed",         g:"Opponents per game (what they give up)", get:ocnt("ast"), fmt:n1, ax:ax},
@@ -5690,7 +5710,7 @@ var Plot=(function(){
   function aggWord(m){ var how=f.agg==="auto"?(m.agg||"sum"):f.agg; return how==="mean"?"roster average":"roster total"; }
   /* ----- NBA teams: ESPN's team statistics feed (own and opponent splits for all thirty in one read)
      plus the standings for the record, conference and division; cached six hours per season ----- */
-  var NBA_KEY="cb-nbateams-v1", NBA_TTL=6*3600*1000, nbaRows={}, nbaBusy={}, nbaErr={};
+  var NBA_KEY="cb-nbateams-v2", NBA_TTL=6*3600*1000, nbaRows={}, nbaBusy={}, nbaErr={};
   var TAB={GSW:"GS",NOP:"NO",NYK:"NY",SAS:"SA",UTA:"UTAH",WAS:"WSH",PHO:"PHX"};
   function abbrFix(a){ a=String(a||"").toUpperCase(); return TAB[a]||a; }
   function nbaSeason(){ return (window.Players&&Players.season())||2027; }
@@ -5723,6 +5743,18 @@ var Plot=(function(){
       var side=function(o){ return {pts:o.avgPoints,reb:o.avgRebounds,oreb:o.avgOffensiveRebounds,dreb:o.avgDefensiveRebounds,ast:o.avgAssists,stl:o.avgSteals,blk:o.avgBlocks,tpm:o.avgThreePointFieldGoalsMade,tpa:o.avgThreePointFieldGoalsAttempted,fgm:o.avgFieldGoalsMade,fga:o.avgFieldGoalsAttempted,ftm:o.avgFreeThrowsMade,fta:o.avgFreeThrowsAttempted,to:o.avgTurnovers,pf:o.avgFouls,fgp:pct(o.fieldGoalPct),ftp:pct(o.freeThrowPct),tpp:pct(o.threePointFieldGoalPct),at:o.assistTurnoverRatio}; };
       var me=side(own), them=side(opp);
       me.pace=(me.fga||0)+0.44*(me.fta||0)+(me.to||0)-(me.oreb||0);
+      /* the advanced line, the way Basketball-Reference and Cleaning the Glass do it, from the two splits:
+         ratings per 100 possessions, the four factors for and against, shooting rates, assist ratio */
+      var opace=(them.fga||0)+0.44*(them.fta||0)+(them.to||0)-(them.oreb||0), div=function(a,b){ return b?a/b:null; };
+      var adv={opace:opace, ortg:div(me.pts*100,me.pace), drtg:div(them.pts*100,opace)};
+      adv.net=adv.ortg!=null&&adv.drtg!=null?adv.ortg-adv.drtg:null;
+      adv.efg=div((me.fgm||0)+0.5*(me.tpm||0),me.fga); adv.oefg=div((them.fgm||0)+0.5*(them.tpm||0),them.fga);
+      adv.ts=div(me.pts,2*((me.fga||0)+0.44*(me.fta||0))); adv.ots=div(them.pts,2*((them.fga||0)+0.44*(them.fta||0)));
+      adv.tpar=div(me.tpa,me.fga); adv.otpar=div(them.tpa,them.fga); adv.ftr=div(me.fta,me.fga); adv.oftr=div(them.fta,them.fga);
+      adv.orebp=div(me.oreb,(me.oreb||0)+(them.dreb||0)); adv.drebp=div(me.dreb,(me.dreb||0)+(them.oreb||0));
+      adv.tovp=div(me.to,me.pace); adv.otovp=div(them.to,opace); adv.astr=div(me.ast,me.fgm); adv.oastr=div(them.ast,them.fgm);
+      adv.stlp=div(me.stl,opace); adv.blkp=div(me.blk,(them.fga||0)-(them.tpa||0));
+      Object.assign(me,adv);
       return Object.assign({id:"t:"+ab, key:"nba:"+ab, name:t.team.displayName||ab, short:t.team.shortDisplayName||ab, team:ab, abbr:ab, gp:gp, tech:own.technicalFouls||0,
         conf:r.conf||"", div:r.div||"", w:r.w||0, l:r.l||0, pct:r.pct||0, streak:r.streak||"", seed:r.seed||0,
         diff:own.avgPointsDifferential, rebd:own.avgReboundsDifferential, astd:own.avgAssistsDifferential, tpmd:own.avgThreePointFieldGoalsMadeDifferential, stld:own.avgStealsDifferential, blkd:own.avgBlocksDifferential,
@@ -6323,7 +6355,8 @@ var Plot=(function(){
     {id:"threes", h:"3P Shooters",               p:"Attempts against accuracy, the top names labelled",s:{chart:"scatter",x:"tpa",y:"tpp",size:"none",color:"grad",lbl:25,minmin:20,mingp:20,style:"poster",title:"3P Shooters",sub:"Volume and accuracy from deep"}},
     {id:"grades", h:"Roster Grades",             p:"The ten teams tiered by fantasy value",           s:{chart:"tiers",y:"val",subject:"teams",style:"site",title:"Roster Grades",sub:"Fantasy value, rolled up per roster"}},
     {id:"stream", h:"Who To Stream Against",      p:"NBA teams: pace against points allowed",          s:{chart:"scatter",subject:"nba",x:"pace",y:"opts",size:"none",color:"single",lbl:30,style:"poster",title:"Who To Stream Against",sub:"Possessions per game against points allowed"}},
-    {id:"glass",  h:"Glass Kings",                p:"NBA teams tiered by rebounds per game",           s:{chart:"tiers",subject:"nba",y:"reb",style:"site",title:"Glass Kings",sub:"Rebounds per game, by NBA team"}}
+    {id:"glass",  h:"Glass Kings",                p:"NBA teams tiered by rebounds per game",           s:{chart:"tiers",subject:"nba",y:"reb",style:"site",title:"Glass Kings",sub:"Rebounds per game, by NBA team"}},
+    {id:"ratings",h:"The Efficiency Landscape",    p:"NBA teams: offensive against defensive rating",   s:{chart:"scatter",subject:"nba",x:"ortg",y:"drtg",size:"none",color:"single",lbl:30,style:"site",title:"The Efficiency Landscape",sub:"Points scored and allowed per 100 possessions"}}
   ];
   function applyState(s,keepFilters){
     var next=JSON.parse(JSON.stringify(DEF));
