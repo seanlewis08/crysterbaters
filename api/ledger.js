@@ -190,6 +190,19 @@ async function rotations(req, res) {
 
 // GET /api/ledger?usage=season|10|5 — the league-wide usage table for the
 // Players page's Advanced view (api/_lib/usage.js seasonTable). Half an hour at the edge.
+// Steadiness for this season, from our own box scores (api/_lib/steady.js). Last season's
+// lives in steady.json beside index.html, built by tools/steadiness.js.
+async function steadyTable(req, res) {
+  try {
+    const t = await require("./_lib/steady").season(supa);
+    res.setHeader("Cache-Control", "public, s-maxage=3600, stale-while-revalidate=7200");
+    return res.status(200).json(t);
+  } catch (e) {
+    res.setHeader("Cache-Control", "no-store");
+    return res.status(503).json({ error: e.message || String(e) });
+  }
+}
+
 async function usageTable(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   const span = String(req.query.usage || "season");
@@ -246,6 +259,7 @@ module.exports = async (req, res) => {
   if (req.method === "GET" && req.query && req.query.team) return read(req, res);
   if (req.method === "GET" && req.query && req.query.rotations) return rotations(req, res);
   if (req.method === "GET" && req.query && req.query.usage) return usageTable(req, res);
+  if (req.method === "GET" && req.query && req.query.steady) return steadyTable(req, res);
   if (req.method === "GET" && req.query && req.query.draft) return draft(req, res);
   if (req.method === "GET" && req.query && req.query.adp) return adp(req, res);
   return snapshot(req, res);

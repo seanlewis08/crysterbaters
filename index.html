@@ -1160,6 +1160,8 @@ td input.capin:focus-visible{outline:1px solid var(--amber);border-color:var(--a
 .pltable .pl-name .nm small{font-family:var(--mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);white-space:nowrap}
 .pltable td.rk{color:var(--dim);font-size:11.5px}
 .pltable td.val b{color:var(--amber)}
+.pltable td.std span{display:inline-block;min-width:30px;padding:2px 5px;border-radius:3px;font-weight:600;text-align:center;color:var(--ink)}
+.pltable td.sdm{color:var(--muted)}
 .pltable td.neg{color:var(--red)}
 .pltable .own{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 .pltable .own .k{display:inline-block;margin-left:6px;padding:1px 5px;border:1px solid var(--amber-dim);border-radius:2px;color:var(--amber);font-size:9px;font-weight:700}
@@ -2354,7 +2356,7 @@ footer p + p{margin-top:11px}
         <div class="field"><label for="pl-owner">In our league</label><select id="pl-owner"><option value="">Everyone</option><option value="fa">Not on a roster</option><option value="owned">On a roster</option><option value="keeper">Flagged keepers</option></select></div>
         <div class="field" style="flex:0 1 96px"><label for="pl-mingp">Min GP</label><input id="pl-mingp" type="number" min="0" step="1" inputmode="numeric" placeholder="0"></div>
         <div class="field" style="flex:0 1 96px"><label for="pl-minmin">Min MPG</label><input id="pl-minmin" type="number" min="0" step="1" inputmode="numeric" placeholder="0"></div>
-        <div class="field"><label for="pl-mode">Stats</label><select id="pl-mode"><option value="pg">Per game</option><option value="tot">Totals</option><option value="z">Z-scores</option><option value="adv">Advanced</option></select></div>
+        <div class="field"><label for="pl-mode">Stats</label><select id="pl-mode"><option value="pg">Per game</option><option value="tot">Totals</option><option value="z">Z-scores</option><option value="adv">Advanced</option><option value="steady">Steadiness</option></select></div>
         <div class="field" id="pl-spanf" hidden><label for="pl-span">Over</label><select id="pl-span"><option value="season">Season so far</option><option value="10">Last 10 games</option><option value="5">Last 5 games</option></select></div>
         <div class="field"><label for="pl-season">Season</label><select id="pl-season"></select></div>
         <div class="field" style="flex:0 0 auto;justify-content:flex-end;flex-direction:row;gap:8px"><button class="btn quiet sm" id="pl-clear">Clear</button><button class="btn sm" id="pl-csv" title="Every player in the list as shown, every column, as a .csv">Download CSV</button></div>
@@ -2372,6 +2374,7 @@ footer p + p{margin-top:11px}
         <span class="sub" id="pl-src"></span>
         <span class="sub" id="pl-adp-note"></span>
       </div>
+      <p class="sub" style="margin-top:10px" id="pl-stdnote" hidden><b>Steadiness</b> (0–100) says how close to his own average a player lands, game after game. Each player’s game-to-game spread in a stat is compared with the spread that is normal for players with the same average, across the league; 100 is the steadiest in the league at that stat, 50 is typical, 0 is the most boom-or-bust. Beside each score is the average it describes, over the same games. Only players with 20+ games at 10+ minutes are scored — before that the spread is mostly luck — so this season fills in as players reach 20 games; 2025-26 is scored from ESPN’s full game logs.</p>
       <p class="sub" style="margin-top:10px" id="pl-advnote" hidden><b>Advanced</b> comes from the play-by-play behind the Rotations and Usage pages (popcornmachine), this season only, over the games we hold. <b>USG%</b> is the share of his team’s possessions he ends with a shot, free throws or a turnover while he is on the floor; <b>Poss/g</b> is those possessions a game and <b>Share</b> his cut of the team’s; <b>Load</b> and <b>Box Cr</b> are Ben Taylor’s Offensive Load and Box Creation per 100 possessions on the floor; <b>TS%</b> is points per two true shooting attempts; <b>3PA rate</b> the share of his shots from three. Early in the season every one of these swings game to game. Lines under ten minutes a game sort to the bottom whichever column is up (garbage time makes anyone a 60% usage player); Min GP and Min MPG filter on these games. A player with no stored game shows a dash.</p>
       <p class="sub" style="margin-top:10px"><b>Value</b> is the sum of z-scores across our nine categories (FG%, FT%, 3PTM, PTS, REB, AST, ST, BLK, DD), per game, measured against the top 200 players by minutes — the Basketball Monster way. A player needs ten games (a fifth of the season early on) to be ranked. Switch Stats to <b>Z-scores</b> and every category column becomes that player's z-score against whoever is currently listed — filter to free agents, or one position, and the numbers re-centre on that group. <b>FPTS</b> is Yahoo's default points formula (PTS 1, REB 1.2, AST 1.5, STL 3, BLK 3, TO −1). <b>Owner</b> is whoever had him when rosters locked; K marks a flagged keeper. Salaries are this season's figure from Basketball-Reference (ESPN where they lack one); stats are ESPN's.</p>
     </section>
@@ -5101,7 +5104,40 @@ var Players=(function(){
     {k:"upts",h:"PTS",num:true,get:u("pts"),fmt:uf(1)},
     COLS[COLS.length-1]
   ];
-  function cols(){ return f.mode==="adv"?ACOLS:COLS; }
+  /* ----- Steadiness: per stat, the average and how steadily he hits it (0–100), from api/_lib/steady.js ----- */
+  var SSTATS=[["pts","PTS"],["reb","REB"],["ast","AST"],["stl","STL"],["blk","BLK"],["tpm","3PM"],["tov","TO"],["min","MIN"]];
+  function sdm(k){ return function(r){ return r.sd&&r.sd.m[k]!=null?r.sd.m[k]:-1e9; }; }
+  function sds(k){ return function(r){ return r.sd&&r.sd.s[k]!=null?r.sd.s[k]:-1; }; }
+  function stdCell(v){ if(v<0) return DASH; var a=(0.08+0.72*v/100).toFixed(3); return '<span style="background:rgba(27,63,122,'+a+')'+(v>=55?';color:#fff':'')+'">'+v+'</span>'; }
+  var SCOLS=[COLS[0],COLS[1],COLS[2],{k:"sgp",h:"GP",num:true,get:function(r){ return r.sd?r.sd.gp:-1e9; },fmt:uf(0),title:"Games the scores are built from"}];
+  SSTATS.forEach(function(x){
+    SCOLS.push({k:"sm_"+x[0],h:x[1],num:true,cls:"sdm",get:sdm(x[0]),fmt:uf(1),title:x[1]+" per game over the same games"});
+    SCOLS.push({k:"ss_"+x[0],h:"Stdy",num:true,cls:"std",get:sds(x[0]),fmt:stdCell,title:x[1]+" steadiness, 0–100 (100 = lands on his average most consistently)"});
+  });
+  SCOLS.push(COLS[COLS.length-1]);
+  var STD={file:null, fileTried:false, live:{}, busy:{}, err:""};
+  function stdFor(y){ return (STD.file&&STD.file.seasons&&STD.file.seasons[y])||STD.live[y]||null; }
+  function loadSteady(y){
+    if(stdFor(y)||STD.busy[y]) return;
+    STD.busy[y]=true; STD.err="";
+    var fileP=STD.fileTried?Promise.resolve(STD.file):fetch("steady.json",{cache:"no-cache"}).then(function(r){ return r.ok?r.json():null; }).catch(function(){ return null; }).then(function(j){ STD.file=j; STD.fileTried=true; return j; });
+    fileP.then(function(){
+      if(stdFor(y)) return;
+      /* not a finished season on file: score it live from our own box scores */
+      return fetch("/api/ledger?steady=season").then(function(r){ return r.json().then(function(j){ if(!r.ok) throw new Error(j.error||("answered "+r.status)); return j; }); })
+        .then(function(j){ STD.live[y]=j; });
+    }).catch(function(e){ STD.err=e.message||"couldn’t read"; }).then(function(){
+      STD.busy[y]=false; joinSteady();
+      if(document.getElementById("v-players").classList.contains("on")) render(); else fire();
+    });
+  }
+  function joinSteady(){
+    var T=stdFor(season); rows.forEach(function(r){ r.sd=null; }); if(!T) return;
+    var S=T.stats, byId={}, byName={};
+    T.rows.forEach(function(x){ var o={gp:x[3],m:{},s:{}}; S.forEach(function(k,i){ o.m[k]=x[4][i]; o.s[k]=x[5][i]; }); byId[x[0]]=o; byName[norm(x[1])]=o; });
+    rows.forEach(function(r){ r.sd=(r.id&&byId[r.id])||byName[r.key]||null; });
+  }
+  function cols(){ return f.mode==="adv"?ACOLS:f.mode==="steady"?SCOLS:COLS; }
   function stat(k){ return function(r){ return f.mode==="tot"?r[k]*r.gp:r[k]; }; }
   function d1(v){ return f.mode==="tot"?String(Math.round(v)):(+v).toFixed(1); }
   function fz(v){ return (v>0?"+":"")+(+v).toFixed(2); }
@@ -5203,6 +5239,7 @@ var Players=(function(){
       return o;
     });
     value();
+    joinSteady(); loadSteady(season);
     var teams={}; rows.forEach(function(r){ if(r.team&&r.team!=="FA") teams[r.team]=1; });
     var sel=$("pl-team"), cur=sel.value;
     sel.innerHTML='<option value="">All teams</option>'+Object.keys(teams).sort().map(function(t){return '<option value="'+t+'">'+t+'</option>';}).join("");
@@ -5294,6 +5331,7 @@ var Players=(function(){
       if(f.owner==="keeper"&&!(r.own&&r.own.k)) return false;
       if(f.owner&&["fa","owned","keeper"].indexOf(f.owner)<0&&!(r.own&&r.own.id===f.owner)) return false;
       if(f.mode==="adv"){ if(f.mingp>0&&!(r.u&&r.u.gp>=f.mingp)) return false; if(f.minmin>0&&!(r.u&&r.u.min>=f.minmin)) return false; return true; }
+      if(f.mode==="steady"){ if(!r.sd) return false; if(f.mingp>0&&r.sd.gp<f.mingp) return false; if(f.minmin>0&&r.sd.m.min<f.minmin) return false; return true; }
       if(f.mingp>0&&r.gp<f.mingp) return false;
       if(f.minmin>0&&r.min<f.minmin) return false;
       return true;
@@ -5304,20 +5342,20 @@ var Players=(function(){
       if(pool.length){ var model=zmodel(pool); view.forEach(function(r){ if(r.gp>0){ var zz=zscores(r,model); r.zc=zz.zc; r.zval=r.gp>=qual?zz.z:zz.z-1000; } else { r.zc=null; r.zval=-1099; } }); }
       else view.forEach(function(r){ r.zc=null; r.zval=-1099; });
     }
-    var C=cols(), col=C.filter(function(c){return c.k===sortKey;})[0]||C.filter(function(c){return c.k===(f.mode==="adv"?"usg":"val");})[0], get=colGet(col), dir=sortAsc?1:-1;
+    var C=cols(), col=C.filter(function(c){return c.k===sortKey;})[0]||C.filter(function(c){return c.k===(f.mode==="adv"?"usg":f.mode==="steady"?"ss_pts":"val");})[0], get=colGet(col), dir=sortAsc?1:-1;
     /* Advanced: a line under ten minutes a game is garbage time, so it sorts after everyone qualified whichever column is up */
     var advQ=function(r){ return r.u&&r.u.min>=10?1:0; };
     view.sort(function(a,b){
       if(f.mode==="adv"){ var qa=advQ(a), qb=advQ(b); if(qa!==qb) return qb-qa; }
       var x=get(a), y=get(b);
       if(typeof x==="string"||typeof y==="string"){ x=String(x); y=String(y); return x<y?-dir:x>y?dir:0; }
-      if(x===y) return (f.mode==="z"?b.zval-a.zval:f.mode==="adv"?(u("usg")(b)-u("usg")(a)):b.val-a.val);
+      if(x===y) return (f.mode==="z"?b.zval-a.zval:f.mode==="adv"?(u("usg")(b)-u("usg")(a)):f.mode==="steady"?(sdm("pts")(b)-sdm("pts")(a)):b.val-a.val);
       return (x<y?-1:1)*dir;
     });
   }
   function render(){
     if(!rows.length) return;
-    $("pl-spanf").hidden=f.mode!=="adv"; $("pl-advnote").hidden=f.mode!=="adv";
+    $("pl-spanf").hidden=f.mode!=="adv"; $("pl-advnote").hidden=f.mode!=="adv"; $("pl-stdnote").hidden=f.mode!=="steady";
     if(f.mode==="adv"){ if(!ADV[advSpan]) loadAdv(advSpan); joinAdv(); }
     apply();
     var C=cols(), head=C.map(function(c){
@@ -5331,8 +5369,9 @@ var Players=(function(){
     renderBody(true);
     var lv=live[season], when=lv?new Date(lv.ts):null;
     var A=ADV[advSpan];
-    $("pl-eyebrow").textContent=f.mode==="adv"?("Advanced · "+(advSpan==="season"?"this season so far":"last "+advSpan+" games")+(A?" · "+Math.round(A.games)+" games held":advLoading?" · loading…":"")):((lv?lv.label:(season-1)+"-"+String(season).slice(2))+(f.mode==="z"?" z-scores vs "+zN+" listed players":" stats")+" · "+CAPS[capSeason].label+" salaries");
-    $("pl-src").textContent=f.mode==="adv"?(A?"Play-by-play from popcornmachine · table built "+new Date(A.built).toLocaleTimeString(undefined,{hour:"numeric",minute:"2-digit"}):(advErr?"Couldn’t read the usage table ("+advErr+")":"Reading the usage table…")):((lv?"Stats from ESPN, refreshed "+when.toLocaleTimeString(undefined,{hour:"numeric",minute:"2-digit"}):"Stats from the last snapshot")+" · salaries as of "+new Date(snap.built).toLocaleDateString(undefined,{month:"short",day:"numeric"}));
+    var ST=stdFor(season);
+    $("pl-eyebrow").textContent=f.mode==="steady"?("Steadiness · "+(lv?lv.label:(season-1)+"-"+String(season).slice(2))+(ST?" · "+ST.rows.length+" players with 20+ games":STD.busy[season]?" · loading…":"")):f.mode==="adv"?("Advanced · "+(advSpan==="season"?"this season so far":"last "+advSpan+" games")+(A?" · "+Math.round(A.games)+" games held":advLoading?" · loading…":"")):((lv?lv.label:(season-1)+"-"+String(season).slice(2))+(f.mode==="z"?" z-scores vs "+zN+" listed players":" stats")+" · "+CAPS[capSeason].label+" salaries");
+    $("pl-src").textContent=f.mode==="steady"?(ST?(ST.source||"Our box scores")+" · scored "+new Date(ST.built).toLocaleDateString(undefined,{month:"short",day:"numeric"}):(STD.err?"Couldn’t read the steadiness table ("+STD.err+")":"Reading the steadiness table…")):f.mode==="adv"?(A?"Play-by-play from popcornmachine · table built "+new Date(A.built).toLocaleTimeString(undefined,{hour:"numeric",minute:"2-digit"}):(advErr?"Couldn’t read the usage table ("+advErr+")":"Reading the usage table…")):((lv?"Stats from ESPN, refreshed "+when.toLocaleTimeString(undefined,{hour:"numeric",minute:"2-digit"}):"Stats from the last snapshot")+" · salaries as of "+new Date(snap.built).toLocaleDateString(undefined,{month:"short",day:"numeric"}));
     renderCap();
     fire();
   }
@@ -5363,7 +5402,8 @@ var Players=(function(){
       out.push('<tr>'+cells.join("")+'</tr>');
     }
     if(end<view.length) out.push('<tr class="sp" style="height:'+((view.length-end)*ROW_H)+'px"><td colspan="'+C.length+'"></td></tr>');
-    $("pl-rows").innerHTML=out.join("")||'<tr><td colspan="'+C.length+'" class="pl-empty">Nobody matches that. Try fewer filters.</td></tr>';
+    var empty=f.mode==="steady"&&!rows.some(function(r){ return r.sd; })?(STD.busy[season]?"Reading the steadiness table…":"Nobody has 20 games at 10+ minutes this season yet"+((stdFor(season)||{}).mostGames?" (the most so far is "+stdFor(season).mostGames+")":"")+". Pick 2025-26 in Season to see last year’s scores."):"Nobody matches that. Try fewer filters.";
+    $("pl-rows").innerHTML=out.join("")||'<tr><td colspan="'+C.length+'" class="pl-empty">'+empty+'</td></tr>';
     $("pl-count").textContent=view.length===rows.length?rows.length+" players":view.length+" of "+rows.length+" players";
   }
   function renderCap(){
@@ -5396,7 +5436,7 @@ var Players=(function(){
   var timer=null;
   function bind(){
     $("pl-q").addEventListener("input",function(){ f.q=this.value; clearTimeout(timer); timer=setTimeout(function(){ render(); },40); });
-    ["team","pos","exp","owner","mode"].forEach(function(k){ $("pl-"+k).addEventListener("change",function(){ var was=f[k]; f[k]=this.value; if(k==="mode"&&(this.value==="adv")!==(was==="adv")){ sortKey=this.value==="adv"?"usg":"val"; sortAsc=false; } render(); }); });
+    ["team","pos","exp","owner","mode"].forEach(function(k){ $("pl-"+k).addEventListener("change",function(){ var was=f[k]; f[k]=this.value; if(k==="mode"&&this.value!==was&&(this.value==="adv"||was==="adv"||this.value==="steady"||was==="steady")){ sortKey=this.value==="adv"?"usg":this.value==="steady"?"ss_pts":"val"; sortAsc=false; } render(); }); });
     $("pl-span").addEventListener("change",function(){ advSpan=this.value; render(); });
     ["mingp","minmin"].forEach(function(k){ var el=$("pl-"+k); function upd(){ var v=Math.max(0,parseFloat(el.value)||0); if(v===f[k]) return; f[k]=v; render(); } el.addEventListener("input",function(){ clearTimeout(timer); timer=setTimeout(upd,120); }); el.addEventListener("change",upd); });
     $("pl-season").addEventListener("change",function(){ season=+this.value; userSeason=true; build(); render(); });
@@ -5428,7 +5468,7 @@ var Players=(function(){
     $("pl-csv").addEventListener("click",function(){
       if(!rows.length) return;
       var lv=live[season], label=(lv?lv.label:(season-1)+"-"+String(season).slice(2)).replace(/[^0-9a-z-]/gi,"");
-      var name="crysterbaters-players-"+label+"-"+({pg:"per-game",tot:"totals",z:"z-scores",adv:"advanced-"+advSpan}[f.mode]||f.mode)+(view.length===rows.length?"":"-filtered")+"-"+new Date().toISOString().slice(0,10)+".csv";
+      var name="crysterbaters-players-"+label+"-"+({pg:"per-game",tot:"totals",z:"z-scores",adv:"advanced-"+advSpan,steady:"steadiness"}[f.mode]||f.mode)+(view.length===rows.length?"":"-filtered")+"-"+new Date().toISOString().slice(0,10)+".csv";
       var blob=new Blob(["\ufeff"+csvText()],{type:"text/csv;charset=utf-8"});
       var a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click();
       setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); },1000);
@@ -5536,6 +5576,10 @@ var Plot=(function(){
     {k:"cappct",s:"%CAP", h:"% of the cap",        g:"Contract", get:function(r,cap){return r.salary?r.salary/cap:null;}, fmt:function(v){return (v*100).toFixed(1)+"%";}, ax:pcax, flat:true},
     {k:"yrs",   s:"YRS",  h:"Years left",          g:"Contract", get:function(r){return r.yrs||null;}, fmt:whole, ax:ax, flat:true, agg:"mean"}
   ];
+  /* Steadiness, 0–100 per stat (players with 20+ games); see the Players page note */
+  [["pts","PTS","Points"],["reb","REB","Rebounds"],["ast","AST","Assists"],["stl","STL","Steals"],["blk","BLK","Blocks"],["tpm","3PM","Threes made"],["tov","TO","Turnovers"],["min","MIN","Minutes"]].forEach(function(x){
+    M.push({k:"sd_"+x[0], s:x[1]+" STDY", h:x[2]+" steadiness (0–100)", g:"Steadiness (0–100)", get:function(r){ return r.sd&&r.sd.s[x[0]]!=null?r.sd.s[x[0]]:null; }, fmt:whole, ax:ax, flat:true, agg:"mean"});
+  });
   /* ----- the same for an NBA team: its own numbers, what it allows, the margins, the record ----- */
   function ocnt(k){ return function(r){ return r.o&&r.o[k]!=null?(f.mode==="tot"?r.o[k]*r.gp:r.o[k]):null; }; }
   function flat(k){ return function(r){ return r[k]==null?null:r[k]; }; }
@@ -5800,6 +5844,7 @@ var Plot=(function(){
     if(gone&&!pts.length) return gone.h+" comes from the salary snapshot, which only covers "+
       ((window.Players&&Players.snapLabel())||"one season")+" — pick that season, or another stat.";
     if(f.chart==="swarm"&&dropX&&!pts.length) return "Nobody here has a "+grp(f.g).h.toLowerCase()+" on file.";
+    if(!isNba()&&!pts.length&&(/^sd_/.test(f.y)||(/^sd_/.test(f.x)&&f.chart!=="swarm"))) return "Steadiness scores need 20 games at 10+ minutes, and nobody has that many this season yet — pick 2025-26 in Season.";
     if(isNba()){ var y=nbaSeason(); return nbaBusy[y]?"Reading the thirty teams from ESPN…":(nbaErr[y]?"Couldn’t read ESPN’s team feed ("+nbaErr[y]+").":"ESPN has no team numbers for "+((window.Players&&Players.seasonLabel())||"that season")+" yet."); }
     return "Nobody matches those filters. Loosen Min GP or Min MPG.";
   }
