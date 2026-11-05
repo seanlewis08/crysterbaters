@@ -1215,6 +1215,9 @@ select.flash{box-shadow:0 0 0 3px var(--amber-glow),0 0 0 1px var(--amber);trans
 .po-build span{font-size:13px;color:var(--muted)}
 .pltools [hidden]{display:none}
 .poster-row{margin-top:-2px}
+.po-chks{display:flex;gap:14px;flex-wrap:wrap}
+.pltools[hidden],.po-chk[hidden]{display:none}
+.plotbox .quad.user{font-size:12.5px;letter-spacing:.12em;text-transform:uppercase}
 .plotbox .colax{stroke:var(--line);stroke-width:1;stroke-dasharray:3 4;shape-rendering:crispEdges}
 .plotbox .gtick{font-family:var(--disp);font-size:12.5px;font-weight:700;fill:var(--muted);letter-spacing:.04em;text-transform:none}
 .plotbox .gtick.sm{font-size:9.5px}
@@ -2410,6 +2413,18 @@ footer p + p{margin-top:11px}
       <div class="pltools poster-row">
         <div class="field grow"><label for="po-title">Headline (for the copied picture)</label><input id="po-title" type="text" maxlength="60" placeholder="Leave blank for the automatic one" autocomplete="off"></div>
         <div class="field grow"><label for="po-sub">Subtitle</label><input id="po-sub" type="text" maxlength="90" placeholder="Season, filters and the league name, unless you say otherwise" autocomplete="off"></div>
+      </div>
+      <div class="pltools poster-row" id="po-opts">
+        <div class="field" style="flex:0 0 auto" data-for="scatter swarm teams"><label>Show</label><div class="po-chks"><label class="po-chk"><input type="checkbox" id="po-grid"> Grid</label><label class="po-chk" data-for="scatter teams"><input type="checkbox" id="po-med"> Median lines</label></div></div>
+        <div class="field" style="flex:0 0 auto" data-for="scatter swarm teams"><label>Flip</label><div class="po-chks"><label class="po-chk" data-for="scatter teams"><input type="checkbox" id="po-flipx"> X axis</label><label class="po-chk"><input type="checkbox" id="po-flipy"> Y axis</label></div></div>
+        <div class="field grow" data-for="scatter swarm teams"><label for="po-xt">X axis title</label><input id="po-xt" type="text" maxlength="60" placeholder="Leave blank for the stat name" autocomplete="off"></div>
+        <div class="field grow" data-for="scatter swarm teams"><label for="po-yt">Y axis title</label><input id="po-yt" type="text" maxlength="60" placeholder="Leave blank for the stat name" autocomplete="off"></div>
+      </div>
+      <div class="pltools poster-row" id="po-quads" data-for="scatter teams">
+        <div class="field grow"><label for="po-qtl">Top-left corner</label><input id="po-qtl" type="text" maxlength="40" placeholder="e.g. Good D, bad O" autocomplete="off"></div>
+        <div class="field grow"><label for="po-qtr">Top-right corner</label><input id="po-qtr" type="text" maxlength="40" placeholder="e.g. The quadrant of wow" autocomplete="off"></div>
+        <div class="field grow"><label for="po-qbl">Bottom-left corner</label><input id="po-qbl" type="text" maxlength="40" placeholder="e.g. The quadrant of woe" autocomplete="off"></div>
+        <div class="field grow"><label for="po-qbr">Bottom-right corner</label><input id="po-qbr" type="text" maxlength="40" placeholder="e.g. Good O, bad D" autocomplete="off"></div>
       </div>
 
       <div class="plotgrid">
@@ -5464,7 +5479,8 @@ var Plot=(function(){
   var $=function(id){return document.getElementById(id);};
   /* everything a chart is, in one object: the URL, presets and the saved gallery all read and write this */
   var DEF={chart:"scatter",x:"min",y:"fpts",g:"age",size:"tmin",color:"group",lbl:3,n:10,order:"top",subject:"players",agg:"auto",
-           pos:"",owner:"",mingp:0,minmin:0,mode:"pg",zero:false,style:"site",title:"",sub:""};
+           pos:"",owner:"",mingp:0,minmin:0,mode:"pg",zero:false,style:"site",title:"",sub:"",
+           grid:true,med:true,flipx:false,flipy:false,xt:"",yt:"",qtl:"",qtr:"",qbl:"",qbr:""};
   var f=JSON.parse(JSON.stringify(DEF)); f.q=""; f.sort="y";
   var sel={}, pts=[], geo=[], hov=-1, started=false, dirty=true, W=0, H=0, LBL_MAX=14;
   var CHARTS={scatter:"Scatter",swarm:"Swarm",teams:"Fantasy teams",cards:"Leaderboard",tiers:"Tier list"};
@@ -5888,8 +5904,9 @@ var Plot=(function(){
     pts.forEach(function(p){ if(p.y<ylo)ylo=p.y; if(p.y>yhi)yhi=p.y; if(!swarm){ if(p.x<xlo)xlo=p.x; if(p.x>xhi)xhi=p.x; } });
     if(teams||(nba&&!swarm)){ var padx=(xhi-xlo||1)*0.12, pady=(yhi-ylo||1)*0.14; xlo-=padx; xhi+=padx; ylo-=pady; yhi+=pady; }
     var TY=f.zero&&!teams?symm(ylo,yhi,5):nice(ylo,yhi,5), TX=swarm?null:(f.zero&&!teams?symm(xlo,xhi,6):nice(xlo,xhi,6));
-    function sy(v){ return PT+ih-(v-TY.lo)/(TY.hi-TY.lo)*ih; }
-    function sx(v){ return PL+(v-TX.lo)/(TX.hi-TX.lo)*iw; }
+    /* a flipped axis runs high-to-low (say defensive rating, where less is better, so good defence sits at the top) */
+    function sy(v){ var t=(v-TY.lo)/(TY.hi-TY.lo); return f.flipy?PT+t*ih:PT+ih-t*ih; }
+    function sx(v){ var t=(v-TX.lo)/(TX.hi-TX.lo); return f.flipx&&!swarm?PL+iw-t*iw:PL+t*iw; }
     var ymed=median(pts.map(function(p){return p.y;})), xmed=swarm?0:median(pts.map(function(p){return p.x;}));
     var gi={}; groups.forEach(function(g,i){ gi[g]=i; });
     var smax=0; pts.forEach(function(p){ if(p.s>smax) smax=p.s; });
@@ -5902,10 +5919,22 @@ var Plot=(function(){
     var unit=nba?" NBA teams.":" players.";
     var aria=teams?axname(my)+" against "+axname(mx)+" for our "+pts.length+" fantasy teams.":(swarm?axname(my)+" by "+grp(f.g).h.toLowerCase()+" for "+pts.length+unit:axname(my)+" against "+axname(mx)+" for "+pts.length+unit)+" The list beside the chart has every value.";
     o.push('<svg width="'+w+'" height="'+h+'" viewBox="0 0 '+w+' '+h+'" role="img" aria-label="'+esc(aria)+'">');
-    TY.ticks.forEach(function(v){ var y=sy(v).toFixed(1); o.push('<line class="grid" x1="'+PL+'" y1="'+y+'" x2="'+(PL+iw)+'" y2="'+y+'"/>'); });
-    if(!swarm) TX.ticks.forEach(function(v){ var x=sx(v).toFixed(1); o.push('<line class="grid" x1="'+x+'" y1="'+PT+'" x2="'+x+'" y2="'+(PT+ih)+'"/>'); });
+    if(f.grid){
+      TY.ticks.forEach(function(v){ var y=sy(v).toFixed(1); o.push('<line class="grid" x1="'+PL+'" y1="'+y+'" x2="'+(PL+iw)+'" y2="'+y+'"/>'); });
+      if(!swarm) TX.ticks.forEach(function(v){ var x=sx(v).toFixed(1); o.push('<line class="grid" x1="'+x+'" y1="'+PT+'" x2="'+x+'" y2="'+(PT+ih)+'"/>'); });
+    }
 
     var placedLbl=[], dotsOut=[], onOut=[], lblQueue=[];
+    /* the reader's own corner labels, written into the plot's four corners; point names steer around them */
+    var userQ=!!(f.qtl||f.qtr||f.qbl||f.qbr);
+    function userCorners(){
+      [[f.qtl,false,true],[f.qtr,true,true],[f.qbl,false,false],[f.qbr,true,false]].forEach(function(c){
+        if(!c[0]) return;
+        var t=String(c[0]).toUpperCase(), wd=t.length*8.2+6, x=c[1]?PL+iw-10:PL+10, y=c[2]?PT+18:PT+ih-10, an=c[1]?"end":"start";
+        o.push('<text class="quad user" x="'+x+'" y="'+y+'" text-anchor="'+an+'">'+esc(t)+'</text>');
+        var x0=c[1]?x-wd:x; placedLbl.push({x0:x0,x1:x0+wd,y0:y-13,y1:y+3});
+      });
+    }
     if(!exp) geo=[];
     function label(x,y,text,cls){ lblQueue.push({x:x,y:y,t:text,cls:cls||"lbl"}); }
 
@@ -5948,13 +5977,17 @@ var Plot=(function(){
       /* named corners, the way his Efficiency Landscape does it */
       var lv=function(m,good){ return ((good!==!!m.neg)?"HIGH ":"LOW ")+m.s; };
       var corners=[[true,true,"THE QUADRANT OF WOW"],[false,false,"THE QUADRANT OF WOE"],[true,false,lv(mx,true)+", "+lv(my,false)],[false,true,lv(mx,false)+", "+lv(my,true)]];
-      corners.forEach(function(c){
-        var x=(mx.neg?!c[0]:c[0])?PL+iw-8:PL+8, y=(my.neg?!c[1]:c[1])?PT+14:PT+ih-8, an=(mx.neg?!c[0]:c[0])?"end":"start";
+      if(userQ) userCorners();
+      else corners.forEach(function(c){
+        var right=(mx.neg?!c[0]:c[0])!==!!f.flipx, top=(my.neg?!c[1]:c[1])!==!!f.flipy;
+        var x=right?PL+iw-8:PL+8, y=top?PT+14:PT+ih-8, an=right?"end":"start";
         o.push('<text class="quad" x="'+x+'" y="'+y+'" text-anchor="'+an+'">'+esc(c[2])+'</text>');
       });
       var mxx=sx(xmed), myy=sy(ymed);
-      o.push('<line class="med" x1="'+mxx.toFixed(1)+'" y1="'+PT+'" x2="'+mxx.toFixed(1)+'" y2="'+(PT+ih)+'"/>');
-      o.push('<line class="med" x1="'+PL+'" y1="'+myy.toFixed(1)+'" x2="'+(PL+iw)+'" y2="'+myy.toFixed(1)+'"/>');
+      if(f.med){
+        o.push('<line class="med" x1="'+mxx.toFixed(1)+'" y1="'+PT+'" x2="'+mxx.toFixed(1)+'" y2="'+(PT+ih)+'"/>');
+        o.push('<line class="med" x1="'+PL+'" y1="'+myy.toFixed(1)+'" x2="'+(PL+iw)+'" y2="'+myy.toFixed(1)+'"/>');
+      }
       pts.forEach(function(p,i){
         var x=sx(p.x), y=sy(p.y);
         if(!exp) geo.push({i:i,x:x,y:y,r:R});
@@ -5970,10 +6003,15 @@ var Plot=(function(){
     }else{
       /* scatter */
       var mxx2=f.zero?sx(0):sx(xmed), myy2=f.zero?sy(0):sy(ymed);
-      o.push('<line class="med" x1="'+mxx2.toFixed(1)+'" y1="'+PT+'" x2="'+mxx2.toFixed(1)+'" y2="'+(PT+ih)+'"/>');
-      o.push('<line class="med" x1="'+PL+'" y1="'+myy2.toFixed(1)+'" x2="'+(PL+iw)+'" y2="'+myy2.toFixed(1)+'"/>');
-      o.push('<text class="medtag" x="'+(mxx2+4).toFixed(1)+'" y="'+(PT+10)+'">'+(f.zero?"zero":"median "+esc(mx.ax(xmed)))+'</text>');
-      o.push('<text class="medtag" x="'+(PL+iw-4)+'" y="'+(myy2-5).toFixed(1)+'" text-anchor="end">'+(f.zero?"zero":"median "+esc(my.ax(ymed)))+'</text>');
+      if(f.med){
+        o.push('<line class="med" x1="'+mxx2.toFixed(1)+'" y1="'+PT+'" x2="'+mxx2.toFixed(1)+'" y2="'+(PT+ih)+'"/>');
+        o.push('<line class="med" x1="'+PL+'" y1="'+myy2.toFixed(1)+'" x2="'+(PL+iw)+'" y2="'+myy2.toFixed(1)+'"/>');
+        /* the tags step aside when a corner label sits where they would go */
+        var tagTop=f.flipy?PT+ih-6:PT+10, tagRight=!f.flipx;
+        o.push('<text class="medtag" x="'+(mxx2+4).toFixed(1)+'" y="'+tagTop+'">'+(f.zero?"zero":"median "+esc(mx.ax(xmed)))+'</text>');
+        o.push('<text class="medtag" x="'+(tagRight?PL+iw-4:PL+4)+'" y="'+(myy2-5).toFixed(1)+'" text-anchor="'+(tagRight?"end":"start")+'">'+(f.zero?"zero":"median "+esc(my.ax(ymed)))+'</text>');
+      }
+      if(userQ) userCorners();
       var rr=f.size==="none"?4:null, rmaxS=Math.min(12,Math.max(4,Math.sqrt(0.18*iw*ih/(Math.max(1,pts.length)*Math.PI))));
       var top2=pts.slice().sort(function(a,b){ return my.neg?(a.y-b.y):(b.y-a.y); }).slice(0,Math.max(0,f.lbl|0));
       top2.forEach(function(p){ p.named=true; });
@@ -6033,6 +6071,8 @@ var Plot=(function(){
     if(!swarm) TX.ticks.forEach(function(v){ o.push('<text class="tick" x="'+sx(v).toFixed(1)+'" y="'+(PT+ih+16)+'" text-anchor="middle">'+esc(mx.ax(v))+'</text>'); });
     TY.ticks.forEach(function(v){ o.push('<text class="tick" x="'+(PL-8)+'" y="'+(sy(v)+3.5).toFixed(1)+'" text-anchor="end">'+esc(my.ax(v))+'</text>'); });
     var xn=swarm?grp(f.g).h:(teams?axname(mx)+" — "+aggWord(mx):axname(mx)), yn=teams?axname(my)+" — "+aggWord(my):axname(my);
+    if(f.xt) xn=f.xt; if(f.yt) yn=f.yt;
+    if(!f.yt&&f.flipy) yn+=" (flipped)"; if(!f.xt&&f.flipx&&!swarm) xn+=" (flipped)";
     o.push('<text class="axname" x="'+(PL+iw/2)+'" y="'+(h-8)+'" text-anchor="middle">'+esc(xn)+'</text>');
     o.push('<text class="axname" transform="translate(15,'+(PT+ih/2)+') rotate(-90)" text-anchor="middle">'+esc(yn)+'</text>');
     if(!exp) o.push('<circle class="hov" id="po-ring" cx="0" cy="0" r="9" style="display:none"/>');
@@ -6356,7 +6396,7 @@ var Plot=(function(){
     {id:"grades", h:"Roster Grades",             p:"The ten teams tiered by fantasy value",           s:{chart:"tiers",y:"val",subject:"teams",style:"site",title:"Roster Grades",sub:"Fantasy value, rolled up per roster"}},
     {id:"stream", h:"Who To Stream Against",      p:"NBA teams: pace against points allowed",          s:{chart:"scatter",subject:"nba",x:"pace",y:"opts",size:"none",color:"single",lbl:30,style:"poster",title:"Who To Stream Against",sub:"Possessions per game against points allowed"}},
     {id:"glass",  h:"Glass Kings",                p:"NBA teams tiered by rebounds per game",           s:{chart:"tiers",subject:"nba",y:"reb",style:"site",title:"Glass Kings",sub:"Rebounds per game, by NBA team"}},
-    {id:"ratings",h:"The Efficiency Landscape",    p:"NBA teams: offensive against defensive rating",   s:{chart:"scatter",subject:"nba",x:"ortg",y:"drtg",size:"none",color:"single",lbl:30,style:"site",title:"The Efficiency Landscape",sub:"Points scored and allowed per 100 possessions"}}
+    {id:"ratings",h:"The Efficiency Landscape",    p:"NBA teams: offensive against defensive rating",   s:{chart:"scatter",subject:"nba",x:"ortg",y:"drtg",size:"none",color:"single",lbl:30,style:"site",flipy:true,qtr:"The quadrant of wow",qbl:"The quadrant of woe",qtl:"Good D, bad O",qbr:"Good O, bad D",title:"The Efficiency Landscape",sub:"Points scored and allowed per 100 possessions"}}
   ];
   function applyState(s,keepFilters){
     var next=JSON.parse(JSON.stringify(DEF));
@@ -6461,7 +6501,7 @@ var Plot=(function(){
     var GL=glist(); if(!GL.some(function(g){ return g.k===f.g; })) f.g=GL[0].k;
   }
   function showFields(){
-    document.querySelectorAll("#po-tools [data-for]").forEach(function(el){ el.hidden=el.dataset.for.split(" ").indexOf(f.chart)<0; });
+    document.querySelectorAll("#v-plot [data-for]").forEach(function(el){ el.hidden=el.dataset.for.split(" ").indexOf(f.chart)<0; });
     /* NBA teams have no position, owner or minutes filter; the fantasy-teams subject only makes sense on the ranked charts */
     document.querySelectorAll("#po-tools [data-pl]").forEach(function(el){ if(isNba()) el.hidden=true; else if(!el.dataset.for) el.hidden=false; });
     var so=$("po-subject"); if(so){ so.querySelector('[value="teams"]').hidden=(f.chart==="scatter"||f.chart==="swarm"); if(f.subject==="teams"&&(f.chart==="scatter"||f.chart==="swarm")){ f.subject="players"; so.value="players"; } }
@@ -6472,6 +6512,8 @@ var Plot=(function(){
     ["chart","x","y","g","size","color","pos","owner","mode","style","order","subject","agg"].forEach(function(k){ var el=$("po-"+k); if(el) el.value=f[k]; });
     ["lbl","n","mingp","minmin"].forEach(function(k){ var el=$("po-"+k); if(el) el.value=f[k]||""; });
     $("po-zero").checked=!!f.zero; $("po-title").value=f.title; $("po-sub").value=f.sub;
+    ["grid","med","flipx","flipy"].forEach(function(k){ var el=$("po-"+k); if(el) el.checked=!!f[k]; });
+    ["xt","yt","qtl","qtr","qbl","qbr"].forEach(function(k){ var el=$("po-"+k); if(el) el.value=f[k]||""; });
     document.querySelectorAll("#po-presets [data-preset]").forEach(function(b){ b.classList.toggle("on",b.dataset.preset===f.preset); });
   }
   var t1=null,t2=null,t3=null;
@@ -6495,6 +6537,8 @@ var Plot=(function(){
       if(k==="subject"||k==="chart"){ var now=isNba(); if(now!==was){ sel={}; if(now&&f.lbl===DEF.lbl) f.lbl=30; else if(!now&&f.lbl===30) f.lbl=DEF.lbl; } }
       refresh(); }); });
     $("po-zero").addEventListener("change",function(){ f.zero=this.checked; draw(); pushHash(); });
+    ["grid","med","flipx","flipy"].forEach(function(k){ $("po-"+k).addEventListener("change",function(){ f[k]=this.checked; f.preset=""; draw(); pushHash(); }); });
+    ["xt","yt","qtl","qtr","qbl","qbr"].forEach(function(k){ $("po-"+k).addEventListener("input",function(){ f[k]=this.value; clearTimeout(t3); t3=setTimeout(function(){ draw(); pushHash(); },140); }); });
     ["lbl","n"].forEach(function(k){ $("po-"+k).addEventListener("input",function(){ var v=Math.max(k==="n"?1:0,parseInt(this.value,10)||0); if(v===f[k]) return; f[k]=v; clearTimeout(t3); t3=setTimeout(function(){ draw(); pushHash(); },120); }); });
     ["title","sub"].forEach(function(k){ $("po-"+k).addEventListener("input",function(){ f[k]=this.value; clearTimeout(t3); t3=setTimeout(pushHash,300); }); });
     $("po-copy").addEventListener("click",function(){ copyChart("wide"); });
