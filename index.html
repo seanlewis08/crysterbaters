@@ -5428,7 +5428,17 @@ var Players=(function(){
     var byName={}, byLast={}, TRI={GSW:"GS",NOP:"NO",NYK:"NY",SAS:"SA",UTA:"UTAH",WAS:"WSH",PHO:"PHX",BRK:"BKN",CHO:"CHA"};
     function tri(x){ x=String(x||"").toUpperCase(); return TRI[x]||x; }
     A.rows.forEach(function(x){ var k=norm(x.name||""), lk=k.split(" ").pop()+"|"+tri(x.team); byName[k]=x; (byLast[lk]=byLast[lk]||[]).push(x); });
-    rows.forEach(function(r){ var x=byName[r.key]; if(!x){ var cand=byLast[r.key.split(" ").pop()+"|"+tri(r.team)]||[]; if(cand.length===1&&norm(cand[0].name).charAt(0)===r.key.charAt(0)) x=cand[0]; } r.u=x||null; });
+    /* exact names first; a usage line taken by its own player is never handed to anyone else */
+    var used=[];
+    rows.forEach(function(r){ var x=byName[r.key]; r.u=x||null; if(x) used.push(x); });
+    /* then surname + team for spellings that differ (Nicolas / Nic Claxton, P.J. / PJ): the first names must
+       agree — one a prefix of the other, or an initial — so Seth Curry never borrows Stephen's line */
+    function sameFirst(a,b){ a=a.split(" ")[0]; b=b.split(" ")[0]; if(!a||!b) return false; if(a===b) return true; if(a.length===1||b.length===1) return a.charAt(0)===b.charAt(0); return a.indexOf(b)===0||b.indexOf(a)===0; }
+    rows.forEach(function(r){
+      if(r.u) return;
+      var cand=(byLast[r.key.split(" ").pop()+"|"+tri(r.team)]||[]).filter(function(x){ return used.indexOf(x)<0&&sameFirst(norm(x.name),r.key); });
+      if(cand.length===1){ r.u=cand[0]; used.push(cand[0]); }
+    });
   }
   function setNotice(html,cls){ $("pl-notice").innerHTML=html?'<div class="notice '+(cls||"")+'">'+html+'</div>':""; }
 
