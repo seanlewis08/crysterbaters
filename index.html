@@ -1460,10 +1460,17 @@ footer p + p{margin-top:11px}
 .gl thead th{cursor:pointer;vertical-align:bottom;user-select:none}
 .gl thead th[aria-sort] .gl-wk b::after,.gl thead th[aria-sort].gl-tm::after{content:" ↓";color:var(--amber)}
 .gl thead th[aria-sort="ascending"] .gl-wk b::after,.gl thead th[aria-sort="ascending"].gl-tm::after{content:" ↑"}
-.gl .gl-tm{position:sticky;left:0;z-index:1;background:var(--surface);text-align:left;min-width:170px;border-right:1px solid var(--line-2)}
-.gl thead .gl-tm{background:var(--surface-2);z-index:2}
-.gl tbody tr:nth-child(even) .gl-tm{background:#F8F3E9}
-.gl td.gl-tm b{display:block;font-family:var(--disp);font-weight:600;font-size:16px;letter-spacing:.015em;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px}
+.gl .gl-tm,.gl .gl-rec{position:sticky;z-index:1;background:var(--surface)}
+.gl .gl-tm{left:0;text-align:left;width:190px;min-width:190px;max-width:190px;box-sizing:border-box}
+.gl .gl-rec{left:190px;width:86px;min-width:86px;box-sizing:border-box;box-shadow:inset -1px 0 0 var(--line-2),6px 0 8px -6px rgba(70,48,20,.18)}
+.gl thead .gl-tm,.gl thead .gl-rec{background:var(--surface-2);z-index:2}
+.gl tbody tr:nth-child(even) .gl-tm,.gl tbody tr:nth-child(even) .gl-rec{background:#F8F3E9}
+.gl tbody .rowlink:hover .gl-tm,.gl tbody .rowlink:hover .gl-rec{background:#F6E8DA!important}
+.gl td.gl-rec{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:13.5px;white-space:nowrap}
+.gl td.gl-rec small{display:block;font-size:10px;color:var(--dim);margin-top:2px}
+.gl thead th[aria-sort].gl-rec::after{content:" ↓";color:var(--amber)}
+.gl thead th[aria-sort="ascending"].gl-rec::after{content:" ↑"}
+.gl td.gl-tm b{display:block;font-family:var(--disp);font-weight:600;font-size:16px;letter-spacing:.015em;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:170px}
 .gl td.gl-tm small{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin-top:2px}
 .gl .gl-wk b{display:block;font-family:var(--disp);font-size:15px;font-weight:700;letter-spacing:.02em;color:var(--ink)}
 .gl .gl-wk small{display:block;font-size:9px;letter-spacing:.06em;color:var(--dim);margin-top:2px}
@@ -1493,8 +1500,10 @@ sup.gl-miss{font-size:10.5px;font-weight:700;color:var(--amber);margin-left:1px;
 .gl td.tot.bad{color:var(--red);font-weight:700}
 .gl-foot{margin-top:12px;line-height:1.55}
 @media (max-width:640px){
-  .gl .gl-tm{min-width:118px}
-  .gl td.gl-tm b{font-size:14px;max-width:130px}
+  .gl .gl-tm{width:120px;min-width:120px;max-width:120px}
+  .gl .gl-rec{left:120px;width:70px;min-width:70px}
+  .gl td.gl-tm b{font-size:14px;max-width:104px}
+  .gl td.gl-rec{font-size:12px}
   .gl th,.gl td{padding:7px 7px}
 }
 .hb-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px 14px;margin-top:8px}
@@ -8494,6 +8503,7 @@ var GamesLog=(function(){
   function sortVal(id){
     var k=sort.k;
     if(k==="team"){ var t=byId(id); return t?t.name.toLowerCase():id; }
+    if(k==="rec"){ var rc=(D.records||{})[id]; if(!rc) return -1; var g=rc.w+rc.l+rc.t, p=rc.pct!=null?rc.pct:(g?(rc.w+rc.t/2)/g:0); return p+(rc.rank?(100-rc.rank)/1e6:0); }
     if(k==="tot"){ var tt=totals(id); return view==="bench"?tt.bench:tt.used; }
     if(k==="unused") return totals(id).unused;
     if(k==="missed") return totals(id).missed;
@@ -8515,7 +8525,7 @@ var GamesLog=(function(){
     ids.sort(function(a,b){ var x=sortVal(a), y=sortVal(b); if(x<y) return -sort.dir; if(x>y) return sort.dir; return byId(a).name<byId(b).name?-1:1; });
     var maxBench=1; if(view==="bench") ids.forEach(function(id){ D.weeks.forEach(function(w){ var c=cell(id,w); if(c&&c[1]>maxBench) maxBench=c[1]; }); });
     function srt(k){ return sort.k===k?' aria-sort="'+(sort.dir<0?"descending":"ascending")+'"':''; }
-    var h='<thead><tr><th class="gl-tm" data-glsort="team"'+srt("team")+'>Team</th>';
+    var h='<thead><tr><th class="gl-tm" data-glsort="team"'+srt("team")+'>Team</th><th class="gl-rec" data-glsort="rec"'+srt("rec")+' title="This season\'s record in Yahoo (category wins-losses-ties) and place in the standings">Record</th>';
     D.weeks.forEach(function(w){
       var capCls=!w.set||!w.locked?" prov":(w.cap!==30?" odd":"");
       var tip="Week "+w.w+" · "+span(w)+" · cap "+w.cap+(w.locked?" (set)":(w.set?" (on the Games Cap page, not locked yet)":" (not set — the normal 30 assumed)"))+(w.note?" · "+w.note:"");
@@ -8529,7 +8539,9 @@ var GamesLog=(function(){
     var gaps=0;
     ids.forEach(function(id){
       var t=byId(id); if(!t) return;
-      h+='<tr class="rowlink" data-team="'+attr(id)+'"><td class="gl-tm"><b>'+esc(t.name)+'</b><small>'+esc(t.short||t.mgr||"")+'</small></td>';
+      var rc=(D.records||{})[id];
+      h+='<tr class="rowlink" data-team="'+attr(id)+'"><td class="gl-tm"><b>'+esc(t.name)+'</b><small>'+esc(t.short||t.mgr||"")+'</small></td>'+
+        '<td class="gl-rec">'+(rc?rc.w+'-'+rc.l+'-'+rc.t+(rc.rank?'<small>'+ordinal(rc.rank)+'</small>':''):'<span class="sub">—</span>')+'</td>';
       D.weeks.forEach(function(w){
         var now=w.state==="live"?" now":"";
         if(w.state==="ahead"){ h+='<td class="c ahead'+now+'">·</td>'; return; }

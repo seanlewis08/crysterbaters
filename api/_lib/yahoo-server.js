@@ -158,6 +158,19 @@ async function rosterSlots() {
   return slotList;
 }
 
+// The league's standings: [{ key, rank, wins, losses, ties, pct }] (Yahoo's own record —
+// in this league, category wins/losses/ties across the weeks played).
+async function standings() {
+  const at = await accessToken();
+  const lg = L.fold((await L.yahoo({ at }, "/league/" + LEAGUE + "/standings")).fantasy_content.league);
+  const st = lg.standings || {};
+  const teams = list(st.teams || (st["0"] && st["0"].teams) || (Array.isArray(st) && st[0] && st[0].teams)).map((x) => x.team || x).filter(Boolean);
+  return teams.map((t) => {
+    const ts = t.team_standings || {}, ot = ts.outcome_totals || {};
+    return { key: t.team_key, rank: Number(ts.rank) || null, wins: Number(ot.wins) || 0, losses: Number(ot.losses) || 0, ties: Number(ot.ties) || 0, pct: ot.percentage != null && ot.percentage !== "" ? Number(ot.percentage) : null };
+  }).filter((t) => t.key);
+}
+
 // Eligible positions for players by key: { key: "PG,SG,G,Util" }, 25 keys a call.
 async function playersElig(keys) {
   const at = await accessToken();
@@ -269,4 +282,4 @@ async function teamName(teamId) {
   return s ? s.name : teamId;
 }
 
-module.exports = { leagueTeams, leagueRosters, mappedTeams, linkChoices, teamName, leagueMeta, weekDates, leagueRostersOn, scoreboard, statCategories, rosterSlots, playersElig, eligOf, draftResults, draftAnalysis, _reset: () => { cached = null; draftCache = null; adpCache = null; } };
+module.exports = { leagueTeams, leagueRosters, mappedTeams, linkChoices, teamName, leagueMeta, weekDates, leagueRostersOn, scoreboard, statCategories, rosterSlots, playersElig, eligOf, standings, draftResults, draftAnalysis, _reset: () => { cached = null; draftCache = null; adpCache = null; } };

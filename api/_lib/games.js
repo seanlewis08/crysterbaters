@@ -144,7 +144,15 @@ async function season(supa) {
       teams[id][w][3] += maxFit(avail[dk], slots);
     });
   }
-  return { built: new Date().toISOString(), season: meta.season, currentWeek: cur, today: today, weeks: weeks, slots: slots, positions: !!elig, notes: notes, teams: teams };
+  // this season's records, from Yahoo's standings: records[id] = { rank, w, l, t, pct }
+  const records = {};
+  try {
+    const ys = require("./yahoo-server");
+    const [st, map] = await Promise.all([ys.standings(), ys.mappedTeams()]);
+    const idByKey = {}; map.forEach((m) => { if (m.team_id) idByKey[m.key] = m.team_id; });
+    st.forEach((s) => { const id = idByKey[s.key]; if (id) records[id] = { rank: s.rank, w: s.wins, l: s.losses, t: s.ties, pct: s.pct }; });
+  } catch (e) { notes.push("records: " + (e.message || e)); }
+  return { built: new Date().toISOString(), season: meta.season, currentWeek: cur, today: today, weeks: weeks, slots: slots, positions: !!elig, notes: notes, records: records, teams: teams };
 }
 
 module.exports = { season, capFor, capRow, maxFit, fits };
