@@ -289,7 +289,8 @@ async function week(opts) {
 
   // matchups + Yahoo's view, the cap
   const mu = await matchupsFor(meta, wk, false); if (mu.note) notes.push(mu.note);
-  let cap = 30; try { const c = await supa.one("cap_table", "select=data&id=eq.current"); const w = c && c.data && c.data.weeks && c.data.weeks[wk - 1]; if (w && w.set != null && w.set !== "") cap = Number(w.set) || 30; } catch (e) { /* default */ }
+  // the Games Cap row this week starts in (by date, so the All-Star double week can't shift the rest)
+  let cap = 30; try { const c = await supa.one("cap_table", "select=data&id=eq.current"); cap = require("./games").capFor(c && c.data, range[0]).cap; } catch (e) { /* default */ }
 
   return {
     built: now(), season: meta.season, week: wk, currentWeek: cur, dates: dates, today: today, cap: cap,

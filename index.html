@@ -1445,6 +1445,54 @@ footer p + p{margin-top:11px}
 .bd-hist li small{font-family:var(--mono);font-size:10px;letter-spacing:.08em;color:var(--dim)}
 .homebadges{margin-top:14px;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:12px 16px;box-shadow:var(--shadow)}
 .homebadges[hidden]{display:none}
+/* games log */
+.gl-bar{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center;justify-content:space-between;margin-top:16px}
+.gl-key{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12.5px;color:var(--muted)}
+.gl-key span{display:inline-flex;align-items:center;gap:6px}
+.gl-key i{display:inline-block;width:12px;height:12px;border-radius:2px}
+.gl-key i.k-full{background:var(--green)}
+.gl-key i.k-over{background:var(--red)}
+.gl-key i.k-under{background:var(--line-2)}
+.gl-key i.k-prov{border:1px dashed var(--line-2)}
+.gl-wrap{margin-top:12px}
+.gl-wrap table.gl{min-width:0}
+.gl th,.gl td{padding:8px 9px;text-align:center}
+.gl thead th{cursor:pointer;vertical-align:bottom;user-select:none}
+.gl thead th[aria-sort] .gl-wk b::after,.gl thead th[aria-sort].gl-tm::after{content:" ↓";color:var(--amber)}
+.gl thead th[aria-sort="ascending"] .gl-wk b::after,.gl thead th[aria-sort="ascending"].gl-tm::after{content:" ↑"}
+.gl .gl-tm{position:sticky;left:0;z-index:1;background:var(--surface);text-align:left;min-width:170px;border-right:1px solid var(--line-2)}
+.gl thead .gl-tm{background:var(--surface-2);z-index:2}
+.gl tbody tr:nth-child(even) .gl-tm{background:#F8F3E9}
+.gl td.gl-tm b{display:block;font-family:var(--disp);font-weight:600;font-size:16px;letter-spacing:.015em;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px}
+.gl td.gl-tm small{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin-top:2px}
+.gl .gl-wk b{display:block;font-family:var(--disp);font-size:15px;font-weight:700;letter-spacing:.02em;color:var(--ink)}
+.gl .gl-wk small{display:block;font-size:9px;letter-spacing:.06em;color:var(--dim);margin-top:2px}
+.gl .gl-cap{display:inline-block;margin-top:5px;padding:2px 6px;border-radius:3px;background:var(--surface-3);color:var(--ink);font-size:10.5px;letter-spacing:.06em;border:1px solid transparent}
+.gl .gl-cap.odd{background:var(--cyan);color:#FFFFFF}
+.gl .gl-cap.prov{background:none;border:1px dashed var(--line-2);color:var(--muted)}
+.gl th.now,.gl td.now{background:var(--amber-glow)!important}
+.gl th.now .gl-wk b{color:var(--amber)}
+.gl td.c{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:14px;min-width:50px;color:var(--ink)}
+.gl td.c .bar{display:block;height:3px;margin:5px auto 0;width:32px;background:var(--surface-3);border-radius:2px;overflow:hidden}
+.gl td.c .bar span{display:block;height:100%;background:var(--line-2)}
+.gl td.c.full{font-weight:600}
+.gl td.c.full .bar span{background:var(--green)}
+.gl td.c.over{background:var(--red-glow)!important;color:var(--red);font-weight:700}
+.gl td.c.over .bar span{background:var(--red)}
+.gl td.c.under{color:var(--muted)}
+.gl td.c small{display:block;font-size:10px;color:var(--dim);font-weight:400;margin-top:3px;white-space:nowrap}
+.gl td.c.ahead{color:var(--line-2)}
+.gl td.c.gap::after{content:"*";color:var(--amber);margin-left:1px}
+.gl .tot{border-left:1px solid var(--line-2);font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:14px;white-space:nowrap}
+.gl .tot + .tot{border-left:0}
+.gl td.tot small{display:block;font-size:10px;color:var(--dim)}
+.gl td.tot.bad{color:var(--red);font-weight:700}
+.gl-foot{margin-top:12px;line-height:1.55}
+@media (max-width:640px){
+  .gl .gl-tm{min-width:118px}
+  .gl td.gl-tm b{font-size:14px;max-width:130px}
+  .gl th,.gl td{padding:7px 7px}
+}
 .hb-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px 14px;margin-top:8px}
 .hb{display:flex;gap:10px;align-items:center;text-align:left;background:none;border:0;padding:4px 0;cursor:pointer;color:inherit;min-width:0}
 .hb span{display:flex;flex-direction:column;min-width:0}
@@ -1954,6 +2002,21 @@ footer p + p{margin-top:11px}
         </div>
       </div>
       <p class="lede" style="margin-top:14px">Every cell is editable and remembered in this browser. <b>Count NBA games</b> pulls the season schedule and tallies regular-season games in each Monday–Sunday week, so next year is one click plus your corrections. Once Yahoo is connected the site counts each team's games used against these caps instead of anyone tallying them.</p>
+    </section>
+  </div>
+
+  <!-- ================= GAMES LOG ================= -->
+  <div class="view" id="v-games">
+    <section>
+      <div class="sec-head"><h2>Games Log</h2><span class="eyebrow cool" id="gl-eyebrow">Loading…</span></div>
+      <div class="rulebar"></div>
+      <p class="lede">Every team's games, week by week, against that week's cap. A game counts when the player was in a starting slot that day and played. Click a column to sort by it, or a team to open its page.</p>
+      <div class="gl-bar">
+        <div class="seg" id="gl-seg"><button class="on" data-glv="used">Games counted</button><button data-glv="bench">Played on the bench</button></div>
+        <div class="gl-key" id="gl-key"></div>
+      </div>
+      <div class="tablewrap gl-wrap"><table class="gl" id="gl-table"><tbody><tr><td class="sub">Loading the season…</td></tr></tbody></table></div>
+      <p class="sub gl-foot" id="gl-foot"></p>
     </section>
   </div>
 
@@ -2939,7 +3002,8 @@ document.getElementById("watch").innerHTML=K.map(function(k){
     {go:"agenda",  n:"—",        lbl:"Open",     h:"Open Items", p:"What the league still has to decide. Raise one, argue about it, then put it to a vote.", id:"hc-agenda"},
     {go:"issues",  n:"—",        lbl:"Open",     h:"Issues",     p:"Something on the site broken or missing? Open an issue, Sean gets an email, and you can follow it from open to closed.", id:"hc-issues"},
     {go:"dues",    n:"—",        lbl:"Paid",     h:"Dues",       p:"What the buy-in is, where to send it, and who has settled up. Pick Venmo, Zelle or Cash App and mark yours sent.", id:"hc-dues"},
-    {go:"badges",  n:"—",        lbl:"Claimed",  h:"Badges",     p:"The trophy case. Seventeen badges the league can earn, from Father Time to Waffle House, each with a prize once Sean sets one.", id:"hc-badges"},
+    {go:"games",   n:"30",       lbl:"A week",   h:"Games Log",  p:"Every team's games used each week against that week's cap, and the games its bench played that didn't count."},
+    {go:"badges",  n:"—",        lbl:"Claimed",  h:"Badges",     p:"The trophy case. Sixteen badges the league can earn, from Father Time to Waffle House, each with a prize once Sean sets one.", id:"hc-badges"},
     {go:"history", n:"14",       lbl:"Seasons",  h:"History",    p:"Every champion since 2012. Four managers tied at two titles, two still hunting their first."},
     {go:"rules",   n:"11",       lbl:"Categories",h:"Rules",     p:"How keepers work, why rosters lock before the playoffs, and the league settings as Yahoo has them."}
   ];
@@ -7299,7 +7363,10 @@ var Yahoo=(function(){
   function capInfo(d, week){
     var out={cap:30, set:false, locked:false, stale:false};
     try{ var a=parseYmd(CAP.start), b=parseYmd(d.league.start); out.stale=(b-a)/86400000>60||(a-b)/86400000>6; }catch(e){}
-    try{ var w=CAP&&CAP.weeks&&CAP.weeks[week-1]; if(w&&w.set!=null&&w.set!==""){ out.cap=Number(w.set)||30; out.set=true; out.locked=!!w.locked; } }catch(e){}
+    /* the row the week's first day falls in (Monday–Sunday rows from CAP.start), so the All-Star double week doesn't shift the rest */
+    try{ var ms=d&&d.matchup&&d.matchup.start, w=null;
+      if(CAP&&CAP.weeks){ if(ms&&CAP.start){ var di=Math.round((parseYmd(ms)-parseYmd(CAP.start))/86400000); if(di>=0) w=CAP.weeks[Math.floor(di/7)]; } else w=CAP.weeks[week-1]; }
+      if(w&&w.set!=null&&w.set!==""){ out.cap=Number(w.set)||30; out.set=true; out.locked=!!w.locked; } }catch(e){}
     return out;
   }
   function staleNote(d, ci){
@@ -8380,7 +8447,126 @@ var Scoreboard=(function(){
   return {onView:function(v){ if(v==="scoreboard") open(); else { inView=false; clearTimeout(timer); if(v==="teams") flagCaps(); } }, flagCaps:flagCaps, capStatus:capStatus, invalidate:invalidate, repaint:paint, data:function(){ return W; }, _load:load, _st:st, _next:nextDelay, _calc:{teamWeek:teamWeek,scoreOf:scoreOf,expect:expect,remaining:remaining,projected:projected}};
 })();
 window.Scoreboard=Scoreboard;
-var views={home:"v-home",teams:"v-teams",team:"v-team",players:"v-players",plot:"v-plot",rotations:"v-rotations",usage:"v-usage",scoreboard:"v-scoreboard",draft:"v-draft",cap:"v-cap",keepers:"v-keepers",polls:"v-polls",pollhist:"v-pollhist",agenda:"v-agenda",issues:"v-issues",sched:"v-sched",dues:"v-dues",badges:"v-badges",signup:"v-signup",manager:"v-manager",history:"v-history",rules:"v-rules"};
+/* ---------- Games Log: every team's games per fantasy week against that week's cap ----------
+   One read of /api/ledger?games=season (starting-slot games and bench games per team per week, the
+   cap from the Games Cap table). This week's column is topped up from the Scoreboard's payload when
+   it is at hand, so it matches the Teams cards: played or in progress, with what is still to come. */
+var GamesLog=(function(){
+  var D=null, loading=false, started=false, err=null, view="used", sort={k:"tot",dir:-1}, live=null;
+  var MON=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  function $(id){ return document.getElementById(id); }
+  function attr(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;"); }
+  function md(ymd){ var p=String(ymd||"").split("-"); return p.length<3?"":MON[+p[1]-1]+" "+(+p[2]); }
+  function span(w){ var a=w.start.split("-"), b=w.end.split("-"); return md(w.start)+"–"+(a[1]===b[1]?(+b[2]):md(w.end)); }
+  function days(w){ return Math.round((parseYmd(w.end)-parseYmd(w.start))/86400000)+1; }
+  function load(force){
+    if(loading) return; loading=true; err=null;
+    fetch("/api/ledger?games=season"+(force?"&n="+Date.now():""),{cache:force?"no-store":"default"})
+      .then(function(r){ return r.json().then(function(j){ if(!r.ok) throw new Error(j.error==="no_snapshot"?"The games ledger hasn't run yet.":(j.error||("answered "+r.status))); return j; }); })
+      .then(function(j){ D=j; loading=false; paint(); topUp(); })
+      .catch(function(e){ err=e.message||String(e); loading=false; paint(); });
+  }
+  /* this week, from the Scoreboard (the same numbers as the Teams cards) */
+  function topUp(){
+    if(!window.Scoreboard||!Scoreboard.capStatus) return;
+    Scoreboard.capStatus().then(function(cs){ if(!cs||!D) return; var any=null; Object.keys(cs).forEach(function(k){ any=cs[k]; });
+      if(!any||any.week!==D.currentWeek) return; live=cs; paint(); }).catch(function(){});
+  }
+  /* the numbers for one team in one week: [counted, bench, days held, still to come or null] */
+  function cell(id,w){
+    var c=(D.teams[id]||{})[w.w]||null;
+    if(w.state==="live"&&live&&live[id]) return [live[id].played+live[id].live, c?c[1]:0, c?c[2]:0, live[id].sched];
+    return c?[c[0],c[1],c[2],null]:null;
+  }
+  function totals(id){
+    var used=0, caps=0, unused=0, over=0, bench=0;
+    D.weeks.forEach(function(w){ if(w.state==="ahead") return; var c=cell(id,w); if(!c) return;
+      used+=c[0]; bench+=c[1]; caps+=w.cap; if(c[0]>w.cap) over++; if(w.state==="done") unused+=Math.max(0,w.cap-c[0]); });
+    return {used:used,caps:caps,unused:unused,over:over,bench:bench};
+  }
+  function sortVal(id){
+    var k=sort.k;
+    if(k==="team"){ var t=byId(id); return t?t.name.toLowerCase():id; }
+    if(k==="tot"){ var tt=totals(id); return view==="bench"?tt.bench:tt.used; }
+    if(k==="unused") return totals(id).unused;
+    if(k==="over") return totals(id).over;
+    var w=D.weeks.filter(function(x){ return "w"+x.w===k; })[0], c=w&&cell(id,w);
+    return c?(view==="bench"?c[1]:c[0]):-1;
+  }
+  function paint(){
+    var tb=$("gl-table"); if(!tb) return;
+    Array.prototype.forEach.call(document.querySelectorAll("#gl-seg button"),function(b){ b.classList.toggle("on",b.dataset.glv===view); });
+    if(err){ $("gl-eyebrow").textContent="Unavailable"; tb.innerHTML='<tbody><tr><td class="sub" style="text-align:left">Couldn\'t read the games ledger: '+esc(err)+' <button class="btn quiet sm" id="gl-retry">Try again</button></td></tr></tbody>'; return; }
+    if(!D){ tb.innerHTML='<tbody><tr><td class="sub" style="text-align:left">Loading the season…</td></tr></tbody>'; return; }
+    var cw=D.weeks.filter(function(w){ return w.state==="live"; })[0];
+    $("gl-eyebrow").textContent=cw?"Week "+cw.w+" · cap "+cw.cap:"Season "+(D.season||"");
+    $("gl-key").innerHTML=view==="used"
+      ?'<span><i class="k-full"></i>used the whole cap</span><span><i class="k-over"></i>over the cap</span><span><i class="k-under"></i>under</span><span><i class="k-prov"></i>cap not locked yet</span>'
+      :'<span>Games your players played while sitting in BN, IL, IL+ or NA — games that didn\'t count.</span>';
+    var ids=T.map(function(t){ return t.id; });
+    ids.sort(function(a,b){ var x=sortVal(a), y=sortVal(b); if(x<y) return -sort.dir; if(x>y) return sort.dir; return byId(a).name<byId(b).name?-1:1; });
+    var maxBench=1; if(view==="bench") ids.forEach(function(id){ D.weeks.forEach(function(w){ var c=cell(id,w); if(c&&c[1]>maxBench) maxBench=c[1]; }); });
+    function srt(k){ return sort.k===k?' aria-sort="'+(sort.dir<0?"descending":"ascending")+'"':''; }
+    var h='<thead><tr><th class="gl-tm" data-glsort="team"'+srt("team")+'>Team</th>';
+    D.weeks.forEach(function(w){
+      var capCls=!w.set||!w.locked?" prov":(w.cap!==30?" odd":"");
+      var tip="Week "+w.w+" · "+span(w)+" · cap "+w.cap+(w.locked?" (set)":(w.set?" (on the Games Cap page, not locked yet)":" (not set — the normal 30 assumed)"))+(w.note?" · "+w.note:"");
+      h+='<th class="'+(w.state==="live"?"now":"")+'" data-glsort="w'+w.w+'"'+srt("w"+w.w)+' title="'+attr(tip)+'"><span class="gl-wk"><b>W'+w.w+'</b><small>'+esc(span(w))+'</small></span><span class="gl-cap'+capCls+'">'+w.cap+'</span></th>';
+    });
+    if(view==="used") h+='<th class="tot" data-glsort="tot"'+srt("tot")+' title="Games counted so far this season, against the caps of the weeks played">Season</th><th class="tot" data-glsort="unused"'+srt("unused")+' title="Cap left unused in finished weeks">Unused</th><th class="tot" data-glsort="over"'+srt("over")+' title="Weeks over the cap">Over</th>';
+    else h+='<th class="tot" data-glsort="tot"'+srt("tot")+' title="Bench games this season">Season</th>';
+    h+='</tr></thead><tbody>';
+    var gaps=0;
+    ids.forEach(function(id){
+      var t=byId(id); if(!t) return;
+      h+='<tr class="rowlink" data-team="'+attr(id)+'"><td class="gl-tm"><b>'+esc(t.name)+'</b><small>'+esc(t.short||t.mgr||"")+'</small></td>';
+      D.weeks.forEach(function(w){
+        var now=w.state==="live"?" now":"";
+        if(w.state==="ahead"){ h+='<td class="c ahead'+now+'">·</td>'; return; }
+        var c=cell(id,w);
+        if(!c){ h+='<td class="c under'+now+'" title="No lineup stored for this week">—</td>'; return; }
+        var gap=w.state==="done"&&c[2]<days(w); if(gap) gaps++;
+        if(view==="bench"){
+          var a=(0.05+0.45*c[1]/maxBench).toFixed(3);
+          h+='<td class="c'+now+(gap?" gap":"")+'" style="background:rgba(193,87,26,'+a+')" title="'+attr("Week "+w.w+": "+c[1]+" games played on the bench, "+c[0]+" counted")+'">'+c[1]+'</td>';
+          return;
+        }
+        var cls=c[0]>w.cap?"over":(c[0]===w.cap?"full":(w.state==="done"&&w.cap-c[0]>=3?"under":""));
+        var pct=Math.min(100,Math.round(c[0]/Math.max(1,w.cap)*100));
+        var tip="Week "+w.w+" · "+span(w)+": "+c[0]+" of "+w.cap+" counted"+(c[0]>w.cap?" — "+(c[0]-w.cap)+" over":"")+(c[3]!=null?", "+c[3]+" still to come for the lineup as set":"")+" · "+c[1]+" played on the bench"+(gap?" · only "+c[2]+" of "+days(w)+" days of lineups stored":"");
+        h+='<td class="c '+cls+now+(gap?" gap":"")+'" title="'+attr(tip)+'">'+c[0]+(c[3]!=null?'<small>+'+c[3]+' to come</small>':'')+'<span class="bar"><span style="width:'+pct+'%"></span></span></td>';
+      });
+      var tt=totals(id);
+      if(view==="used") h+='<td class="tot">'+tt.used+'<small>of '+tt.caps+'</small></td><td class="tot">'+tt.unused+'</td><td class="tot'+(tt.over?" bad":"")+'">'+tt.over+'</td>';
+      else h+='<td class="tot">'+tt.bench+'</td>';
+      h+='</tr>';
+    });
+    tb.innerHTML=h+'</tbody>';
+    $("gl-foot").innerHTML='Counted = games played by players in a starting slot (not BN, IL, IL+ or NA) on the day, from each day\'s lineup as set in Yahoo and ESPN box scores. '+
+      'Caps come from the <button class="back" data-go="cap" style="margin:0;padding:0">Games Cap</button> page; a dashed cap isn\'t locked yet and a blue one is a short or long week. '+
+      (cw?'This week counts games played or in progress, with the games still scheduled for the lineup as set underneath. ':'')+
+      (gaps?'<b>*</b> a day or more of lineups is missing from the ledger for that week, so the number may be short. ':'')+
+      'Hover a cell for the detail.';
+  }
+  function bind(){
+    $("gl-seg").addEventListener("click",function(e){ var b=e.target.closest("[data-glv]"); if(!b) return; view=b.dataset.glv; if(view==="bench"&&(sort.k==="unused"||sort.k==="over")) sort={k:"tot",dir:-1}; paint(); });
+    $("gl-table").addEventListener("click",function(e){
+      if(e.target.closest("#gl-retry")){ load(true); paint(); return; }
+      var th=e.target.closest("[data-glsort]"); if(!th) return; e.stopPropagation();
+      var k=th.dataset.glsort; if(sort.k===k) sort.dir=-sort.dir; else sort={k:k,dir:k==="team"||k==="unused"||k==="over"?1:-1}; paint();
+    });
+  }
+  function onView(v){
+    if(v!=="games") return;
+    if(!started){ started=true; bind(); }
+    if(!D||Date.now()-new Date(D.built).getTime()>5*60*1000) load(false); else { paint(); topUp(); }
+    paint();
+  }
+  return {onView:onView, data:function(){ return D; }};
+})();
+window.GamesLog=GamesLog;
+
+var views={home:"v-home",teams:"v-teams",team:"v-team",players:"v-players",plot:"v-plot",rotations:"v-rotations",usage:"v-usage",scoreboard:"v-scoreboard",draft:"v-draft",cap:"v-cap",games:"v-games",keepers:"v-keepers",polls:"v-polls",pollhist:"v-pollhist",agenda:"v-agenda",issues:"v-issues",sched:"v-sched",dues:"v-dues",badges:"v-badges",signup:"v-signup",manager:"v-manager",history:"v-history",rules:"v-rules"};
 var curTeam=null;
 /* Sections: the top row holds six words, the row under it the pages of the open section.
    Every page keeps its own #hash, so old links and the home cards still land where they did. */
@@ -8389,7 +8575,7 @@ var Nav=window.Nav=(function(){
     teams: [["teams","Teams"],["scoreboard","Scoreboard"]],
     nba:   [["players","Players"],["plot","Analysis"],["rotations","Rotations"],["usage","Usage"]],
     draft: [["draft","Draft board"],["keepers","Keepers"],["sched","Draft Day"]],
-    season:[["cap","Games Cap"],["badges","Badges"]],
+    season:[["cap","Games Cap"],["games","Games Log"],["badges","Badges"]],
     league:[["polls","Polls"],["issues","Issues"],["dues","Dues"],["history","History"],["rules","Rules"],["manager","Manager"]]
   };
   var ALIAS={team:"teams",pollhist:"polls",agenda:"polls"};
@@ -8429,6 +8615,7 @@ function go(v,silent){
   if(window.Rotations) Rotations.onView(v);
   if(window.Usage) Usage.onView(v);
   if(window.Scoreboard) Scoreboard.onView(v);
+  if(window.GamesLog) try{ GamesLog.onView(v); }catch(e){}
   window.scrollTo({top:0,behavior:"instant"});
 }
 document.addEventListener("click",function(e){

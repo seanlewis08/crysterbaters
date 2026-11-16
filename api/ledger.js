@@ -9,6 +9,8 @@
 //        Cached a minute at the edge; today's lineups are re-read from Yahoo when stale.
 //   GET  /api/ledger?cast=lineups            the page's "Refresh lineups from Yahoo" button
 //   GET  /api/ledger?cast=game&id=<espn id>  one game: box scores, stints, score margin
+//   GET  /api/ledger?games=season            the Games Log: each team's games used per week
+//        against that week's cap (starting slots), plus games played on the bench
 //   GET  /api/ledger?team=jalenba[&week=5]   one team's week, in /api/yahoo/team's
 //        shape, so the page draws stored and live data the same way. Lineups are
 //        what the last snapshot (or that manager's last visit) read from Yahoo;
@@ -219,6 +221,19 @@ async function usageTable(req, res) {
   }
 }
 
+async function gamesLog(req, res) {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  try {
+    const d = await require("./_lib/games").season(supa);
+    res.setHeader("Cache-Control", "public, s-maxage=300, stale-while-revalidate=600");
+    return res.status(200).json(d);
+  } catch (e) {
+    res.setHeader("Cache-Control", "no-store");
+    const msg = e.message || String(e);
+    return res.status(msg === "no_snapshot" ? 404 : 503).json({ error: msg });
+  }
+}
+
 async function scoreboard(req, res) {
   const q = req.query || {}, mode = String(q.cast || "");
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -260,6 +275,7 @@ module.exports = async (req, res) => {
   if (req.method === "GET" && req.query && req.query.rotations) return rotations(req, res);
   if (req.method === "GET" && req.query && req.query.usage) return usageTable(req, res);
   if (req.method === "GET" && req.query && req.query.steady) return steadyTable(req, res);
+  if (req.method === "GET" && req.query && req.query.games) return gamesLog(req, res);
   if (req.method === "GET" && req.query && req.query.draft) return draft(req, res);
   if (req.method === "GET" && req.query && req.query.adp) return adp(req, res);
   return snapshot(req, res);
