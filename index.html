@@ -1480,6 +1480,10 @@ footer p + p{margin-top:11px}
 .gl td.c.over{background:var(--red-glow)!important;color:var(--red);font-weight:700}
 .gl td.c.over .bar span{background:var(--red)}
 .gl td.c.under{color:var(--muted)}
+.gl td.c.maxed .bar span{background:var(--cyan)}
+sup.gl-miss{font-size:10.5px;font-weight:700;color:var(--amber);margin-left:1px;vertical-align:super;line-height:0;font-family:var(--mono)}
+.gl td.tot.miss{color:var(--amber);font-weight:600}
+.gl-key i.k-max{background:var(--cyan)}
 .gl td.c small{display:block;font-size:10px;color:var(--dim);font-weight:400;margin-top:3px;white-space:nowrap}
 .gl td.c.ahead{color:var(--line-2)}
 .gl td.c.gap::after{content:"*";color:var(--amber);margin-left:1px}
@@ -8472,23 +8476,27 @@ var GamesLog=(function(){
     Scoreboard.capStatus().then(function(cs){ if(!cs||!D) return; var any=null; Object.keys(cs).forEach(function(k){ any=cs[k]; });
       if(!any||any.week!==D.currentWeek) return; live=cs; paint(); }).catch(function(){});
   }
-  /* the numbers for one team in one week: [counted, bench, days held, still to come or null] */
+  /* the numbers for one team in one week: [counted, bench, days held, still to come or null,
+     games that could have counted (finished weeks with positions known, held to the cap) or null, games by players of unknown position] */
   function cell(id,w){
     var c=(D.teams[id]||{})[w.w]||null;
-    if(w.state==="live"&&live&&live[id]) return [live[id].played+live[id].live, c?c[1]:0, c?c[2]:0, live[id].sched];
-    return c?[c[0],c[1],c[2],null]:null;
+    if(w.state==="live"&&live&&live[id]) return [live[id].played+live[id].live, c?c[1]:0, c?c[2]:0, live[id].sched, null, 0];
+    return c?[c[0],c[1],c[2],null,(c[3]==null?null:Math.min(w.cap,Math.max(c[3],c[0]))),c[4]||0]:null;
   }
+  /* games a team left on the table in a finished week: what fitted, held to the cap, less what counted */
+  function missed(c,w){ return c&&c[4]!=null&&c[0]<w.cap?Math.max(0,c[4]-c[0]):0; }
   function totals(id){
-    var used=0, caps=0, unused=0, over=0, bench=0;
+    var used=0, caps=0, unused=0, over=0, bench=0, miss=0;
     D.weeks.forEach(function(w){ if(w.state==="ahead") return; var c=cell(id,w); if(!c) return;
-      used+=c[0]; bench+=c[1]; caps+=w.cap; if(c[0]>w.cap) over++; if(w.state==="done") unused+=Math.max(0,w.cap-c[0]); });
-    return {used:used,caps:caps,unused:unused,over:over,bench:bench};
+      used+=c[0]; bench+=c[1]; caps+=w.cap; if(c[0]>w.cap) over++; if(w.state==="done"){ unused+=Math.max(0,w.cap-c[0]); miss+=missed(c,w); } });
+    return {used:used,caps:caps,unused:unused,over:over,bench:bench,missed:miss};
   }
   function sortVal(id){
     var k=sort.k;
     if(k==="team"){ var t=byId(id); return t?t.name.toLowerCase():id; }
     if(k==="tot"){ var tt=totals(id); return view==="bench"?tt.bench:tt.used; }
     if(k==="unused") return totals(id).unused;
+    if(k==="missed") return totals(id).missed;
     if(k==="over") return totals(id).over;
     var w=D.weeks.filter(function(x){ return "w"+x.w===k; })[0], c=w&&cell(id,w);
     return c?(view==="bench"?c[1]:c[0]):-1;
@@ -8501,7 +8509,7 @@ var GamesLog=(function(){
     var cw=D.weeks.filter(function(w){ return w.state==="live"; })[0];
     $("gl-eyebrow").textContent=cw?"Week "+cw.w+" · cap "+cw.cap:"Season "+(D.season||"");
     $("gl-key").innerHTML=view==="used"
-      ?'<span><i class="k-full"></i>used the whole cap</span><span><i class="k-over"></i>over the cap</span><span><i class="k-under"></i>under</span><span><i class="k-prov"></i>cap not locked yet</span>'
+      ?'<span><i class="k-full"></i>used the whole cap</span><span><i class="k-max"></i>short, but played every game that fit</span><span><i class="k-under"></i>short, with games left on the bench <sup class="gl-miss">−3</sup></span><span><i class="k-over"></i>over the cap</span><span><i class="k-prov"></i>cap not locked yet</span>'
       :'<span>Games your players played while sitting in BN, IL, IL+ or NA — games that didn\'t count.</span>';
     var ids=T.map(function(t){ return t.id; });
     ids.sort(function(a,b){ var x=sortVal(a), y=sortVal(b); if(x<y) return -sort.dir; if(x>y) return sort.dir; return byId(a).name<byId(b).name?-1:1; });
@@ -8513,7 +8521,9 @@ var GamesLog=(function(){
       var tip="Week "+w.w+" · "+span(w)+" · cap "+w.cap+(w.locked?" (set)":(w.set?" (on the Games Cap page, not locked yet)":" (not set — the normal 30 assumed)"))+(w.note?" · "+w.note:"");
       h+='<th class="'+(w.state==="live"?"now":"")+'" data-glsort="w'+w.w+'"'+srt("w"+w.w)+' title="'+attr(tip)+'"><span class="gl-wk"><b>W'+w.w+'</b><small>'+esc(span(w))+'</small></span><span class="gl-cap'+capCls+'">'+w.cap+'</span></th>';
     });
-    if(view==="used") h+='<th class="tot" data-glsort="tot"'+srt("tot")+' title="Games counted so far this season, against the caps of the weeks played">Season</th><th class="tot" data-glsort="unused"'+srt("unused")+' title="Cap left unused in finished weeks">Unused</th><th class="tot" data-glsort="over"'+srt("over")+' title="Weeks over the cap">Over</th>';
+    if(view==="used") h+='<th class="tot" data-glsort="tot"'+srt("tot")+' title="Games counted so far this season, against the caps of the weeks played">Season</th><th class="tot" data-glsort="unused"'+srt("unused")+' title="Cap left unused in finished weeks">Unused</th>'+
+      (D.positions?'<th class="tot" data-glsort="missed"'+srt("missed")+' title="Of the unused cap, games that were there to be had: players on the roster who played and would have fitted a starting slot">Missed</th>':'')+
+      '<th class="tot" data-glsort="over"'+srt("over")+' title="Weeks over the cap">Over</th>';
     else h+='<th class="tot" data-glsort="tot"'+srt("tot")+' title="Bench games this season">Season</th>';
     h+='</tr></thead><tbody>';
     var gaps=0;
@@ -8531,29 +8541,33 @@ var GamesLog=(function(){
           h+='<td class="c'+now+(gap?" gap":"")+'" style="background:rgba(193,87,26,'+a+')" title="'+attr("Week "+w.w+": "+c[1]+" games played on the bench, "+c[0]+" counted")+'">'+c[1]+'</td>';
           return;
         }
-        var cls=c[0]>w.cap?"over":(c[0]===w.cap?"full":(w.state==="done"&&w.cap-c[0]>=3?"under":""));
+        var miss=missed(c,w), known=c[4]!=null&&c[0]<w.cap;
+        var cls=c[0]>w.cap?"over":(c[0]===w.cap?"full":(known?(miss?"under":"maxed"):(w.state==="done"&&w.cap-c[0]>=3?"under":"")));
         var pct=Math.min(100,Math.round(c[0]/Math.max(1,w.cap)*100));
-        var tip="Week "+w.w+" · "+span(w)+": "+c[0]+" of "+w.cap+" counted"+(c[0]>w.cap?" — "+(c[0]-w.cap)+" over":"")+(c[3]!=null?", "+c[3]+" still to come for the lineup as set":"")+" · "+c[1]+" played on the bench"+(gap?" · only "+c[2]+" of "+days(w)+" days of lineups stored":"");
-        h+='<td class="c '+cls+now+(gap?" gap":"")+'" title="'+attr(tip)+'">'+c[0]+(c[3]!=null?'<small>+'+c[3]+' to come</small>':'')+'<span class="bar"><span style="width:'+pct+'%"></span></span></td>';
+        var why=!known?"":(miss?" · "+c[4]+" could have counted with the players you had ("+miss+" left on the bench)"
+                               :" · no other game would have fit: every player who played and could fill an open starting slot was in one");
+        var tip="Week "+w.w+" · "+span(w)+": "+c[0]+" of "+w.cap+" counted"+(c[0]>w.cap?" — "+(c[0]-w.cap)+" over":"")+why+(c[3]!=null?", "+c[3]+" still to come for the lineup as set":"")+" · "+c[1]+" played on the bench"+(c[5]&&known?" · "+c[5]+" of those games by a player whose positions Yahoo didn't give, counted for Util only":"")+(gap?" · only "+c[2]+" of "+days(w)+" days of lineups stored":"");
+        h+='<td class="c '+cls+now+(gap?" gap":"")+'" title="'+attr(tip)+'">'+c[0]+(miss?'<sup class="gl-miss">−'+miss+'</sup>':'')+(c[3]!=null?'<small>+'+c[3]+' to come</small>':'')+'<span class="bar"><span style="width:'+pct+'%"></span></span></td>';
       });
       var tt=totals(id);
-      if(view==="used") h+='<td class="tot">'+tt.used+'<small>of '+tt.caps+'</small></td><td class="tot">'+tt.unused+'</td><td class="tot'+(tt.over?" bad":"")+'">'+tt.over+'</td>';
+      if(view==="used") h+='<td class="tot">'+tt.used+'<small>of '+tt.caps+'</small></td><td class="tot">'+tt.unused+'</td>'+(D.positions?'<td class="tot'+(tt.missed?" miss":"")+'">'+tt.missed+'</td>':'')+'<td class="tot'+(tt.over?" bad":"")+'">'+tt.over+'</td>';
       else h+='<td class="tot">'+tt.bench+'</td>';
       h+='</tr>';
     });
     tb.innerHTML=h+'</tbody>';
     $("gl-foot").innerHTML='Counted = games played by players in a starting slot (not BN, IL, IL+ or NA) on the day, from each day\'s lineup as set in Yahoo and ESPN box scores. '+
       'Caps come from the <button class="back" data-go="cap" style="margin:0;padding:0">Games Cap</button> page; a dashed cap isn\'t locked yet and a blue one is a short or long week. '+
-      (cw?'This week counts games played or in progress, with the games still scheduled for the lineup as set underneath. ':'')+
+      (D.positions?'A small <sup class="gl-miss">−N</sup> on a finished week is how many more games could have counted: each day, the players on your roster who played (not ones in IL slots) fitted into G G F F C Util by their Yahoo positions, the week held to its cap. It\'s hindsight — a late scratch you started while a bench player played still counts as a game that was there — and it doesn\'t count free agents you could have picked up. A short week with no −N had no other game to play. ':'Missed games appear once positions are stored (schema §17). ')+
+      (cw?'This week counts games played or in progress, with the games still scheduled for the lineup as set underneath; it gets its −N once it\'s over, since a game left on the bench Monday isn\'t lost while the week can still reach the cap. ':'')+
       (gaps?'<b>*</b> a day or more of lineups is missing from the ledger for that week, so the number may be short. ':'')+
       'Hover a cell for the detail.';
   }
   function bind(){
-    $("gl-seg").addEventListener("click",function(e){ var b=e.target.closest("[data-glv]"); if(!b) return; view=b.dataset.glv; if(view==="bench"&&(sort.k==="unused"||sort.k==="over")) sort={k:"tot",dir:-1}; paint(); });
+    $("gl-seg").addEventListener("click",function(e){ var b=e.target.closest("[data-glv]"); if(!b) return; view=b.dataset.glv; if(view==="bench"&&(sort.k==="unused"||sort.k==="over"||sort.k==="missed")) sort={k:"tot",dir:-1}; paint(); });
     $("gl-table").addEventListener("click",function(e){
       if(e.target.closest("#gl-retry")){ load(true); paint(); return; }
       var th=e.target.closest("[data-glsort]"); if(!th) return; e.stopPropagation();
-      var k=th.dataset.glsort; if(sort.k===k) sort.dir=-sort.dir; else sort={k:k,dir:k==="team"||k==="unused"||k==="over"?1:-1}; paint();
+      var k=th.dataset.glsort; if(sort.k===k) sort.dir=-sort.dir; else sort={k:k,dir:k==="team"?1:-1}; paint();
     });
   }
   function onView(v){

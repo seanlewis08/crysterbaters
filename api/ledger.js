@@ -95,7 +95,7 @@ async function snapshot(req, res) {
       catch (e) { out.notes.push("Yahoo " + date + ": " + e.message); continue; }
       teams.forEach((t) => {
         const id = idByKey[t.key]; if (!id) return;
-        (perTeam[id] = perTeam[id] || []).push({ date: date, players: t.players.map((p) => ({ key: p.key, name: p.name, team: p.nba, pos: p.pos, status: p.status })) });
+        (perTeam[id] = perTeam[id] || []).push({ date: date, players: t.players.map((p) => ({ key: p.key, name: p.name, team: p.nba, pos: p.pos, status: p.status, elig: p.elig })) });
       });
       out.days++;
     }

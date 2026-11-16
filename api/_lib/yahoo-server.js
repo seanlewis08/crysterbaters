@@ -27,6 +27,8 @@ async function accessToken() {
 }
 
 const list = (v) => (Array.isArray(v) ? v : v && typeof v === "object" ? [v] : []);
+// a player's eligible positions as one string, "PG,SG,G,Util" ("" when Yahoo gave none)
+const eligOf = (pl) => list(pl && pl.eligible_positions).map((x) => (x && x.position) || x).filter((x) => typeof x === "string").join(",");
 
 // Live: [{ key, name, nick, logo }]
 async function leagueTeams() {
@@ -141,6 +143,32 @@ async function statCategories() {
   return out;
 }
 
+// The league's starting slots, one entry per slot: ["G","G","F","F","C","Util"] (bench and
+// injury slots left out). Cached per instance; null when Yahoo won't say.
+let slotList = null;
+async function rosterSlots() {
+  if (slotList) return slotList;
+  const at = await accessToken();
+  const lg = L.fold((await L.yahoo({ at }, "/league/" + LEAGUE + "/settings")).fantasy_content.league);
+  const settings = list(lg.settings)[0] || lg.settings || {};
+  const rp = list(settings.roster_positions && (settings.roster_positions.roster_position || settings.roster_positions)).map((x) => x.roster_position || x);
+  const out = [];
+  rp.forEach((r) => { const pos = r && r.position; if (!pos || /^(BN|IL|IL\+|IR|NA)$/.test(pos)) return; for (let i = 0; i < (Number(r.count) || 0); i++) out.push(pos); });
+  if (out.length) slotList = out;
+  return slotList;
+}
+
+// Eligible positions for players by key: { key: "PG,SG,G,Util" }, 25 keys a call.
+async function playersElig(keys) {
+  const at = await accessToken();
+  const out = {};
+  for (let i = 0; i < keys.length; i += 25) {
+    const raw = L.fold((await L.yahoo({ at }, "/league/" + LEAGUE + "/players;player_keys=" + keys.slice(i, i + 25).join(","))).fantasy_content.league);
+    list(raw.players).map((x) => x.player || x).forEach((pl) => { if (pl && pl.player_key) out[pl.player_key] = eligOf(pl); });
+  }
+  return out;
+}
+
 // This week's matchups with Yahoo's running totals and category winners, for the
 // scoreboard's check: { matchups: [{ status, teams: [{key, stats:{FG%: ".480", …}}, …], winners: {PTS: team_key|"tie"} }] }
 async function scoreboard(week) {
@@ -171,7 +199,7 @@ async function leagueRostersOn(date) {
     const ro = t.roster || {};
     const players = list(ro.players || (ro["0"] && ro["0"].players)).map((p) => {
       const pl = p.player || p;
-      return { key: pl.player_key || "", name: pl.name && pl.name.full, nba: pl.editorial_team_abbr || "", pos: (pl.selected_position && pl.selected_position.position) || "", status: pl.status || "" };
+      return { key: pl.player_key || "", name: pl.name && pl.name.full, nba: pl.editorial_team_abbr || "", pos: (pl.selected_position && pl.selected_position.position) || "", status: pl.status || "", elig: eligOf(pl) };
     }).filter((p) => p.name && p.key);
     return { key: t.team_key, name: t.name, date: (ro.date || date), players };
   });
@@ -241,4 +269,4 @@ async function teamName(teamId) {
   return s ? s.name : teamId;
 }
 
-module.exports = { leagueTeams, leagueRosters, mappedTeams, linkChoices, teamName, leagueMeta, weekDates, leagueRostersOn, scoreboard, statCategories, draftResults, draftAnalysis, _reset: () => { cached = null; draftCache = null; adpCache = null; } };
+module.exports = { leagueTeams, leagueRosters, mappedTeams, linkChoices, teamName, leagueMeta, weekDates, leagueRostersOn, scoreboard, statCategories, rosterSlots, playersElig, eligOf, draftResults, draftAnalysis, _reset: () => { cached = null; draftCache = null; adpCache = null; } };

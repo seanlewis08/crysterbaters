@@ -1,10 +1,48 @@
 // The games log: for every team and every fantasy week so far, how many games its players
 // played from starting slots (what counts against the weekly cap), how many were played on
-// the bench (games left on the table), and the week's cap from the Games Cap table.
+// the bench, the week's cap from the Games Cap table, and — for a finished week — the most
+// games the team could have counted with the players it had.
 // Read by the Games Log page through /api/ledger?games=season.
+//
+// "Could have": each day, the players on the roster that day (any slot but IL/IL+/IR/NA —
+// starting one of those means freeing a roster spot first) who actually played, fitted into
+// the league's starting slots by their Yahoo eligibility (a maximum matching, so three
+// centers on one night fill C and Util, not three slots). The week's figure is the sum of
+// those days, held to the cap. It is hindsight: a late scratch who was started while a
+// bench player played still reads as a game that was there. Only finished weeks get one —
+// a game left on the bench on Monday isn't lost while the rest of the week can still reach
+// the cap. Free agents aren't counted: it is the roster as it was.
 "use strict";
 
 const ledger = require("./ledger");
+
+const SLOTS = ["G", "G", "F", "F", "C", "Util"];
+const OUT = { IL: 1, "IL+": 1, IR: 1, NA: 1 };
+// can a player with these eligible positions (Set; empty = unknown) sit in this slot? He can
+// always sit where he actually sat that day; with nothing known about him, only Util as well.
+function fits(slot, elig, sat) {
+  if (slot === sat || slot === "Util") return true;
+  if (!elig.size) return false;
+  if (elig.has(slot)) return true;
+  if (slot === "G") return elig.has("PG") || elig.has("SG");
+  if (slot === "F") return elig.has("SF") || elig.has("PF");
+  return false;
+}
+// the most of these players that fit into these slots at once (augmenting paths; a dozen players, six slots)
+function maxFit(players, slots) {
+  const owner = slots.map(() => -1);
+  function place(i, seen) {
+    for (let s = 0; s < slots.length; s++) {
+      if (seen[s] || !fits(slots[s], players[i].elig, players[i].sat)) continue;
+      seen[s] = true;
+      if (owner[s] < 0 || place(owner[s], seen)) { owner[s] = i; return true; }
+    }
+    return false;
+  }
+  let n = 0;
+  for (let i = 0; i < players.length; i++) if (place(i, slots.map(() => false))) n++;
+  return n;
+}
 
 // The Games Cap table is a run of Monday–Sunday NBA weeks from data.start. A fantasy week
 // takes the row its first day falls in, so a week that spans two NBA weeks (All-Star) gets
@@ -51,27 +89,62 @@ async function season(supa) {
   if (!held.length) return { built: new Date().toISOString(), season: meta.season, currentWeek: cur, today: today, weeks: weeks, teams: {} };
   const first = held[0].start, last = held[held.length - 1].end;
 
-  const lines = await pages(supa, "lineup_days", "select=team_id,date,espn_id,pos&date=gte." + first + "&date=lte." + last + "&order=date.asc,team_id.asc,yahoo_key.asc");
+  const lines = await pages(supa, "lineup_days", "select=team_id,date,yahoo_key,espn_id,pos&date=gte." + first + "&date=lte." + last + "&order=date.asc,team_id.asc,yahoo_key.asc");
   const ids = Array.from(new Set(lines.map((l) => l.espn_id).filter(Boolean)));
   const played = {};
   for (let i = 0; i < ids.length; i += 150) {
     const box = await pages(supa, "nba_box", "select=espn_id,date&played=is.true&date=gte." + first + "&date=lte." + last + "&espn_id=in.(" + ids.slice(i, i + 150).join(",") + ")&order=date.asc,espn_id.asc");
     box.forEach((b) => { played[b.espn_id + "|" + b.date] = 1; });
   }
+  // eligibility: what the lineup reads stored, and Yahoo's players resource for anyone missing
+  let elig = null, slots = SLOTS, notes = [];
+  try {
+    elig = {};
+    (await pages(supa, "player_elig", "select=yahoo_key,elig&order=yahoo_key.asc")).forEach((r) => { if (r.elig) elig[r.yahoo_key] = r.elig; });
+  } catch (e) { elig = null; notes.push("positions: the player_elig table isn't there yet (schema §17)"); }
+  if (elig) {
+    const doneStart = {}; weeks.forEach((x) => { if (x.state === "done") ledger.daysBetween(x.start, x.end).forEach((d) => { doneStart[d] = 1; }); });
+    const missing = Array.from(new Set(lines.filter((l) => doneStart[l.date] && !OUT[l.pos] && l.espn_id && played[l.espn_id + "|" + l.date] && !elig[l.yahoo_key]).map((l) => l.yahoo_key))).slice(0, 300);
+    if (missing.length) {
+      try {
+        const got = await require("./yahoo-server").playersElig(missing);
+        const now = new Date().toISOString(), rows = Object.keys(got).filter((k) => got[k]).map((k) => ({ yahoo_key: k, elig: got[k], updated_at: now }));
+        rows.forEach((r) => { elig[r.yahoo_key] = r.elig; });
+        if (rows.length) await supa.upsert("player_elig", rows, "yahoo_key").catch(() => {});
+      } catch (e) { notes.push("positions: Yahoo lookup failed (" + (e.message || e) + ")"); }
+    }
+    try { const s = await require("./yahoo-server").rosterSlots(); if (s && s.length) slots = s; } catch (e) { /* the league's G G F F C Util */ }
+  }
+
   const weekOfDate = {};
   held.forEach((x) => ledger.daysBetween(x.start, x.end).forEach((d) => { weekOfDate[d] = x.w; }));
 
-  // teams[id][w] = [games from starting slots, games on the bench, days we hold a lineup for]
-  const teams = {}, seen = {};
+  // teams[id][w] = [games from starting slots, games on the bench, days we hold a lineup for,
+  //                 most games that fitted (finished weeks, before the cap; else null),
+  //                 games played by players whose positions we don't know]
+  const teams = {}, seen = {}, avail = {};
+  const state = {}; weeks.forEach((x) => { state[x.w] = x.state; });
   lines.forEach((l) => {
     const w = weekOfDate[l.date]; if (!w || !l.team_id) return;
     const t = teams[l.team_id] = teams[l.team_id] || {};
-    const c = t[w] = t[w] || [0, 0, 0];
+    const c = t[w] = t[w] || [0, 0, 0, null, 0];
     const dk = l.team_id + "|" + l.date; if (!seen[dk]) { seen[dk] = 1; c[2]++; }
     if (!l.espn_id || !played[l.espn_id + "|" + l.date]) return;
     if (ledger.BENCH[l.pos]) c[1]++; else c[0]++;
+    if (elig && state[w] === "done" && !OUT[l.pos]) {
+      const e = elig[l.yahoo_key] || "";
+      if (!e) c[4]++;
+      (avail[dk] = avail[dk] || []).push({ elig: new Set(e.split(",").filter(Boolean)), sat: l.pos });
+    }
   });
-  return { built: new Date().toISOString(), season: meta.season, currentWeek: cur, today: today, weeks: weeks, teams: teams };
+  if (elig) {
+    Object.keys(teams).forEach((id) => Object.keys(teams[id]).forEach((w) => { if (state[w] === "done") teams[id][w][3] = 0; }));
+    Object.keys(avail).forEach((dk) => {
+      const [id, date] = dk.split("|"), w = weekOfDate[date];
+      teams[id][w][3] += maxFit(avail[dk], slots);
+    });
+  }
+  return { built: new Date().toISOString(), season: meta.season, currentWeek: cur, today: today, weeks: weeks, slots: slots, positions: !!elig, notes: notes, teams: teams };
 }
 
-module.exports = { season, capFor, capRow };
+module.exports = { season, capFor, capRow, maxFit, fits };

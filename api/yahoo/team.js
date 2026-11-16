@@ -117,7 +117,8 @@ module.exports = async (req, res) => {
         const r = t.roster || {};
         const ps = list(r.players || (r["0"] && r["0"].players)).map(p => {
           const pl = p.player || p;
-          return { key: pl.player_key, name: pl.name && pl.name.full, team: pl.editorial_team_abbr, pos: pl.selected_position && pl.selected_position.position, status: pl.status || "", gp: 0 };
+          return { key: pl.player_key, name: pl.name && pl.name.full, team: pl.editorial_team_abbr, pos: pl.selected_position && pl.selected_position.position, status: pl.status || "", gp: 0,
+            elig: list(pl.eligible_positions).map(x => (x && x.position) || x).filter(x => typeof x === "string").join(",") };
         });
         let dayErr = "";
         if (ps.length) {

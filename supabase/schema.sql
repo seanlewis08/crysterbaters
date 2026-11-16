@@ -1238,3 +1238,15 @@ create table if not exists public.player_proj (
 alter table public.matchups    enable row level security;
 alter table public.player_proj enable row level security;
 grant all on public.matchups, public.player_proj to service_role;
+
+-- 17. Games Log (added 2026-11-16): each player's Yahoo position eligibility
+-- ("PG,SG,G,Util"), so the Games Log can work out the most games a team could have
+-- fitted into its starting slots each day. Written by the server only (each lineup
+-- read, and a backfill from Yahoo's players resource for anyone missing).
+create table if not exists public.player_elig (
+  yahoo_key  text primary key,
+  elig       text not null default '',
+  updated_at timestamptz not null default now()
+);
+alter table public.player_elig enable row level security;
+grant all on public.player_elig to service_role;

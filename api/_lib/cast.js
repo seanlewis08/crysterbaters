@@ -161,7 +161,7 @@ async function refreshDays(dates) {
     const teams = await yahoo.leagueRostersOn(date);
     for (const t of teams) {
       const id = idByKey[t.key]; if (!id) continue;
-      await ledger.writeLineups(id, [{ date: date, players: t.players.map((p) => ({ key: p.key, name: p.name, team: p.nba, pos: p.pos, status: p.status })) }]);
+      await ledger.writeLineups(id, [{ date: date, players: t.players.map((p) => ({ key: p.key, name: p.name, team: p.nba, pos: p.pos, status: p.status, elig: p.elig })) }]);
       n++;
     }
   }

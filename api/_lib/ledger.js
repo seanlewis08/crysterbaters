@@ -131,6 +131,12 @@ async function writeLineups(teamId, days) {
   const now = new Date().toISOString();
   rows.forEach((r) => { r.espn_id = links[r.yahoo_key] || null; r.updated_at = now; });
   await supa.upsert("lineup_days", rows, "team_id,date,yahoo_key");
+  // each player's eligible positions, for the Games Log's "could have played" (a table that may
+  // not exist yet: its absence never gets in the way of the lineup itself)
+  const elig = {};
+  (days || []).forEach((d) => (d && d.players || []).forEach((p) => { if (p && p.key && p.elig) elig[p.key] = p.elig; }));
+  const er = Object.keys(elig).map((k) => ({ yahoo_key: k, elig: elig[k], updated_at: now }));
+  if (er.length) await supa.upsert("player_elig", er, "yahoo_key").catch(() => {});
   // a player dropped mid-week must vanish from the days we just rewrote
   const byDate = {}; rows.forEach((r) => { (byDate[r.date] = byDate[r.date] || []).push(r.yahoo_key); });
   for (const date of Object.keys(byDate)) {
