@@ -158,8 +158,8 @@ async function rosterSlots() {
   return slotList;
 }
 
-// The league's standings: [{ key, rank, wins, losses, ties, pct }] (Yahoo's own record —
-// in this league, category wins/losses/ties across the weeks played).
+// The league's standings: [{ key, rank, wins, losses, ties, pct }] (Yahoo's own record:
+// weekly matchups won, lost and tied).
 async function standings() {
   const at = await accessToken();
   const lg = L.fold((await L.yahoo({ at }, "/league/" + LEAGUE + "/standings")).fantasy_content.league);

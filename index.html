@@ -8525,7 +8525,7 @@ var GamesLog=(function(){
     ids.sort(function(a,b){ var x=sortVal(a), y=sortVal(b); if(x<y) return -sort.dir; if(x>y) return sort.dir; return byId(a).name<byId(b).name?-1:1; });
     var maxBench=1; if(view==="bench") ids.forEach(function(id){ D.weeks.forEach(function(w){ var c=cell(id,w); if(c&&c[1]>maxBench) maxBench=c[1]; }); });
     function srt(k){ return sort.k===k?' aria-sort="'+(sort.dir<0?"descending":"ascending")+'"':''; }
-    var h='<thead><tr><th class="gl-tm" data-glsort="team"'+srt("team")+'>Team</th><th class="gl-rec" data-glsort="rec"'+srt("rec")+' title="This season\'s record in Yahoo (category wins-losses-ties) and place in the standings">Record</th>';
+    var h='<thead><tr><th class="gl-tm" data-glsort="team"'+srt("team")+'>Team</th><th class="gl-rec" data-glsort="rec"'+srt("rec")+' title="This season\'s record in Yahoo (weekly matchups won-lost-tied) and place in the standings">Record</th>';
     D.weeks.forEach(function(w){
       var capCls=!w.set||!w.locked?" prov":(w.cap!==30?" odd":"");
       var tip="Week "+w.w+" · "+span(w)+" · cap "+w.cap+(w.locked?" (set)":(w.set?" (on the Games Cap page, not locked yet)":" (not set — the normal 30 assumed)"))+(w.note?" · "+w.note:"");
