@@ -5298,8 +5298,8 @@ var Players=(function(){
         tpm:r[C.tpm],tpa:r[C.tpa],fgm:r[C.fgm],fga:r[C.fga],ftm:r[C.ftm],fta:r[C.fta],to:r[C.to],dd:r[C.dd],td:r[C.td],
         pf:r[C.pf]||0,tech:r[C.tech]||0,ff:r[C.ff]||0,ejct:r[C.ejct]||0,
         salary:s.salary,yrs:s.yrs,gtd:s.gtd,num:s.num||"",exp:s.exp==null?null:s.exp,own:OWN[norm(r[C.name])]||null,key:norm(r[C.name])};
-      /* ESPN's bulk feed has no rebound splits or games started: those ride with the
-         snapshot, so they only apply to the season the snapshot was built for */
+      /* ESPN's bulk feed has no rebound splits or games started: for the snapshot's season they
+         ride with the snapshot; for this season joinBox() fills them from our own play-by-play */
       var sameSeason=(season===snap.statsSeason);
       o.oreb=sameSeason&&s.oreb!=null?s.oreb:null;
       o.dreb=sameSeason&&s.dreb!=null?s.dreb:null;
@@ -5316,7 +5316,7 @@ var Players=(function(){
       return o;
     });
     value();
-    joinSteady(); loadSteady(season);
+    joinSteady(); loadSteady(season); joinBox();
     var teams={}; rows.forEach(function(r){ if(r.team&&r.team!=="FA") teams[r.team]=1; });
     var sel=$("pl-team"), cur=sel.value;
     sel.innerHTML='<option value="">All teams</option>'+Object.keys(teams).sort().map(function(t){return '<option value="'+t+'">'+t+'</option>';}).join("");
@@ -5498,24 +5498,43 @@ var Players=(function(){
   function loadAdv(span){
     if(advLoading===span) return; advLoading=span; advErr="";
     fetch("/api/ledger?usage="+encodeURIComponent(span)).then(function(r){ return r.json().then(function(j){ if(!r.ok) throw new Error(j.error==="no_usage"?"usage tables not set up yet":(j.error||("answered "+r.status))); return j; }); })
-      .then(function(j){ ADV[span]=j; }).catch(function(e){ advErr=e.message||"couldn’t read"; }).then(function(){ advLoading=null; if(document.getElementById("v-players").classList.contains("on")) render(); });
+      .then(function(j){ ADV[span]=j; }).catch(function(e){ advErr=e.message||"couldn’t read"; }).then(function(){ advLoading=null; if(span==="season") joinBox();
+        if(document.getElementById("v-players").classList.contains("on")) render(); else fire(); });
   }
   function joinAdv(){
     var A=ADV[advSpan]; rows.forEach(function(r){ r.u=null; }); if(!A) return;
+    var m=matchUsage(A); rows.forEach(function(r,i){ r.u=m[i]; });
+  }
+  /* this season's OREB / DREB / GS and on-court defense: ESPN's bulk feed carries none of them, so they come
+     from our own play-by-play (the season usage table) whenever the current season is showing */
+  function curSeason(){ return liveSeasons()[0]||null; }
+  function joinBox(){
+    var A=ADV.season, cur=season===curSeason()&&(!snap||season!==snap.statsSeason);
+    rows.forEach(function(r){ r.dz=null; });
+    if(!cur) return;
+    if(!A){ loadAdv("season"); return; }
+    var m=matchUsage(A);
+    rows.forEach(function(r,i){ var x=m[i]; if(!x) return; r.dz=x.d||null;
+      if(r.oreb==null&&x.oreb!=null){ r.oreb=x.oreb; r.dreb=x.dreb; } if(r.gs==null&&x.starter!=null) r.gs=x.starter; });
+  }
+  /* the usage line for each row (same order as rows): exact names first, then surname + team */
+  function matchUsage(A){
+    var out=rows.map(function(){ return null; });
     var byName={}, byLast={}, TRI={GSW:"GS",NOP:"NO",NYK:"NY",SAS:"SA",UTA:"UTAH",WAS:"WSH",PHO:"PHX",BRK:"BKN",CHO:"CHA"};
     function tri(x){ x=String(x||"").toUpperCase(); return TRI[x]||x; }
     A.rows.forEach(function(x){ var k=norm(x.name||""), lk=k.split(" ").pop()+"|"+tri(x.team); byName[k]=x; (byLast[lk]=byLast[lk]||[]).push(x); });
     /* exact names first; a usage line taken by its own player is never handed to anyone else */
     var used=[];
-    rows.forEach(function(r){ var x=byName[r.key]; r.u=x||null; if(x) used.push(x); });
+    rows.forEach(function(r,i){ var x=byName[r.key]; out[i]=x||null; if(x) used.push(x); });
     /* then surname + team for spellings that differ (Nicolas / Nic Claxton, P.J. / PJ): the first names must
        agree — one a prefix of the other, or an initial — so Seth Curry never borrows Stephen's line */
     function sameFirst(a,b){ a=a.split(" ")[0]; b=b.split(" ")[0]; if(!a||!b) return false; if(a===b) return true; if(a.length===1||b.length===1) return a.charAt(0)===b.charAt(0); return a.indexOf(b)===0||b.indexOf(a)===0; }
-    rows.forEach(function(r){
-      if(r.u) return;
+    rows.forEach(function(r,i){
+      if(out[i]) return;
       var cand=(byLast[r.key.split(" ").pop()+"|"+tri(r.team)]||[]).filter(function(x){ return used.indexOf(x)<0&&sameFirst(norm(x.name),r.key); });
-      if(cand.length===1){ r.u=cand[0]; used.push(cand[0]); }
+      if(cand.length===1){ out[i]=cand[0]; used.push(cand[0]); }
     });
+    return out;
   }
   function setNotice(html,cls){ $("pl-notice").innerHTML=html?'<div class="notice '+(cls||"")+'">'+html+'</div>':""; }
 
@@ -5592,6 +5611,8 @@ var Players=(function(){
     srcLine:function(){ var lv=live[season]; return snap?((lv?"Stats from ESPN":"Stats from the last snapshot")+" · salaries as of "+new Date(snap.built).toLocaleDateString(undefined,{month:"short",day:"numeric"})):""; },
     seasonLabel:function(){ var lv=live[season]; return lv?lv.label:(season?(season-1)+"-"+String(season).slice(2):""); },
     plays:plays,
+    curSeason:curSeason,
+    usage:function(){ if(!ADV.season&&advLoading!=="season") loadAdv("season"); return ADV.season||null; },
     snapLabel:function(){ return snap?((snap.statsSeason-1)+"-"+String(snap.statsSeason).slice(2)):""; },
     seasons:function(){ var years={}; if(snap) years[snap.statsSeason]=1; liveSeasons().forEach(function(y){years[y]=1;});
       return Object.keys(years).map(Number).sort(function(a,b){return b-a;}).map(function(y){ return {y:y,label:(live[y]&&live[y].label)||((y-1)+"-"+String(y).slice(2))}; }); },
@@ -5667,7 +5688,27 @@ var Plot=(function(){
   [["pts","PTS","Points"],["reb","REB","Rebounds"],["ast","AST","Assists"],["stl","STL","Steals"],["blk","BLK","Blocks"],["tpm","3PM","Threes made"],["tov","TO","Turnovers"],["min","MIN","Minutes"]].forEach(function(x){
     M.push({k:"sd_"+x[0], s:x[1]+" STDY", h:x[2]+" steadiness (0–100)", g:"Steadiness (0–100)", get:function(r){ return r.sd&&r.sd.s[x[0]]!=null?r.sd.s[x[0]]:null; }, fmt:whole, ax:ax, flat:true, agg:"mean"});
   });
+  /* On-court defense (this season, from our play-by-play): opponents' shooting while he's on the floor,
+     by distance, and the same against the league in that band (percentage points; lower is better) */
+  var DBANDS=[["all","all shots","All"],["d6","under 6 ft","<6FT"],["d14","6–14 ft","6-14FT"],["d15","15 ft+ twos","15FT+"],["t3","threes","3PT"]];
+  function dget(k){ return function(r){ return r.dz&&r.dz[k]!=null?r.dz[k]:null; }; }
+  DBANDS.forEach(function(b){
+    M.push({k:"df_"+b[0], s:"oFG% "+b[2], h:"Opponent FG% with him on the floor, "+b[1], g:"Defense on the floor (this season)", get:dget(b[0]), fmt:pc3, ax:pcax, flat:true, neg:true, agg:"mean", dz:true});
+  });
+  DBANDS.forEach(function(b){
+    M.push({k:"dv_"+b[0], s:"vsLg "+b[2], h:"Opponent FG% on the floor vs league, "+b[1]+" (pts)", g:"Defense on the floor (this season)", get:dget(b[0]+"_vs"), fmt:sg, ax:sg, flat:true, neg:true, agg:"mean", dz:true});
+  });
+  M.push({k:"dn_d6", s:"RIM FACED", h:"Opponent shots under 6 ft faced, per game", g:"Defense on the floor (this season)", get:function(r){ return r.dz&&r.gp?r.dz.d6_n/r.gp:null; }, fmt:function(v){return (+v).toFixed(1);}, ax:ax, flat:true, dz:true});
   /* ----- the same for an NBA team: its own numbers, what it allows, the margins, the record ----- */
+  /* an NBA team's line in the usage table's defense block (NBA tricodes there, ESPN's here); this season only */
+  var NBA_TRI={GS:"GSW",NO:"NOP",NY:"NYK",SA:"SAS",UTAH:"UTA",WSH:"WAS"};
+  function teamDz(r){
+    if(!window.Players||!Players.usage) return null;
+    var cur=Players.curSeason&&Players.curSeason(); if(!cur||nbaSeason()!==cur) return null;
+    var U=Players.usage(), D=U&&U.defense; if(!D) return null;
+    var ab=String(r.abbr||r.team||"").toUpperCase(); return D.teams[NBA_TRI[ab]||ab]||null;
+  }
+  function tdz(k){ return function(r){ var d=teamDz(r); return d&&d[k]!=null?d[k]:null; }; }
   function ocnt(k){ return function(r){ return r.o&&r.o[k]!=null?(f.mode==="tot"?r.o[k]*r.gp:r.o[k]):null; }; }
   function flat(k){ return function(r){ return r[k]==null?null:r[k]; }; }
   var MT=[
@@ -5730,6 +5771,16 @@ var Plot=(function(){
     {k:"tpmd", s:"3PM±", h:"Threes margin",           g:"Margins per game", get:flat("tpmd"), fmt:sg, ax:sg, flat:true},
     {k:"stld", s:"STL±", h:"Steals margin",           g:"Margins per game", get:flat("stld"), fmt:sg, ax:sg, flat:true},
     {k:"blkd", s:"BLK±", h:"Blocks margin",           g:"Margins per game", get:flat("blkd"), fmt:sg, ax:sg, flat:true},
+    {k:"tdf_all", s:"oFG% All",   h:"Opponent FG%, all shots",        g:"Defense by distance (this season)", get:tdz("all"), fmt:pc3, ax:pcax, flat:true, neg:true, dz:true},
+    {k:"tdf_d6",  s:"oFG% <6FT",  h:"Opponent FG% under 6 ft",        g:"Defense by distance (this season)", get:tdz("d6"),  fmt:pc3, ax:pcax, flat:true, neg:true, dz:true},
+    {k:"tdf_d14", s:"oFG% 6-14FT",h:"Opponent FG% 6–14 ft",           g:"Defense by distance (this season)", get:tdz("d14"), fmt:pc3, ax:pcax, flat:true, neg:true, dz:true},
+    {k:"tdf_d15", s:"oFG% 15FT+", h:"Opponent FG% 15 ft+ (twos)",     g:"Defense by distance (this season)", get:tdz("d15"), fmt:pc3, ax:pcax, flat:true, neg:true, dz:true},
+    {k:"tdf_t3",  s:"oFG% 3PT",   h:"Opponent FG% on threes",         g:"Defense by distance (this season)", get:tdz("t3"),  fmt:pc3, ax:pcax, flat:true, neg:true, dz:true},
+    {k:"tdv_d6",  s:"vsLg <6FT",  h:"Opponent FG% under 6 ft vs league (pts)", g:"Defense by distance (this season)", get:tdz("d6_vs"),  fmt:sg, ax:sg, flat:true, neg:true, dz:true},
+    {k:"tdv_d14", s:"vsLg 6-14FT",h:"Opponent FG% 6–14 ft vs league (pts)",    g:"Defense by distance (this season)", get:tdz("d14_vs"), fmt:sg, ax:sg, flat:true, neg:true, dz:true},
+    {k:"tdv_d15", s:"vsLg 15FT+", h:"Opponent FG% 15 ft+ vs league (pts)",     g:"Defense by distance (this season)", get:tdz("d15_vs"), fmt:sg, ax:sg, flat:true, neg:true, dz:true},
+    {k:"tdv_t3",  s:"vsLg 3PT",   h:"Opponent FG% on threes vs league (pts)",  g:"Defense by distance (this season)", get:tdz("t3_vs"),  fmt:sg, ax:sg, flat:true, neg:true, dz:true},
+    {k:"tdn_d6",  s:"RIM ALLOWED",h:"Opponent shots under 6 ft per game", g:"Defense by distance (this season)", get:function(r){ var d=teamDz(r); return d&&d.gp?d.d6_n/d.gp:null; }, fmt:function(v){return (+v).toFixed(1);}, ax:ax, flat:true, dz:true},
     {k:"w",    s:"W",    h:"Wins",                    g:"Record", get:flat("w"), fmt:whole, ax:ax, flat:true},
     {k:"l",    s:"L",    h:"Losses",                  g:"Record", get:flat("l"), fmt:whole, ax:ax, flat:true, neg:true},
     {k:"pct",  s:"WIN%", h:"Win %",                   g:"Record", get:flat("pct"), fmt:pc3, ax:pcax, flat:true}
@@ -5928,8 +5979,15 @@ var Plot=(function(){
   function whyEmpty(){
     var mx=met(f.x), my=met(f.y);
     var gone=(dropX&&mx.snap&&f.chart!=="swarm"?mx:0)||(dropY&&my.snap?my:0);
-    if(gone&&!pts.length) return gone.h+" comes from the salary snapshot, which only covers "+
-      ((window.Players&&Players.snapLabel())||"one season")+" — pick that season, or another stat.";
+    if(gone&&!pts.length) return gone.h+" comes from the salary snapshot for "+
+      ((window.Players&&Players.snapLabel())||"last season")+" and from our own play-by-play for this season — pick one of those, or another stat.";
+    var dgone=(dropX&&mx.dz&&f.chart!=="swarm"?mx:0)||(dropY&&my.dz?my:0);
+    if(dgone&&!pts.length){
+      var U=window.Players&&Players.usage&&Players.usage();
+      if(!U) return "Reading this season’s play-by-play…";
+      if(!U.defense) return "On-court defense is waiting on a one-time database update (schema §18).";
+      return dgone.h+" comes from this season’s play-by-play — pick "+(((window.Players&&Players.seasons()[0])||{}).label||"this season")+" in Season.";
+    }
     if(f.chart==="swarm"&&dropX&&!pts.length) return "Nobody here has a "+grp(f.g).h.toLowerCase()+" on file.";
     if(!isNba()&&!pts.length&&(/^sd_/.test(f.y)||(/^sd_/.test(f.x)&&f.chart!=="swarm"))) return "Steadiness scores need 20 games at 10+ minutes, and nobody has that many this season yet — pick 2025-26 in Season.";
     if(isNba()){ var y=nbaSeason(); return nbaBusy[y]?"Reading the thirty teams from ESPN…":(nbaErr[y]?"Couldn’t read ESPN’s team feed ("+nbaErr[y]+").":"ESPN has no team numbers for "+((window.Players&&Players.seasonLabel())||"that season")+" yet."); }

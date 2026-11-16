@@ -1250,3 +1250,12 @@ create table if not exists public.player_elig (
 );
 alter table public.player_elig enable row level security;
 grant all on public.player_elig to service_role;
+
+-- 18. Rebound splits and on-court defense (added 2026-11-16), from the same gameflows:
+-- each player's offensive / defensive rebounds, and opponents' shooting while he was
+-- on the floor by distance (dz: {d6, d14, d15, t3} → [attempts, makes]); per team, the
+-- same for every shot taken against it. The sync re-pulls any game stored without them.
+alter table public.usage_players add column if not exists oreb integer;
+alter table public.usage_players add column if not exists dreb integer;
+alter table public.usage_players add column if not exists dz   jsonb;
+alter table public.usage_games   add column if not exists dz   jsonb;

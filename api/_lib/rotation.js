@@ -148,9 +148,14 @@ async function sync(opts) {
   catch (e) { stored = (await supa.select("rotation_games", "select=game_id&limit=10000")).map((r) => ({ game_id: r.game_id, starter_stint_min: 1 })); }
   const stale = new Set(stored.filter((r) => !(Number(r.starter_stint_min) > 0)).map((r) => r.game_id));
   // usage rows arrived later than rotation rows; a game stored without them is pulled again
-  let usageHave = null;
-  try { usageHave = new Set((await supa.select("usage_games", "select=game_id&limit=10000")).map((r) => r.game_id)); }
-  catch (e) { out.notes.push("usage tables missing (run supabase/schema.sql): " + (e.message || e)); }
+  // and one stored before the rebound / on-court defense columns (schema §18) is pulled again too
+  let usageHave = null, ext = true;
+  try { usageHave = new Set((await supa.select("usage_games", "select=game_id,dz&limit=10000")).filter((r) => r.dz).map((r) => r.game_id)); }
+  catch (e) {
+    ext = false;
+    try { usageHave = new Set((await supa.select("usage_games", "select=game_id&limit=10000")).map((r) => r.game_id)); out.notes.push("defense columns missing (schema §18): rebounds and on-court defense wait for it"); }
+    catch (e2) { out.notes.push("usage tables missing (run supabase/schema.sql): " + (e2.message || e2)); }
+  }
   const have = new Set(stored.map((r) => r.game_id).filter((g) => !stale.has(g) && (!usageHave || usageHave.has(g))));
   out.stored = have.size;
   // newest first: the page is opened for last night, and the older games follow on the next call
@@ -168,6 +173,7 @@ async function sync(opts) {
       await supa.upsert("rotation_players", rw.players, "game_id,player_id");
       if (usageHave) {
         const uw = usage.rows(g, e);
+        if (!ext) { uw.games.forEach((r) => { delete r.dz; }); uw.players.forEach((r) => { delete r.oreb; delete r.dreb; delete r.dz; }); }
         await supa.upsert("usage_games", uw.games, "game_id,team");
         await supa.upsert("usage_players", uw.players, "game_id,player_id");
       }

@@ -61,11 +61,60 @@ function zone14(sh, three) {
   return th < -60 ? "m16l" : (th < -20 ? "m16lc" : (th <= 20 ? "m16c" : (th <= 60 ? "m16rc" : "m16r")));
 }
 
+// ---- defense on the floor -------------------------------------------------------
+// Opponents' shooting while a player is on the court, by distance: the NBA's own
+// closest-defender tracking isn't something the site can read, so this is the on-court
+// version — every opponent shot in his stints, whoever contested it. Bands: d6 = under
+// 6 ft, d14 = 6–14 ft, d15 = 15 ft and out (twos), t3 = threes. Each is [attempts, makes].
+const D_KEYS = ["d6", "d14", "d15", "t3"];
+function clockSecs(period, clock) {
+  const m = /^(\d+):(\d+(?:\.\d+)?)$/.exec(String(clock || "")); if (!m) return null;
+  const base = period <= 4 ? (period - 1) * 720 : 2880 + (period - 5) * 300, plen = period <= 4 ? 720 : 300;
+  return base + plen - (Number(m[1]) * 60 + Number(m[2]));
+}
+function distOf(desc, sh) {
+  let dist = sh && sh.dist != null ? Number(sh.dist) : null;
+  if (dist == null || isNaN(dist)) { const m = /(\d+)'/.exec(desc || ""); dist = m ? Number(m[1]) : (/layup|dunk|tip/i.test(desc || "") ? 0 : null); }
+  return dist;
+}
+function dband(desc, sh, three) {
+  if (three) return "t3";
+  const d = distOf(desc, sh); if (d == null) return null;
+  return d < 6 ? "d6" : (d < 15 ? "d14" : "d15");
+}
+// { teams: {tri: dz of the shots taken against it}, players: {playerId: dz while he was on}, checked, short }
+function defense(g) {
+  const ps = g.players || [], onFloor = [], shots = [];
+  ps.forEach((p) => (p.stints || []).forEach((st) => {
+    const per = Number(st.period) || 1, a = clockSecs(per, st.inTime), b = clockSecs(per, st.outTime);
+    if (a != null && b != null) onFloor.push({ id: p.playerId, team: p.team, a: a, b: b });
+    (st.events || []).forEach((e) => {
+      const t = String(e.type || "");
+      if (t !== "Make2" && t !== "Make3" && t !== "miss2" && t !== "miss3") return;
+      const s = clockSecs(per, e.clock); if (s == null) return;
+      shots.push({ team: p.team, t: s, made: t.indexOf("Make") === 0, band: dband(e.description, e.shot, /3$/.test(t)) });
+    });
+  }));
+  const teams = {}, players = {}; let checked = 0, short = 0;
+  shots.forEach((s) => {
+    if (!s.band) return;
+    // the other side's players on the floor: in before the shot (a sub at that clock came in after it), out at or after it
+    const d = onFloor.filter((f) => f.team !== s.team && f.a < s.t && s.t <= f.b);
+    const def = d.length ? d[0].team : null;
+    checked++; if (d.length !== 5) short++;
+    const add = (o) => { const v = o[s.band] || (o[s.band] = [0, 0]); v[0]++; if (s.made) v[1]++; };
+    const opp = (g.homeTeam && g.homeTeam.tricode === s.team) ? (g.awayTeam && g.awayTeam.tricode) : (g.homeTeam && g.homeTeam.tricode);
+    add(teams[opp || def] = teams[opp || def] || {});
+    const seen = {}; d.forEach((f) => { if (seen[f.id]) return; seen[f.id] = 1; add(players[f.id] = players[f.id] || {}); });
+  });
+  return { teams: teams, players: players, checked: checked, short: short };
+}
+
 const AST_RE = /\(([A-Z]\. ?[^()]+?) \d+ AST\)/;
 function shortName(name) { const p = String(name || "").split(" "); return p.length > 1 ? (p[0][0] + ". " + p.slice(1).join(" ")).toLowerCase() : String(name || "").toLowerCase(); }
 
 function newPlayer() {
-  return { min: 0, fga: 0, fta: 0, tov: 0, pts: 0, ast: 0, astDesc: 0, fgm: 0, fg3a: 0, fg3m: 0, astFg: 0,
+  return { min: 0, fga: 0, fta: 0, tov: 0, pts: 0, ast: 0, astDesc: 0, fgm: 0, fg3a: 0, fg3m: 0, astFg: 0, oreb: 0, dreb: 0,
     q: [0, 1, 2, 3, 4].map(() => ({ min: 0, pos: 0, fga: 0 })), pt: {}, zone: {}, z14: {} };
 }
 function bump(o, k, made) { const v = o[k] || (o[k] = [0, 0]); v[0]++; if (made) v[1]++; }
@@ -85,6 +134,7 @@ function teamUsage(g, tri) {
       a.min += mins; a.q[qi].min += mins; a.q[qi].fga += fga; a.q[qi].pos += pos; T.q[qi].pos += pos;
       a.fga += fga; a.fta += fta; a.tov += tov; a.pts += Number(s.pts) || 0; a.ast += Number(s.ast) || 0;
       a.fgm += Number(s.fgm) || 0; a.fg3a += Number(s.fg3a) || 0; a.fg3m += Number(s.fg3m) || 0;
+      a.oreb += Number(s.oreb) || 0; a.dreb += Math.max(0, (Number(s.reb) || 0) - (Number(s.oreb) || 0));
       T.min += mins; T.pos += pos; T.fga += fga; T.fta += fta; T.tov += tov;
       (st.events || []).forEach((e) => {
         const t = String(e.type || "");
@@ -109,7 +159,7 @@ function teamUsage(g, tri) {
   const players = Object.keys(P).filter((id) => P[id].name && P[id].min > 0).map((id) => {
     const a = P[id];
     return { id: id, name: a.name, starter: a.starter, min: r1(a.min), fga: a.fga, fta: a.fta, tov: a.tov, pts: a.pts, ast: useDesc ? a.astDesc : a.ast,
-      fgm: a.fgm, fg3a: a.fg3a, fg3m: a.fg3m, ast_fg: a.astFg, q: a.q.map((x) => ({ min: r1(x.min), pos: r1(x.pos), fga: x.fga })), pt: a.pt, zone: a.zone, z14: Object.keys(a.z14).length ? a.z14 : null };
+      fgm: a.fgm, fg3a: a.fg3a, fg3m: a.fg3m, ast_fg: a.astFg, oreb: a.oreb, dreb: a.dreb, q: a.q.map((x) => ({ min: r1(x.min), pos: r1(x.pos), fga: x.fga })), pt: a.pt, zone: a.zone, z14: Object.keys(a.z14).length ? a.z14 : null };
   }).sort((x, y) => y.min - x.min);
   return { min: r1(T.min), pos: r1(T.pos), fga: T.fga, fta: T.fta, tov: T.tov, q: T.q.map((x) => ({ min: x.min, pos: r1(x.pos) })), pt: T.pt, zone: T.zone, players: players };
 }
@@ -118,12 +168,12 @@ function teamUsage(g, tri) {
 function rows(g, entry) {
   const home = g.homeTeam && g.homeTeam.tricode, away = g.awayTeam && g.awayTeam.tricode;
   if (!home || !away) throw new Error("gameflow without teams");
-  const games = [], players = [], built = new Date().toISOString();
+  const games = [], players = [], built = new Date().toISOString(), D = defense(g);
   [home, away].forEach((tri) => {
     const t = teamUsage(g, tri), isHome = tri === home, opp = isHome ? away : home;
-    games.push({ game_id: String(g.gameId), team: tri, opp: opp, home: isHome, date: entry.date, min: t.min, poss: t.pos, fga: t.fga, fta: t.fta, tov: t.tov, q: t.q, pt: t.pt, zone: t.zone, built_at: built });
+    games.push({ game_id: String(g.gameId), team: tri, opp: opp, home: isHome, date: entry.date, min: t.min, poss: t.pos, fga: t.fga, fta: t.fta, tov: t.tov, q: t.q, pt: t.pt, zone: t.zone, dz: D.teams[tri] || {}, built_at: built });
     t.players.forEach((p) => players.push({ game_id: String(g.gameId), date: entry.date, team: tri, opp: opp, player_id: p.id, name: p.name, starter: p.starter, min: p.min,
-      fga: p.fga, fta: p.fta, tov: p.tov, pts: p.pts, ast: p.ast, fgm: p.fgm, fg3a: p.fg3a, fg3m: p.fg3m, ast_fg: p.ast_fg, q: p.q, pt: p.pt, zone: p.zone, z14: p.z14 }));
+      fga: p.fga, fta: p.fta, tov: p.tov, pts: p.pts, ast: p.ast, fgm: p.fgm, fg3a: p.fg3a, fg3m: p.fg3m, ast_fg: p.ast_fg, oreb: p.oreb, dreb: p.dreb, q: p.q, pt: p.pt, zone: p.zone, z14: p.z14, dz: D.players[p.id] || {} }));
   });
   return { games: games, players: players };
 }
@@ -146,8 +196,17 @@ function boxCreation(ast, pts, tov, fg3a, fg3m) { const prof = (2 / (1 + Math.ex
 const r3 = (x) => Math.round(x * 1000) / 1000;
 async function seasonTable(supa, opts) {
   const last = Number((opts || {}).last) || 0;
-  const games = await pageAll(supa, "usage_games", "game_id,team,date,min,poss");
-  const players = await pageAll(supa, "usage_players", "game_id,date,team,player_id,name,starter,min,fga,fta,tov,pts,ast,fgm,fg3a,fg3m,ast_fg");
+  // rebounds and on-court defense arrived later (schema §18): read them when the columns are there
+  let ext = true, games, players;
+  try {
+    games = await pageAll(supa, "usage_games", "game_id,team,date,min,poss,dz");
+    players = await pageAll(supa, "usage_players", "game_id,date,team,player_id,name,starter,min,fga,fta,tov,pts,ast,fgm,fg3a,fg3m,ast_fg,oreb,dreb,dz");
+  } catch (e) {
+    if (!/dz|oreb|dreb|column/i.test(e.message || "")) throw e;
+    ext = false;
+    games = await pageAll(supa, "usage_games", "game_id,team,date,min,poss");
+    players = await pageAll(supa, "usage_players", "game_id,date,team,player_id,name,starter,min,fga,fta,tov,pts,ast,fgm,fg3a,fg3m,ast_fg");
+  }
   // the games in scope per team: all, or the last N by date
   const byTeam = {}; games.forEach((g) => { (byTeam[g.team] = byTeam[g.team] || []).push(g); });
   const inScope = {}; const G = {};
@@ -161,10 +220,31 @@ async function seasonTable(supa, opts) {
     const g = G[k]; const a = by[r.player_id] || (by[r.player_id] = { id: r.player_id, name: r.name, team: r.team, last: "", gp: 0, starter: 0, min: 0, fga: 0, fta: 0, tov: 0, pts: 0, ast: 0, fgm: 0, fg3a: 0, fg3m: 0, ast_fg: 0, tmin: 0, tposs: 0, onfloor: 0 });
     if (r.date >= a.last) { a.last = r.date; a.name = r.name; a.team = r.team; }
     a.gp++; if (r.starter) a.starter++;
+    if (r.oreb != null) { a.oreb = (a.oreb || 0) + Number(r.oreb); a.dreb = (a.dreb || 0) + (Number(r.dreb) || 0); a.rebGp = (a.rebGp || 0) + 1; }
+    if (r.dz) { const z = a.dz || (a.dz = {}); D_KEYS.forEach((k) => { const v = r.dz[k]; if (!v) return; const t = z[k] || (z[k] = [0, 0]); t[0] += v[0]; t[1] += v[1]; }); }
     ["min", "fga", "fta", "tov", "pts", "ast", "fgm", "fg3a", "fg3m", "ast_fg"].forEach((f) => { a[f] += Number(r[f]) || 0; });
     const tmin = Number(g.min) || 0, tposs = Number(g.poss) || 0; a.tmin += tmin; a.tposs += tposs;
     if (tmin) a.onfloor += tposs * (Number(r.min) || 0) / (tmin / 5);
   });
+  // the league's shooting by band over the same games, for "vs league"
+  const lg = {}, T = {};
+  games.forEach((g) => {
+    const k = g.game_id + "|" + g.team; if (!inScope[k] || !g.dz) return;
+    const t = T[g.team] || (T[g.team] = { gp: 0, dz: {} }); t.gp++;
+    D_KEYS.forEach((b) => { const v = g.dz[b]; if (!v) return; [lg, t.dz].forEach((o) => { const x = o[b] || (o[b] = [0, 0]); x[0] += v[0]; x[1] += v[1]; }); });
+  });
+  const pct = (v, min) => (v && v[0] >= (min || 1) ? r3(v[1] / v[0]) : null);
+  const all = (z) => D_KEYS.reduce((s, k) => { const v = z[k]; if (v) { s[0] += v[0]; s[1] += v[1]; } return s; }, [0, 0]);
+  const lgp = {}; D_KEYS.forEach((k) => { lgp[k] = pct(lg[k]); }); lgp.all = pct(all(lg));
+  // a band's figure needs ten shots faced; "vs" is percentage points against the league in that band
+  function dstats(z) {
+    if (!z) return null;
+    const out = {}; D_KEYS.concat(["all"]).forEach((k) => {
+      const v = k === "all" ? all(z) : z[k], p = pct(v, k === "all" ? 25 : 10);
+      out[k] = p; out[k + "_vs"] = p != null && lgp[k] != null ? Math.round((p - lgp[k]) * 1000) / 10 : null; out[k + "_n"] = v ? v[0] : 0;
+    });
+    return out;
+  }
   const rows = Object.keys(by).map((id) => {
     const a = by[id], gp = a.gp, poss = a.fga + 0.44 * a.fta + a.tov;
     const usg = a.tposs && a.min ? 100 * poss * (a.tmin / 5) / (a.min * a.tposs) : 0;
@@ -174,9 +254,13 @@ async function seasonTable(supa, opts) {
     const tsa = a.fga + 0.44 * a.fta;
     return { id: a.id, name: a.name, team: a.team, gp: gp, starter: a.starter, min: r1(a.min / gp), usg: r1(usg), pos: r1(poss / gp), share: a.tposs ? r1(100 * poss / a.tposs) : 0,
       load: r1(load), creation: r1(bc), ts: tsa ? r3(a.pts / (2 * tsa)) : null, tpar: a.fga ? r3(a.fg3a / a.fga) : null, at: a.tov ? r1(a.ast / a.tov) : (a.ast ? 99 : null),
-      fga: r1(a.fga / gp), fta: r1(a.fta / gp), tov: r1(a.tov / gp), ast: r1(a.ast / gp), pts: r1(a.pts / gp), tpa: r1(a.fg3a / gp), ast_rate: a.fgm ? Math.round(100 * a.ast_fg / a.fgm) : null };
+      fga: r1(a.fga / gp), fta: r1(a.fta / gp), tov: r1(a.tov / gp), ast: r1(a.ast / gp), pts: r1(a.pts / gp), tpa: r1(a.fg3a / gp), ast_rate: a.fgm ? Math.round(100 * a.ast_fg / a.fgm) : null,
+      oreb: a.rebGp ? r1(a.oreb / a.rebGp) : null, dreb: a.rebGp ? r1(a.dreb / a.rebGp) : null, d: dstats(a.dz) };
   }).sort((x, y) => y.usg - x.usg);
-  return { built: new Date().toISOString(), scope: last ? "last" + last : "season", games: Object.keys(inScope).length / 2, teams: Object.keys(byTeam).length, rows: rows, attribution: "Play-by-play from popcornmachine.com" };
+  const teamD = {}; Object.keys(T).forEach((tri) => { teamD[tri] = Object.assign({ gp: T[tri].gp }, dstats(T[tri].dz)); });
+  return { built: new Date().toISOString(), scope: last ? "last" + last : "season", games: Object.keys(inScope).length / 2, teams: Object.keys(byTeam).length, rows: rows,
+    defense: ext ? { league: lgp, teams: teamD, bands: { d6: "under 6 ft", d14: "6–14 ft", d15: "15 ft+ (twos)", t3: "threes" } } : null,
+    attribution: "Play-by-play from popcornmachine.com" };
 }
 
-module.exports = { classify, zoneOf, zone14, teamUsage, rows, seasonTable, PT_KEYS, ZONE_KEYS };
+module.exports = { classify, zoneOf, zone14, teamUsage, rows, seasonTable, defense, dband, PT_KEYS, ZONE_KEYS, D_KEYS };
