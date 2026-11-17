@@ -91,13 +91,15 @@ async function season(supa) {
   if (!held.length) return { built: new Date().toISOString(), season: meta.season, currentWeek: cur, today: today, weeks: weeks, teams: {} };
   const first = held[0].start, last = held[held.length - 1].end;
 
-  const lines = await pages(supa, "lineup_days", "select=team_id,date,yahoo_key,espn_id,pos,status&date=gte." + first + "&date=lte." + last + "&order=date.asc,team_id.asc,yahoo_key.asc");
+  const lines = await pages(supa, "lineup_days", "select=team_id,date,yahoo_key,espn_id,pos,status,nba&date=gte." + first + "&date=lte." + last + "&order=date.asc,team_id.asc,yahoo_key.asc");
   const ids = Array.from(new Set(lines.map((l) => l.espn_id).filter(Boolean)));
-  // played[id|date] = 1 for a line he played; hadGame[id|date] = 1 whenever his team played that day
-  const played = {}, hadGame = {};
+  // played[id|date] = 1 for a line he played; teamDay[NBA team|date] = 1 when that team played (seen
+  // from any rostered player's line: a player on the inactive list has no line at all, so his own
+  // box can't say whether his team played)
+  const played = {}, teamDay = {};
   for (let i = 0; i < ids.length; i += 150) {
-    const box = await pages(supa, "nba_box", "select=espn_id,date,played&date=gte." + first + "&date=lte." + last + "&espn_id=in.(" + ids.slice(i, i + 150).join(",") + ")&order=date.asc,espn_id.asc");
-    box.forEach((b) => { const k = b.espn_id + "|" + b.date; hadGame[k] = 1; if (b.played) played[k] = 1; });
+    const box = await pages(supa, "nba_box", "select=espn_id,date,played,nba&date=gte." + first + "&date=lte." + last + "&espn_id=in.(" + ids.slice(i, i + 150).join(",") + ")&order=date.asc,espn_id.asc");
+    box.forEach((b) => { if (b.played) played[b.espn_id + "|" + b.date] = 1; if (b.nba) teamDay[b.nba + "|" + b.date] = 1; });
   }
   // eligibility: what the lineup reads stored, and Yahoo's players resource for anyone missing
   let elig = null, slots = SLOTS, notes = [];
@@ -140,7 +142,7 @@ async function season(supa) {
     const dk = l.team_id + "|" + l.date; if (!seen[dk]) { seen[dk] = 1; c[2]++; }
     const bk = l.espn_id + "|" + l.date;
     // a late scratch holds his slot in the best fit (the lineup was right when it was set) without counting
-    if (l.espn_id && hadGame[bk] && !played[bk] && !ledger.BENCH[l.pos] && !OUT_STATUS.test(l.status || "") && elig && fitDay(w, l.date)) {
+    if (l.espn_id && l.nba && teamDay[l.nba + "|" + l.date] && !played[bk] && !ledger.BENCH[l.pos] && !OUT_STATUS.test(l.status || "") && elig && fitDay(w, l.date)) {
       c[6]++;
       (avail[dk] = avail[dk] || []).push({ elig: new Set((elig[l.yahoo_key] || "").split(",").filter(Boolean)), sat: l.pos });
       return;
