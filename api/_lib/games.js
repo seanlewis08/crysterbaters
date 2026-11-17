@@ -18,6 +18,8 @@ const ledger = require("./ledger");
 
 const SLOTS = ["G", "G", "F", "F", "C", "Util"];
 const OUT = { IL: 1, "IL+": 1, IR: 1, NA: 1 };
+// listed out on the day: starting him anyway isn't a late scratch, it's a lineup left unset
+const OUT_STATUS = /^(O|OUT|INJ|SUSP|NA|DTD-O)$/i;
 // can a player with these eligible positions (Set; empty = unknown) sit in this slot? He can
 // always sit where he actually sat that day; with nothing known about him, only Util as well.
 function fits(slot, elig, sat) {
@@ -89,12 +91,13 @@ async function season(supa) {
   if (!held.length) return { built: new Date().toISOString(), season: meta.season, currentWeek: cur, today: today, weeks: weeks, teams: {} };
   const first = held[0].start, last = held[held.length - 1].end;
 
-  const lines = await pages(supa, "lineup_days", "select=team_id,date,yahoo_key,espn_id,pos&date=gte." + first + "&date=lte." + last + "&order=date.asc,team_id.asc,yahoo_key.asc");
+  const lines = await pages(supa, "lineup_days", "select=team_id,date,yahoo_key,espn_id,pos,status&date=gte." + first + "&date=lte." + last + "&order=date.asc,team_id.asc,yahoo_key.asc");
   const ids = Array.from(new Set(lines.map((l) => l.espn_id).filter(Boolean)));
-  const played = {};
+  // played[id|date] = 1 for a line he played; hadGame[id|date] = 1 whenever his team played that day
+  const played = {}, hadGame = {};
   for (let i = 0; i < ids.length; i += 150) {
-    const box = await pages(supa, "nba_box", "select=espn_id,date&played=is.true&date=gte." + first + "&date=lte." + last + "&espn_id=in.(" + ids.slice(i, i + 150).join(",") + ")&order=date.asc,espn_id.asc");
-    box.forEach((b) => { played[b.espn_id + "|" + b.date] = 1; });
+    const box = await pages(supa, "nba_box", "select=espn_id,date,played&date=gte." + first + "&date=lte." + last + "&espn_id=in.(" + ids.slice(i, i + 150).join(",") + ")&order=date.asc,espn_id.asc");
+    box.forEach((b) => { const k = b.espn_id + "|" + b.date; hadGame[k] = 1; if (b.played) played[k] = 1; });
   }
   // eligibility: what the lineup reads stored, and Yahoo's players resource for anyone missing
   let elig = null, slots = SLOTS, notes = [];
@@ -122,7 +125,9 @@ async function season(supa) {
   // teams[id][w] = [games from starting slots, games on the bench, days we hold a lineup for,
   //                 most games that fitted (before the cap; null without positions),
   //                 games played by players whose positions we don't know,
-  //                 games counted on the days the fit covers]
+  //                 games counted on the days the fit covers,
+  //                 late scratches on those days: starters whose team played but who didn't, and who
+  //                 weren't listed out — the manager set a lineup that should have counted that game]
   // A finished week's fit covers every day; this week's covers the days already over (before
   // today), so the page can show what has been left on the bench so far.
   const teams = {}, seen = {}, avail = {};
@@ -131,9 +136,16 @@ async function season(supa) {
   lines.forEach((l) => {
     const w = weekOfDate[l.date]; if (!w || !l.team_id) return;
     const t = teams[l.team_id] = teams[l.team_id] || {};
-    const c = t[w] = t[w] || [0, 0, 0, null, 0, 0];
+    const c = t[w] = t[w] || [0, 0, 0, null, 0, 0, 0];
     const dk = l.team_id + "|" + l.date; if (!seen[dk]) { seen[dk] = 1; c[2]++; }
-    if (!l.espn_id || !played[l.espn_id + "|" + l.date]) return;
+    const bk = l.espn_id + "|" + l.date;
+    // a late scratch holds his slot in the best fit (the lineup was right when it was set) without counting
+    if (l.espn_id && hadGame[bk] && !played[bk] && !ledger.BENCH[l.pos] && !OUT_STATUS.test(l.status || "") && elig && fitDay(w, l.date)) {
+      c[6]++;
+      (avail[dk] = avail[dk] || []).push({ elig: new Set((elig[l.yahoo_key] || "").split(",").filter(Boolean)), sat: l.pos });
+      return;
+    }
+    if (!l.espn_id || !played[bk]) return;
     if (ledger.BENCH[l.pos]) c[1]++; else { c[0]++; if (fitDay(w, l.date)) c[5]++; }
     if (elig && fitDay(w, l.date) && !OUT[l.pos]) {
       const e = elig[l.yahoo_key] || "";

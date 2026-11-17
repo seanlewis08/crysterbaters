@@ -8549,9 +8549,12 @@ var GamesLog=(function(){
   function cell(id,w){
     var c=(D.teams[id]||{})[w.w]||null;
     /* [6] = games counted on the days the fit covers: the whole week once it's over, the days already played this week */
-    var past=c?(c[5]!=null?c[5]:c[0]):0, fit=c&&c[3]!=null?Math.min(w.cap,Math.max(c[3],past)):null;
-    if(w.state==="live"&&live&&live[id]) return [live[id].played+live[id].live, c?c[1]:0, c?c[2]:0, live[id].sched, fit, c?c[4]||0:0, past];
-    return c?[c[0],c[1],c[2],null,fit,c[4]||0,past]:null;
+    /* [4] = what could have counted: what did, plus the best fit's extra games over the same days, less the late
+       scratches (a starter who was in the lineup and didn't play held that slot honestly), held to the cap. [7] = scratches */
+    var past=c?(c[5]!=null?c[5]:c[0]):0, scr=c?c[6]||0:0, fit=null;
+    if(c&&c[3]!=null){ var extra=Math.max(0,c[3]-past-scr); fit=past+(past<w.cap?Math.min(extra,w.cap-past):0); }
+    if(w.state==="live"&&live&&live[id]) return [live[id].played+live[id].live, c?c[1]:0, c?c[2]:0, live[id].sched, fit, c?c[4]||0:0, past, scr];
+    return c?[c[0],c[1],c[2],null,fit,c[4]||0,past,scr]:null;
   }
   /* games left on the bench: what fitted (held to the cap) less what counted, over the days the fit covers —
      the whole of a finished week, or this week's days that are already over */
@@ -8623,7 +8626,7 @@ var GamesLog=(function(){
         var why=!known?"":(miss?" · "+c[4]+" could have counted with the players you had ("+miss+" left on the bench)"
                                :" · no other game would have fit: every player who played and could fill an open starting slot was in one");
         if(liveMiss) why=" · "+miss+" left on the bench so far, on the days already played"+(onPace?" — but the lineup as set still reaches the cap ("+(c[0]+c[3])+"), so they cost nothing yet":(c[3]!=null?" — and the lineup as set only reaches "+(c[0]+c[3])+" of "+w.cap+", so they're costing you":""));
-        var tip="Week "+w.w+" · "+span(w)+": "+c[0]+" of "+w.cap+" counted"+(c[0]>w.cap?" — "+(c[0]-w.cap)+" over":"")+why+(c[3]!=null?", "+c[3]+" still to come for the lineup as set":"")+" · "+c[1]+" played on the bench"+(c[5]&&known?" · "+c[5]+" of those games by a player whose positions Yahoo didn't give, counted for Util only":"")+(gap?" · only "+c[2]+" of "+days(w)+" days of lineups stored":"");
+        var tip="Week "+w.w+" · "+span(w)+": "+c[0]+" of "+w.cap+" counted"+(c[0]>w.cap?" — "+(c[0]-w.cap)+" over":"")+why+(c[3]!=null?", "+c[3]+" still to come for the lineup as set":"")+" · "+c[1]+" played on the bench"+(c[5]&&known?" · "+c[5]+" of those games by a player whose positions Yahoo didn't give, counted for Util only":"")+(c[7]&&(known||liveMiss||w.state!=="ahead")?" · "+c[7]+" late scratch"+(c[7]===1?"":"es")+" (a starter whose team played but who didn't) not held against you":"")+(gap?" · only "+c[2]+" of "+days(w)+" days of lineups stored":"");
         h+='<td class="c '+cls+now+(gap?" gap":"")+'" title="'+attr(tip)+'">'+c[0]+(miss?'<sup class="gl-miss'+(onPace?' soft':'')+'">−'+miss+'</sup>':'')+(c[3]!=null?'<small>+'+c[3]+' to come</small>':'')+'<span class="bar"><span style="width:'+pct+'%"></span></span></td>';
       });
       var tt=totals(id);
@@ -8634,7 +8637,7 @@ var GamesLog=(function(){
     tb.innerHTML=h+'</tbody>';
     $("gl-foot").innerHTML='Counted = games played by players in a starting slot (not BN, IL, IL+ or NA) on the day, from each day\'s lineup as set in Yahoo and ESPN box scores. '+
       'Caps come from the <button class="back" data-go="cap" style="margin:0;padding:0">Games Cap</button> page; a dashed cap isn\'t locked yet and a blue one is a short or long week. '+
-      (D.positions?'A small <sup class="gl-miss">−N</sup> on a finished week is how many more games could have counted: each day, the players on your roster who played (not ones in IL slots) fitted into G G F F C Util by their Yahoo positions, the week held to its cap. It\'s hindsight — a late scratch you started while a bench player played still counts as a game that was there — and it doesn\'t count free agents you could have picked up. A short week with no −N had no other game to play. ':'Missed games appear once positions are stored (schema §17). ')+
+      (D.positions?'A small <sup class="gl-miss">−N</sup> on a finished week is how many more games could have counted: each day, the players on your roster who played (not ones in IL slots) fitted into G G F F C Util by their Yahoo positions, the week held to its cap. A starter whose team played but who didn\'t (a late scratch, unless he was listed out) isn\'t held against you: his slot counts as filled. It doesn\'t count free agents you could have picked up. A short week with no −N had no other game to play. ':'Missed games appear once positions are stored (schema §17). ')+
       (cw?'This week counts games played or in progress, with the games still scheduled for the lineup as set underneath. Its −N covers the days already played: amber when the lineup as set won\'t reach the cap (those games are costing you), grey when it still will (they cost nothing yet). ':'')+
       (gaps?'<b>*</b> a day or more of lineups is missing from the ledger for that week, so the number may be short. ':'')+
       'Hover a cell for the detail.';
