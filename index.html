@@ -1490,6 +1490,7 @@ footer p + p{margin-top:11px}
 .gl td.c.maxed .bar span{background:var(--cyan)}
 sup.gl-miss{font-size:10.5px;font-weight:700;color:var(--amber);margin-left:1px;vertical-align:super;line-height:0;font-family:var(--mono)}
 .gl td.tot.miss{color:var(--amber);font-weight:600}
+sup.gl-miss.soft{color:var(--dim);font-weight:500}
 .gl-key i.k-max{background:var(--cyan)}
 .gl td.c small{display:block;font-size:10px;color:var(--dim);font-weight:400;margin-top:3px;white-space:nowrap}
 .gl td.c.ahead{color:var(--line-2)}
@@ -8547,11 +8548,14 @@ var GamesLog=(function(){
      games that could have counted (finished weeks with positions known, held to the cap) or null, games by players of unknown position] */
   function cell(id,w){
     var c=(D.teams[id]||{})[w.w]||null;
-    if(w.state==="live"&&live&&live[id]) return [live[id].played+live[id].live, c?c[1]:0, c?c[2]:0, live[id].sched, null, 0];
-    return c?[c[0],c[1],c[2],null,(c[3]==null?null:Math.min(w.cap,Math.max(c[3],c[0]))),c[4]||0]:null;
+    /* [6] = games counted on the days the fit covers: the whole week once it's over, the days already played this week */
+    var past=c?(c[5]!=null?c[5]:c[0]):0, fit=c&&c[3]!=null?Math.min(w.cap,Math.max(c[3],past)):null;
+    if(w.state==="live"&&live&&live[id]) return [live[id].played+live[id].live, c?c[1]:0, c?c[2]:0, live[id].sched, fit, c?c[4]||0:0, past];
+    return c?[c[0],c[1],c[2],null,fit,c[4]||0,past]:null;
   }
-  /* games a team left on the table in a finished week: what fitted, held to the cap, less what counted */
-  function missed(c,w){ return c&&c[4]!=null&&c[0]<w.cap?Math.max(0,c[4]-c[0]):0; }
+  /* games left on the bench: what fitted (held to the cap) less what counted, over the days the fit covers —
+     the whole of a finished week, or this week's days that are already over */
+  function missed(c,w){ return c&&c[4]!=null&&c[6]<w.cap?Math.max(0,c[4]-c[6]):0; }
   function totals(id){
     var used=0, caps=0, unused=0, over=0, bench=0, miss=0;
     D.weeks.forEach(function(w){ if(w.state==="ahead") return; var c=cell(id,w); if(!c) return;
@@ -8577,7 +8581,7 @@ var GamesLog=(function(){
     var cw=D.weeks.filter(function(w){ return w.state==="live"; })[0];
     $("gl-eyebrow").textContent=cw?"Week "+cw.w+" · cap "+cw.cap:"Season "+(D.season||"");
     $("gl-key").innerHTML=view==="used"
-      ?'<span><i class="k-full"></i>used the whole cap</span><span><i class="k-max"></i>short, but played every game that fit</span><span><i class="k-under"></i>short, with games left on the bench <sup class="gl-miss">−3</sup></span><span><i class="k-over"></i>over the cap</span><span><i class="k-prov"></i>cap not locked yet</span>'
+      ?'<span><i class="k-full"></i>used the whole cap</span><span><i class="k-max"></i>short, but played every game that fit</span><span><i class="k-under"></i>short, with games left on the bench <sup class="gl-miss">−3</sup></span><span><i class="k-over"></i>over the cap</span><span><i class="k-prov"></i>cap not locked yet</span>'+(D.weeks.some(function(w){return w.state==="live";})?'<span><sup class="gl-miss soft">−2</sup> this week, cap still in reach</span>':'')
       :'<span>Games your players played while sitting in BN, IL, IL+ or NA — games that didn\'t count.</span>';
     var ids=T.map(function(t){ return t.id; });
     ids.sort(function(a,b){ var x=sortVal(a), y=sortVal(b); if(x<y) return -sort.dir; if(x>y) return sort.dir; return byId(a).name<byId(b).name?-1:1; });
@@ -8611,13 +8615,16 @@ var GamesLog=(function(){
           h+='<td class="c'+now+(gap?" gap":"")+'" style="background:rgba(193,87,26,'+a+')" title="'+attr("Week "+w.w+": "+c[1]+" games played on the bench, "+c[0]+" counted")+'">'+c[1]+'</td>';
           return;
         }
-        var miss=missed(c,w), known=c[4]!=null&&c[0]<w.cap;
+        var miss=missed(c,w), known=w.state==="done"&&c[4]!=null&&c[0]<w.cap;
+        /* this week: games already left on the bench only cost something if the lineup as set won't reach the cap anyway */
+        var liveMiss=w.state==="live"&&miss, onPace=liveMiss&&c[3]!=null&&c[0]+c[3]>=w.cap;
         var cls=c[0]>w.cap?"over":(c[0]===w.cap?"full":(known?(miss?"under":"maxed"):(w.state==="done"&&w.cap-c[0]>=3?"under":"")));
         var pct=Math.min(100,Math.round(c[0]/Math.max(1,w.cap)*100));
         var why=!known?"":(miss?" · "+c[4]+" could have counted with the players you had ("+miss+" left on the bench)"
                                :" · no other game would have fit: every player who played and could fill an open starting slot was in one");
+        if(liveMiss) why=" · "+miss+" left on the bench so far, on the days already played"+(onPace?" — but the lineup as set still reaches the cap ("+(c[0]+c[3])+"), so they cost nothing yet":(c[3]!=null?" — and the lineup as set only reaches "+(c[0]+c[3])+" of "+w.cap+", so they're costing you":""));
         var tip="Week "+w.w+" · "+span(w)+": "+c[0]+" of "+w.cap+" counted"+(c[0]>w.cap?" — "+(c[0]-w.cap)+" over":"")+why+(c[3]!=null?", "+c[3]+" still to come for the lineup as set":"")+" · "+c[1]+" played on the bench"+(c[5]&&known?" · "+c[5]+" of those games by a player whose positions Yahoo didn't give, counted for Util only":"")+(gap?" · only "+c[2]+" of "+days(w)+" days of lineups stored":"");
-        h+='<td class="c '+cls+now+(gap?" gap":"")+'" title="'+attr(tip)+'">'+c[0]+(miss?'<sup class="gl-miss">−'+miss+'</sup>':'')+(c[3]!=null?'<small>+'+c[3]+' to come</small>':'')+'<span class="bar"><span style="width:'+pct+'%"></span></span></td>';
+        h+='<td class="c '+cls+now+(gap?" gap":"")+'" title="'+attr(tip)+'">'+c[0]+(miss?'<sup class="gl-miss'+(onPace?' soft':'')+'">−'+miss+'</sup>':'')+(c[3]!=null?'<small>+'+c[3]+' to come</small>':'')+'<span class="bar"><span style="width:'+pct+'%"></span></span></td>';
       });
       var tt=totals(id);
       if(view==="used") h+='<td class="tot">'+tt.used+'<small>of '+tt.caps+'</small></td><td class="tot">'+tt.unused+'</td>'+(D.positions?'<td class="tot'+(tt.missed?" miss":"")+'">'+tt.missed+'</td>':'')+'<td class="tot'+(tt.over?" bad":"")+'">'+tt.over+'</td>';
@@ -8628,7 +8635,7 @@ var GamesLog=(function(){
     $("gl-foot").innerHTML='Counted = games played by players in a starting slot (not BN, IL, IL+ or NA) on the day, from each day\'s lineup as set in Yahoo and ESPN box scores. '+
       'Caps come from the <button class="back" data-go="cap" style="margin:0;padding:0">Games Cap</button> page; a dashed cap isn\'t locked yet and a blue one is a short or long week. '+
       (D.positions?'A small <sup class="gl-miss">−N</sup> on a finished week is how many more games could have counted: each day, the players on your roster who played (not ones in IL slots) fitted into G G F F C Util by their Yahoo positions, the week held to its cap. It\'s hindsight — a late scratch you started while a bench player played still counts as a game that was there — and it doesn\'t count free agents you could have picked up. A short week with no −N had no other game to play. ':'Missed games appear once positions are stored (schema §17). ')+
-      (cw?'This week counts games played or in progress, with the games still scheduled for the lineup as set underneath; it gets its −N once it\'s over, since a game left on the bench Monday isn\'t lost while the week can still reach the cap. ':'')+
+      (cw?'This week counts games played or in progress, with the games still scheduled for the lineup as set underneath. Its −N covers the days already played: amber when the lineup as set won\'t reach the cap (those games are costing you), grey when it still will (they cost nothing yet). ':'')+
       (gaps?'<b>*</b> a day or more of lineups is missing from the ledger for that week, so the number may be short. ':'')+
       'Hover a cell for the detail.';
   }

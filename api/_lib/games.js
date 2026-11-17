@@ -103,7 +103,7 @@ async function season(supa) {
     (await pages(supa, "player_elig", "select=yahoo_key,elig&order=yahoo_key.asc")).forEach((r) => { if (r.elig) elig[r.yahoo_key] = r.elig; });
   } catch (e) { elig = null; notes.push("positions: the player_elig table isn't there yet (schema §17)"); }
   if (elig) {
-    const doneStart = {}; weeks.forEach((x) => { if (x.state === "done") ledger.daysBetween(x.start, x.end).forEach((d) => { doneStart[d] = 1; }); });
+    const doneStart = {}; weeks.forEach((x) => { if (x.state !== "ahead") ledger.daysBetween(x.start, x.end).forEach((d) => { if (d < today) doneStart[d] = 1; }); });
     const missing = Array.from(new Set(lines.filter((l) => doneStart[l.date] && !OUT[l.pos] && l.espn_id && played[l.espn_id + "|" + l.date] && !elig[l.yahoo_key]).map((l) => l.yahoo_key))).slice(0, 300);
     if (missing.length) {
       try {
@@ -120,25 +120,29 @@ async function season(supa) {
   held.forEach((x) => ledger.daysBetween(x.start, x.end).forEach((d) => { weekOfDate[d] = x.w; }));
 
   // teams[id][w] = [games from starting slots, games on the bench, days we hold a lineup for,
-  //                 most games that fitted (finished weeks, before the cap; else null),
-  //                 games played by players whose positions we don't know]
+  //                 most games that fitted (before the cap; null without positions),
+  //                 games played by players whose positions we don't know,
+  //                 games counted on the days the fit covers]
+  // A finished week's fit covers every day; this week's covers the days already over (before
+  // today), so the page can show what has been left on the bench so far.
   const teams = {}, seen = {}, avail = {};
   const state = {}; weeks.forEach((x) => { state[x.w] = x.state; });
+  const fitDay = (w, d) => state[w] === "done" || (state[w] === "live" && d < today);
   lines.forEach((l) => {
     const w = weekOfDate[l.date]; if (!w || !l.team_id) return;
     const t = teams[l.team_id] = teams[l.team_id] || {};
-    const c = t[w] = t[w] || [0, 0, 0, null, 0];
+    const c = t[w] = t[w] || [0, 0, 0, null, 0, 0];
     const dk = l.team_id + "|" + l.date; if (!seen[dk]) { seen[dk] = 1; c[2]++; }
     if (!l.espn_id || !played[l.espn_id + "|" + l.date]) return;
-    if (ledger.BENCH[l.pos]) c[1]++; else c[0]++;
-    if (elig && state[w] === "done" && !OUT[l.pos]) {
+    if (ledger.BENCH[l.pos]) c[1]++; else { c[0]++; if (fitDay(w, l.date)) c[5]++; }
+    if (elig && fitDay(w, l.date) && !OUT[l.pos]) {
       const e = elig[l.yahoo_key] || "";
       if (!e) c[4]++;
       (avail[dk] = avail[dk] || []).push({ elig: new Set(e.split(",").filter(Boolean)), sat: l.pos });
     }
   });
   if (elig) {
-    Object.keys(teams).forEach((id) => Object.keys(teams[id]).forEach((w) => { if (state[w] === "done") teams[id][w][3] = 0; }));
+    Object.keys(teams).forEach((id) => Object.keys(teams[id]).forEach((w) => { if (state[w] !== "ahead") teams[id][w][3] = 0; }));
     Object.keys(avail).forEach((dk) => {
       const [id, date] = dk.split("|"), w = weekOfDate[date];
       teams[id][w][3] += maxFit(avail[dk], slots);
