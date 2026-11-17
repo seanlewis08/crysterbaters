@@ -81,6 +81,8 @@ async function linkChoices(typed) {
     console.error("yahoo autocomplete fallback:", e.message);
     rows = supa.TEAMS.map((t) => ({ name: t.name + " · " + t.mgr.split(" ")[0], value: t.id }));
   }
+  // the expansion teams have no Yahoo team yet; their managers can still link and vote
+  supa.EXPANSION.forEach((t) => rows.push({ name: t.name + " · joins 2027-28", value: t.id }));
   const q = norm(typed);
   const hit = q ? rows.filter((r) => norm(r.name).includes(q)) : rows;
   return (hit.length ? hit : rows).slice(0, 25).map((r) => ({ name: r.name.slice(0, 100), value: r.value }));

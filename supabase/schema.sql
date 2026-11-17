@@ -49,7 +49,7 @@ create table if not exists public.profiles (
   user_id      uuid primary key references auth.users (id) on delete cascade,
   email        text not null,
   team_id      text not null unique check (team_id in
-                 ('knuepp','claxton','rollins','george','rucker','ant','ysga','freaky','giannis','jalenba')),
+                 ('knuepp','claxton','rollins','george','rucker','ant','ysga','freaky','giannis','jalenba','exp1','exp2')),
   display_name text,
   created_at   timestamptz not null default now()
 );
@@ -1259,3 +1259,12 @@ alter table public.usage_players add column if not exists oreb integer;
 alter table public.usage_players add column if not exists dreb integer;
 alter table public.usage_players add column if not exists dz   jsonb;
 alter table public.usage_games   add column if not exists dz   jsonb;
+
+-- 19. Expansion (added 2026-11-17): the league goes to twelve teams in 2027-28. The two new
+-- franchises (exp1, exp2) can claim a login, vote and set up their team page now; they have
+-- no players, standings or dues until next season. Profiles accept the two new ids, and an
+-- expansion team names itself (team_prefs.team_name — the other ten take their names from Yahoo).
+alter table public.profiles drop constraint if exists profiles_team_id_check;
+alter table public.profiles add constraint profiles_team_id_check check (team_id in
+  ('knuepp','claxton','rollins','george','rucker','ant','ysga','freaky','giannis','jalenba','exp1','exp2'));
+alter table public.team_prefs add column if not exists team_name text check (team_name is null or (length(team_name) between 2 and 40));

@@ -63,7 +63,13 @@ const TEAMS = [
   { id: "giannis", name: "Regular Season Giannis",      short: "Kabir", mgr: "Kabir Sodhi" },
   { id: "jalenba", name: "The JaleNBA",                 short: "Sean",  mgr: "Sean Lewis" },
 ];
-const teamById = (id) => TEAMS.find((t) => t.id === id) || null;
+// The two 2027-28 expansion teams: they can claim a login, link Discord and vote now, and get
+// players next season. Not in TEAMS, which stays the ten who play this season (dues, Yahoo mapping).
+const EXPANSION = [
+  { id: "exp1", name: "Expansion Team 1", short: "Exp 1", mgr: "New manager", exp: true },
+  { id: "exp2", name: "Expansion Team 2", short: "Exp 2", mgr: "New manager", exp: true },
+];
+const teamById = (id) => TEAMS.find((t) => t.id === id) || EXPANSION.find((t) => t.id === id) || null;
 
 // Same rule as the site's nameFor(): display_name, else the team's short
 // name, else the email's local part.
@@ -96,7 +102,7 @@ function pollIsOpen(p) {
 
 module.exports = {
   rest, select, one, insert, upsert, update, remove,
-  TEAMS, teamById, nameFor,
+  TEAMS, EXPANSION, teamById, nameFor,
   profileByDiscord, profileByTeam, profiles, isCommissioner,
   getPoll, getVotes, getMessage, pollIsOpen,
 };

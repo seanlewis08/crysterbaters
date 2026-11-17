@@ -758,6 +758,18 @@ tr.keeprow td{background:var(--amber-glow)!important;border-bottom-color:var(--a
 .team-id b{display:block;font-family:var(--disp);font-weight:700;font-size:19px;text-transform:uppercase;letter-spacing:.02em;overflow-wrap:anywhere}
 .team-id span{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin-top:3px}
 .team-body{padding:13px 17px 15px;display:flex;flex-direction:column;gap:9px;flex:1}
+/* the two 2027-28 expansion teams */
+.team.exp{border-style:dashed}
+.team.exp .avatar{background:none;border-style:dashed;color:var(--dim)}
+.exp-grid{grid-template-columns:repeat(auto-fill,minmax(280px,1fr))}
+.exp-steps{list-style:none;margin:0;padding:6px 18px 14px;counter-reset:st}
+.exp-steps li{counter-increment:st;position:relative;padding:11px 0 11px 40px;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:3px}
+.exp-steps li:last-child{border-bottom:0}
+.exp-steps li::before{content:counter(st);position:absolute;left:0;top:10px;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-family:var(--disp);font-weight:800;font-size:14px;background:var(--surface-3);color:var(--muted);border:1px solid var(--line-2)}
+.exp-steps li.done::before{content:"✓";background:var(--green);color:#fff;border-color:var(--green)}
+.exp-steps li b{font-family:var(--disp);font-size:17px;text-transform:uppercase;letter-spacing:.02em}
+.exp-steps li span{font-size:14px;color:var(--muted);line-height:1.5}
+.exp-steps li.done b{color:var(--muted)}
 .kv{display:flex;justify-content:space-between;gap:12px;align-items:baseline}
 .kv dt{font-family:var(--mono);font-size:9.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--dim)}
 .kv dd{margin:0;font-family:var(--disp);font-weight:600;font-size:16px;font-variant-numeric:tabular-nums}
@@ -1533,7 +1545,9 @@ sup.gl-miss.soft{color:var(--dim);font-weight:500}
 .mg-form{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:flex-end;margin-top:8px;padding:10px 12px;background:rgba(20,14,8,.72);border:1px solid rgba(255,255,255,.25);border-radius:3px;max-width:520px}
 .mg-form label{display:flex;flex-direction:column;gap:3px;font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:#EDE3CE}
 .mg-form input{font:inherit;font-size:15px;padding:6px 9px;width:200px;max-width:100%;color:var(--ink);background:var(--surface);border:1px solid var(--line-2);border-radius:2px}
-.mg-form label:nth-child(2) input{width:120px}
+.mg-form #mg-short{width:120px}
+.mg-form label.mg-team{flex:1 1 100%}
+.mg-form label.mg-team input{width:100%}
 .mg-form .mg-out{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
 .mg-form small{flex-basis:100%;font-size:12px;color:#D9CDB6}
 @media (max-width:640px){ .mg-form input{width:100%} .mg-form label{flex:1 1 100%} }
@@ -1814,6 +1828,13 @@ sup.gl-miss.soft{color:var(--dim);font-weight:500}
       <div class="rulebar"></div>
       <p class="lede">Rosters as they stood when they locked for the 2025–26 playoffs — the record that decides who is keepable.</p>
       <div class="teamgrid" id="teamgrid" style="margin-top:20px"></div>
+    </section>
+
+    <section id="exp-sec">
+      <div class="sec-head"><h2>Joining 2027–28</h2><span class="eyebrow cool">Twelve teams next season</span></div>
+      <div class="rulebar"></div>
+      <p class="lede">Two new franchises. Each one gets a login and a vote now, names itself and picks a home court, and gets players with the 2027–28 draft.</p>
+      <div class="teamgrid exp-grid" id="expgrid" style="margin-top:20px"></div>
     </section>
 
     <section>
@@ -2926,7 +2947,15 @@ function costFor(player){
 
 function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;");}
 function yearsLeft(c){return Math.max(0,Math.floor((c-1)/2));}
-function byId(id){for(var i=0;i<T.length;i++){if(T[i].id===id)return T[i];}return null;}
+/* 2027-28 expansion: two new franchises that can sign in, vote and set up their team now, and get players
+   next season. Kept out of T on purpose — T is the ten who play this season (standings, rosters, the
+   Scoreboard, the Games Log, the draft); TX joins wherever a team is signed into, named or looked up. */
+var TX=[
+  {id:"exp1", name:"Expansion Team 1", mgr:"New manager", short:"Exp 1", ini:"X1", exp:true, titles:[], roster:[]},
+  {id:"exp2", name:"Expansion Team 2", mgr:"New manager", short:"Exp 2", ini:"X2", exp:true, titles:[], roster:[]}
+];
+function isExp(id){ for(var i=0;i<TX.length;i++){ if(TX[i].id===id) return true; } return false; }
+function byId(id){for(var i=0;i<T.length;i++){if(T[i].id===id)return T[i];} for(var j=0;j<TX.length;j++){if(TX[j].id===id)return TX[j];} return null;}
 function ordinal(n){var s=["th","st","nd","rd"],v=n%100;return n+(s[(v-20)%10]||s[v]||s[0]);}
 function ladderChips(cost){
   var out=[],c=cost;
@@ -3151,7 +3180,7 @@ function applyLiveTeams(data){
    team_prefs.manager / manager_short (set from the team page by that manager or the commissioner)
    override the names typed into T[] above, everywhere a manager is named: cards, standings,
    boards, badges, pickers. Clearing them puts the original name back. */
-function managerDefaults(t){ if(!t._orig) t._orig={mgr:t.mgr,short:t.short,ini:t.ini}; return t._orig; }
+function managerDefaults(t){ if(!t._orig) t._orig={mgr:t.mgr,short:t.short,ini:t.ini,name:t.name}; return t._orig; }
 function initialsOf(name){ return String(name||"").trim().split(/\s+/).map(function(w){return w.charAt(0).toUpperCase();}).slice(0,3).join("")||"?"; }
 function applyManagers(list){
   var changed=false;
@@ -3160,6 +3189,8 @@ function applyManagers(list){
     var o=managerDefaults(t), full=(p.manager||"").trim(), shortName=(p.manager_short||"").trim()||(full?full.split(/\s+/)[0]:"");
     var mgr=full||o.mgr, sh=full?(shortName||o.short):o.short, ini=full?initialsOf(full):o.ini;
     if(t.mgr!==mgr||t.short!==sh||t.ini!==ini){ t.mgr=mgr; t.short=sh; t.ini=ini; changed=true; }
+    /* an expansion team has no Yahoo name yet: it names itself (team_prefs.team_name) */
+    if(t.exp){ var nm=(p.team_name||"").trim()||o.name; if(t.name!==nm){ t.name=nm; changed=true; } }
   });
   if(!changed) return false;
   try{ rebuildKeeperViews(); }catch(e){}
@@ -3169,6 +3200,8 @@ function applyManagers(list){
   if(window.Draft26&&Draft26.repaint) Draft26.repaint();
   if(window.Badges&&Badges.onView) try{ Badges.onView("badges"); }catch(e){}
   document.dispatchEvent(new CustomEvent("cb:managers"));
+  try{ renderExpCards(); }catch(e){}
+  if(window.Polls&&Polls.repaintAcct) try{ Polls.repaintAcct(); }catch(e){}
   return true;
 }
 function loadLiveTeams(){
@@ -3193,6 +3226,7 @@ renderKeeperLadders();
 function renderTeam(id){
   curTeam=id;
   var t=byId(id); if(!t) return;
+  if(t.exp) return renderExpTeam(t);
   var s=ST[t.id];
   var me=(window.Polls&&Polls.profile)?Polls.profile():null, isC=!!(window.Polls&&Polls.commish&&Polls.commish());
   var mine=!!(me&&me.team_id===t.id), canKeep=(isC||(mine&&!KEEPERS_LOCKED)), ks=keeperState(t);
@@ -3266,6 +3300,60 @@ function renderTeam(id){
   if(window.Court) Court.onTeam(id);
   if(window.Yahoo) Yahoo.onTeam(id);
 }
+/* ---------- the two expansion teams: a login, a name, a court, a vote — and an empty roster until 2027-28 ---------- */
+function expClaimed(id){ var c=(window.Polls&&Polls.claimed)?Polls.claimed():[]; var p=(window.Polls&&Polls.profile)?Polls.profile():null; return c.indexOf(id)>=0||!!(p&&p.team_id===id); }
+function renderExpTeam(t){
+  var me=(window.Polls&&Polls.profile)?Polls.profile():null, isC=!!(window.Polls&&Polls.commish&&Polls.commish());
+  var mine=!!(me&&me.team_id===t.id), taken=expClaimed(t.id), o=managerDefaults(t), named=t.name!==o.name, hasMgr=t.mgr!==o.mgr;
+  var steps=[
+    [taken, "Claim the spot", taken?"Done.":"Pick “"+esc(o.name)+"” on the <button class=\"back\" data-go=\"signup\" style=\"margin:0;padding:0\">Claim your team</button> page, with the league code Sean sent you."],
+    [named&&hasMgr, "Name your team and yourself", named&&hasMgr?"Done — change either any time with “edit name” above.":"Use “edit name” under the team name above: the team’s name, your name, and the short name boards and tables use."],
+    [!!(window.Court&&Court.hasCourt&&Court.hasCourt(t.id)), "Pick a home court and a jersey", "The Home court panel: any NBA floor for your page, and a jersey for the player you can’t wait to draft."],
+    [false, "Vote", "You have a full vote on every league poll from today — next season’s rules, keepers and draft are yours to decide too. <button class=\"back\" data-go=\"polls\" style=\"margin:0;padding:0\">Open polls</button>"]
+  ];
+  var setup='<ol class="exp-steps">'+steps.map(function(s){ return '<li class="'+(s[0]?"done":"")+'"><b>'+s[1]+'</b><span>'+s[2]+'</span></li>'; }).join("")+'</ol>';
+  document.getElementById("teamdetail").innerHTML =
+    '<div id="team-hero"></div>'+
+    '<div class="detail-cols two">'+
+      '<div class="detail-main" style="display:flex;flex-direction:column;gap:16px">'+
+        '<div class="panel"><div class="panel-hd"><span class="eyebrow">Joining for 2027–28</span></div>'+
+          '<div style="padding:18px 18px 8px"><p style="margin:0 0 6px;font-size:15.5px;line-height:1.55">The league goes to twelve teams next season and this is one of the two new franchises. '+
+          (taken?'It has a manager, a login and a vote; the players arrive with the 2027–28 draft.':'The spot is open: whoever claims it gets a login and a vote now, and players with the 2027–28 draft.')+'</p>'+
+          '<p class="sub" style="margin:0 0 10px">No roster, keepers or games this season, so it isn’t in the standings, the Scoreboard or the Games Log until it has players.</p></div>'+
+          ((mine||isC||!taken)?'<div class="panel-hd" style="border-top:1px solid var(--line)"><span class="eyebrow">'+(mine?"Set up your team":"Getting set up")+'</span></div>'+setup:'')+
+        '</div>'+
+        '<div class="panel"><div class="panel-hd"><span class="eyebrow">Roster · 2027–28</span></div>'+
+          '<div class="empty" style="padding:22px 18px">Empty until the 2027–28 draft. How the new teams stock their rosters is the league’s call — '+
+          '<button class="back" data-go="agenda" style="margin:0;padding:0">raise it on Open Items</button>.</div></div>'+
+      '</div>'+
+      '<div class="detail-side" style="display:flex;flex-direction:column;gap:16px">'+
+        '<div class="panel"><div class="panel-hd"><span class="eyebrow">Home court</span></div><div id="hc-panel"></div></div>'+
+        '<div class="panel"><div class="panel-hd"><span class="eyebrow">Franchise</span></div>'+
+          '<div style="padding:16px;display:flex;flex-direction:column;gap:12px">'+
+            '<div class="kv"><dt>Joins</dt><dd>2027–28</dd></div>'+
+            '<div class="kv"><dt>Manager</dt><dd>'+(taken?esc(t.mgr):"Open spot")+'</dd></div>'+
+            '<div class="kv"><dt>Titles</dt><dd>None yet</dd></div>'+
+          '</div></div>'+
+      '</div>'+
+    '</div>';
+  if(window.Court) Court.onTeam(t.id);
+}
+/* the Teams page shelf under the ten */
+function renderExpCards(){
+  var el=document.getElementById("expgrid"); if(!el) return;
+  el.innerHTML=TX.map(function(t){
+    var taken=expClaimed(t.id);
+    return '<button class="team exp" data-team="'+t.id+'">'+
+      '<div class="team-top"><div class="avatar">'+esc(t.ini)+'</div>'+
+        '<div class="team-id"><b>'+esc(t.name)+'</b><span>'+(taken?esc(t.mgr):"Open spot")+'</span></div></div>'+
+      '<div class="team-body">'+
+        '<div class="kv"><dt>Joins</dt><dd>2027–28</dd></div>'+
+        '<div class="kv"><dt>This season</dt><dd>'+(taken?'Claimed · votes in polls':'<span class="pill q">Open — claim it</span>')+'</dd></div>'+
+      '</div></button>';
+  }).join("");
+}
+document.addEventListener("cb:managers",function(){ if(curTeam&&isExp(curTeam)&&document.getElementById("v-team").classList.contains("on")) renderTeam(curTeam); });
+renderExpCards();
 /* the main column shows one thing at a time: this season from Yahoo, or last season's locked list */
 function teamTab(name){
   var root=document.getElementById("teamdetail"); if(!root) return;
@@ -4041,7 +4129,7 @@ var Polls=(function(){
       capSave:function(data){ if(!commish()) return Promise.reject(new Error("Commissioner only.")); db.cap=JSON.parse(JSON.stringify(data)); save(); return Promise.resolve(); },
       /* home courts */
       prefsLoad:function(){ return Promise.resolve((db.prefs||[]).slice()); },
-      prefsSet:function(team_id,o){ var p=myProf(); if(!(commish()||(p&&p.team_id===team_id))) return Promise.reject(new Error("That's not your team.")); if(!db.prefs) db.prefs=[]; var row=db.prefs.filter(function(x){return x.team_id===team_id;})[0]; if(!row){ row={team_id:team_id}; db.prefs.push(row); } row.nba_team=o.nba_team||null; row.jersey_player=o.jersey_player||null; row.jersey_num=o.jersey_num||null; row.jersey_team=o.jersey_team||null; row.manager=o.manager||null; row.manager_short=o.manager_short||null; row.updated_by=db.me.id; row.updated_at=new Date().toISOString(); save(); return Promise.resolve(); },
+      prefsSet:function(team_id,o){ var p=myProf(); if(!(commish()||(p&&p.team_id===team_id))) return Promise.reject(new Error("That's not your team.")); if(!db.prefs) db.prefs=[]; var row=db.prefs.filter(function(x){return x.team_id===team_id;})[0]; if(!row){ row={team_id:team_id}; db.prefs.push(row); } row.nba_team=o.nba_team||null; row.jersey_player=o.jersey_player||null; row.jersey_num=o.jersey_num||null; row.jersey_team=o.jersey_team||null; row.manager=o.manager||null; row.manager_short=o.manager_short||null; if(o.team_name!==undefined) row.team_name=o.team_name||null; row.updated_by=db.me.id; row.updated_at=new Date().toISOString(); save(); return Promise.resolve(); },
       schedChoose:function(eid,slot){ if(!commish()) return Promise.reject(new Error("Commissioner only.")); var ev=db.sched.events.filter(function(x){return x.id===eid;})[0]; if(ev){ ev.chosen=slot; ev.status=slot?"closed":"open"; } save(); return Promise.resolve(); },
       agendaVote:function(id,on){
         var p=myProf(); if(!p) return Promise.reject(new Error("Claim your team first."));
@@ -4230,9 +4318,16 @@ var Polls=(function(){
       capLoad:function(){ return client.from("cap_table").select("data,updated_at").eq("id","current").maybeSingle().then(function(r){ chk(r); return r.data?r.data.data:null; }); },
       capSave:function(data){ return client.from("cap_table").upsert({id:"current",data:data,updated_at:new Date().toISOString()},{onConflict:"id"}).then(chk); },
       /* home courts */
-      prefsLoad:function(){ return client.from("team_prefs").select("team_id,nba_team,jersey_player,jersey_num,jersey_team,manager,manager_short,updated_at").then(function(r){ chk(r); return r.data||[]; }); },
+      prefsLoad:function(){
+        var cols="team_id,nba_team,jersey_player,jersey_num,jersey_team,manager,manager_short,updated_at";
+        /* team_name (the expansion teams' own names) arrived with schema §19: read it when the column is there */
+        return client.from("team_prefs").select(cols+",team_name").then(function(r){
+          if(r.error) return client.from("team_prefs").select(cols).then(function(r2){ chk(r2); return r2.data||[]; });
+          return r.data||[]; }); },
       /* o is the whole row (court + manager); callers merge what they aren't changing */
-      prefsSet:function(team_id,o){ return client.from("team_prefs").upsert({team_id:team_id,nba_team:o.nba_team||null,jersey_player:o.jersey_player||null,jersey_num:o.jersey_num||null,jersey_team:o.jersey_team||null,manager:o.manager||null,manager_short:o.manager_short||null,updated_at:new Date().toISOString()},{onConflict:"team_id"}).then(chk); },
+      prefsSet:function(team_id,o){ var row={team_id:team_id,nba_team:o.nba_team||null,jersey_player:o.jersey_player||null,jersey_num:o.jersey_num||null,jersey_team:o.jersey_team||null,manager:o.manager||null,manager_short:o.manager_short||null,updated_at:new Date().toISOString()};
+        if(o.team_name!==undefined) row.team_name=o.team_name||null;
+        return client.from("team_prefs").upsert(row,{onConflict:"team_id"}).then(chk); },
       schedChoose:function(eid,slot){ return client.from("avail_events").update({chosen:slot,status:slot?"closed":"open"}).eq("id",eid).then(chk); },
       agendaAdd:function(a){ return client.from("agenda").insert({title:a.title,details:a.details||null}).then(chk); },
       agendaDecide:function(id,outcome){ return client.from("agenda").update(outcome==null?{status:"open",outcome:null,decided_at:null}:{status:"decided",outcome:outcome,decided_at:new Date().toISOString()}).eq("id",id).then(chk); },
@@ -4341,7 +4436,11 @@ var Polls=(function(){
     sel.innerHTML='<option value="">Pick your team…</option>'+T.map(function(t){
       var taken=claimed.indexOf(t.id)>=0;
       return '<option value="'+t.id+'"'+(taken?' disabled':'')+'>'+esc(t.name)+' — '+esc(t.mgr)+(taken?' (claimed)':'')+'</option>';
-    }).join("");
+    }).join("")+'<optgroup label="New for 2027–28">'+TX.map(function(t){
+      var taken=claimed.indexOf(t.id)>=0, nm=managerDefaults(t).name;
+      return '<option value="'+t.id+'"'+(taken?' disabled':'')+'>'+esc(nm)+' — new manager, joins 2027–28'+(taken?' (claimed)':'')+'</option>';
+    }).join("")+'</optgroup>';
+    try{ renderExpCards(); }catch(e){}
     if(cur) sel.value=cur;
     /* already signed in: only the claim is missing */
     var signed=!!me;
@@ -4372,7 +4471,7 @@ var Polls=(function(){
   });
   function renderCommish(){
     renderKeeperRequests();
-    $("commish-rows").innerHTML=T.map(function(t){
+    $("commish-rows").innerHTML=T.concat(TX).map(function(t){
       var pr=profiles.filter(function(p){return p.team_id===t.id;})[0];
       return '<tr><td><b>'+esc(t.name)+'</b></td><td class="mgr">'+esc(t.mgr)+'</td>'+
         '<td>'+(pr?esc(pr.email):'<span class="pill q">Unclaimed</span>')+'</td>'+
@@ -4829,6 +4928,12 @@ var Polls=(function(){
     $("du-paid").checked=!!(mine&&mine.paid);
     ["du-method","du-note","du-paid","du-save"].forEach(function(id){ $(id).disabled=locked; });
     $("dues-me").classList.toggle("locked",locked);
+    /* an expansion team joins next season: nothing owed for this one */
+    if(isExp(profile.team_id)){
+      $("du-status").innerHTML='<span class="pill q">Not this season</span>Your team joins for 2027–28, so there’s nothing to pay for '+esc(cur.season)+'. Your first dues come with next season.';
+      ["du-method","du-note","du-paid","du-save"].forEach(function(id){ $(id).disabled=true; });
+      $("dues-me").classList.add("locked");
+    }
     renderHow(cur);
     /* everyone */
     $("dues-rows").innerHTML=rows.map(function(r){
@@ -5086,6 +5191,7 @@ var Polls=(function(){
   boot();
   return {refresh:refresh,onView:onView,openIssue:openIssue,
     store:function(){ return store; }, me:function(){ return me; }, commish:function(){ return isCommish; }, profile:function(){ return profile; },
+    claimed:function(){ return (claimed||[]).slice(); }, repaintAcct:function(){ try{ renderAcct(); }catch(e){} },
     who:function(){ var t=profile&&byId(profile.team_id); return profile&&profile.display_name?profile.display_name:(t?t.short:(me?me.email.split("@")[0]:"")); },
     onAuth:function(cb){ authSubs.push(cb); if(store) cb(); }};
 })();
@@ -7234,11 +7340,14 @@ var Court=(function(){
     var p=prefOf(t.id), can=canEdit(t.id), o=(typeof managerDefaults==="function")?managerDefaults(t):{mgr:t.mgr,short:t.short};
     if(naming&&can){
       return '<form class="mg-form" id="mg-form" autocomplete="off">'+
-        '<label>Manager<input name="name" id="mg-name" maxlength="40" value="'+esc(p.manager||t.mgr)+'" placeholder="'+esc(o.mgr)+'"></label>'+
-        '<label>Goes by<input name="short" id="mg-short" maxlength="12" value="'+esc(p.manager_short||t.short)+'" placeholder="'+esc(o.short)+'"></label>'+
+        (t.exp?'<label class="mg-team">Team name<input name="team" id="mg-team" maxlength="40" value="'+esc(p.team_name||"")+'" placeholder="'+esc(o.name||t.name)+'"></label>':'')+
+        '<label>Manager<input name="name" id="mg-name" maxlength="40" value="'+esc(p.manager||(t.exp?"":t.mgr))+'" placeholder="'+esc(t.exp?"Your name":o.mgr)+'"></label>'+
+        '<label>Goes by<input name="short" id="mg-short" maxlength="12" value="'+esc(p.manager_short||(t.exp?"":t.short))+'" placeholder="'+esc(t.exp?"First name":o.short)+'"></label>'+
         '<span class="mg-out"><button class="btn sm" type="submit">Save</button><button class="btn quiet sm" type="button" id="mg-cancel">Cancel</button>'+(p.manager?'<button class="btn quiet sm" type="button" id="mg-reset" title="Back to '+esc(o.mgr)+'">Use '+esc(o.short)+' again</button>':'')+'<span class="bd-msg" id="mg-msg"></span></span>'+
         '<small>The short name is what boards, tables and badges use.</small></form>';
     }
+    if(t.exp) return '<p class="sub">'+(expClaimed(t.id)?esc(t.mgr):"Open spot")+' · joins for 2027–28'+
+      (can?' <button type="button" class="mg-edit" id="mg-edit" title="Name your team and yourself">edit name</button>':'')+'</p>';
     return '<p class="sub">'+esc(t.mgr)+(p.manager&&p.manager!==o.mgr?' <span class="mg-sub" title="'+esc(o.mgr)+'’s team">for '+esc(o.short)+'</span>':'')+' · '+s.rec+' · finished '+ordinal(s.fin)+(s.fin===1?' · reigning champion':'')+
       (can?' <button type="button" class="mg-edit" id="mg-edit" title="Change who runs this team">edit name</button>':'')+'</p>';
   }
@@ -7332,15 +7441,16 @@ var Court=(function(){
     });
     document.addEventListener("submit",function(e){
       var f=e.target.closest("#mg-form"); if(!f) return; e.preventDefault();
-      var name=(f.name.value||"").trim(), sh=(f.short.value||"").trim();
-      if(name&&name.length<2){ var m=$("mg-msg"); if(m){ m.style.color="var(--red)"; m.textContent="Type a name."; } return; }
-      saveManager(name||null, name?(sh||null):null);
+      var name=(f.name.value||"").trim(), sh=(f.short.value||"").trim(), tn=f.team?(f.team.value||"").trim():undefined;
+      if((name&&name.length<2)||(tn&&tn.length<2)){ var m=$("mg-msg"); if(m){ m.style.color="var(--red)"; m.textContent="Names need at least two letters."; } return; }
+      saveManager(name||null, name?(sh||null):null, tn);
     });
     if(window.Players) Players.sub(function(){ if(editing) paint(); });
   }
-  function saveManager(name,sh){
+  function saveManager(name,sh,teamName){
     var f=$("mg-form"); if(f) Array.prototype.forEach.call(f.querySelectorAll("button"),function(b){ b.disabled=true; });
     var o=Object.assign({},prefOf(curTid),{manager:name,manager_short:sh});
+    if(teamName!==undefined) o.team_name=teamName||null;
     Polls.store().prefsSet(curTid,o).then(function(){ naming=false; load(); }).catch(function(err){
       if(f) Array.prototype.forEach.call(f.querySelectorAll("button"),function(b){ b.disabled=false; });
       var m=$("mg-msg"); if(m){ m.style.color="var(--red)"; m.textContent=(err&&err.message)||"Couldn't save."; }
@@ -7350,7 +7460,8 @@ var Court=(function(){
   function onTeam(tid){ curTid=tid; editing=false; naming=false; if(!started){ started=true; bind(); } paint(); }
   if(window.Polls&&Polls.onAuth) Polls.onAuth(load);
   background();
-  return {onTeam:onTeam, load:load, court:courtSvg, jersey:jerseySvg, team:team, logo:logo, NBA:NBA};
+  return {onTeam:onTeam, load:load, court:courtSvg, jersey:jerseySvg, team:team, logo:logo, NBA:NBA,
+    hasCourt:function(tid){ var p=prefOf(tid); return !!(p.nba_team||p.jersey_player); }};
 })();
 window.Court=Court;
 
@@ -8709,6 +8820,7 @@ function go(v,silent){
   if(window.Rotations) Rotations.onView(v);
   if(window.Usage) Usage.onView(v);
   if(window.Scoreboard) Scoreboard.onView(v);
+  if(v==="teams") try{ renderExpCards(); }catch(e){}
   if(window.GamesLog) try{ GamesLog.onView(v); }catch(e){}
   window.scrollTo({top:0,behavior:"instant"});
 }
